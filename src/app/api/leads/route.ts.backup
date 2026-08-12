@@ -1,0 +1,129 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+type LeadRequest = {
+  fullName?: unknown;
+  schoolName?: unknown;
+  email?: unknown;
+  phone?: unknown;
+  studentCount?: unknown;
+  requirements?: unknown;
+  source?: unknown;
+};
+
+function cleanString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+export async function POST(request: Request) {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error(
+        "Supabase environment variables are not configured."
+      );
+
+      return NextResponse.json(
+        {
+          error: "Lead service is not configured.",
+        },
+        { status: 500 }
+      );
+    }
+
+    const supabaseAdmin = createClient(
+      supabaseUrl,
+      serviceRoleKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
+    const body = (await request.json()) as LeadRequest;
+
+    const fullName = cleanString(body.fullName);
+    const schoolName = cleanString(body.schoolName);
+    const email = cleanString(body.email).toLowerCase();
+    const phone = cleanString(body.phone);
+    const studentCount = cleanString(body.studentCount);
+    const requirements = cleanString(body.requirements);
+    const source = cleanString(body.source) || "website";
+
+    if (!fullName) {
+      return NextResponse.json(
+        { error: "Name is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!schoolName) {
+      return NextResponse.json(
+        { error: "School or organization name is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!email) {
+      return NextResponse.json(
+        { error: "Email is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!phone) {
+      return NextResponse.json(
+        { error: "Phone number is required." },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("crm_leads")
+      .insert({
+        full_name: fullName,
+        school_name: schoolName,
+        email,
+        phone,
+        student_count: studentCount || null,
+        requirements: requirements || null,
+        source,
+        status: "NEW",
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("CRM lead creation error:", error);
+
+      return NextResponse.json(
+        {
+          error: "Unable to create lead.",
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        leadId: data.id,
+        message: "Lead created successfully.",
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Lead API error:", error);
+
+    return NextResponse.json(
+      {
+        error: "Invalid request.",
+      },
+      { status: 400 }
+    );
+  }
+}
