@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0f0b1e;
+  --foreground: #ffffff;
 }
 
 @theme inline {
@@ -12,15 +12,24 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: #0f0b1e;
+  color: #ffffff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Custom styling matching the bronze-gold and purple design */
+.bronze-gradient-text {
+  background: linear-gradient(135deg, #ffffff 0%, #e8d0a9 50%, #c59b27 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-card-purple {
+  background: rgba(30, 20, 60, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(197, 155, 39, 0.25);
+}
+html {
+  scroll-behavior: smooth;
 }
