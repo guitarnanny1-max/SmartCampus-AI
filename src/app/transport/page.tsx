@@ -1,37 +1,49 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Bus, MapPin, Shield, Clock, Activity, ArrowLeft, Navigation, CheckCircle2, AlertTriangle, Phone } from 'lucide-react';
+import { Sparkles, Bus, Car, Navigation, Shield, ArrowLeft, CheckCircle2, Search, MapPin, Gauge } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TransportModule() {
-  const [selectedBus, setSelectedBus] = useState('Bus 101 - North Sector');
+  const [dispatchSuccess, setDispatchSuccess] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const buses = [
-    { id: 'Bus 101 - North Sector', driver: 'Ramesh Kumar', phone: '+91 98111 22334', route: 'Civil Lines → Model Town → Campus', speed: '38 km/h', status: 'On Schedule', students: 42, eta: '08:15 AM' },
-    { id: 'Bus 102 - South Avenue', driver: 'Suresh Singh', phone: '+91 98222 33445', route: 'Greater Kailash → Nehru Place → Campus', speed: '45 km/h', status: 'On Schedule', students: 38, eta: '08:20 AM' },
-    { id: 'Bus 103 - Cyber City Express', driver: 'Manoj Sharma', phone: '+91 98333 44556', route: 'DLF Phase 3 → MG Road → Campus', speed: '28 km/h', status: 'Minor Delay (Traffic)', students: 45, eta: '08:32 AM' },
+  const transportLedger = [
+    { route: 'Route A (City Center Express)', vehicle: 'EV Bus #04 (60 Seater)', driver: 'Ramesh Kumar', gps: 'Live • Speed 38 km/h', status: 'On Schedule' },
+    { route: 'Route B (Tech Park & Metro Link)', vehicle: 'Electric Shuttle #12', driver: 'Suresh Patel', gps: 'Live • En Route Gate 3', status: 'On Schedule' },
+    { route: 'Research Quad Shuttle Service', vehicle: 'Autonomous Pod #02', driver: 'AI Auto-Pilot', gps: 'Docked & Charging', status: 'Standby' },
+    { route: 'Inter-Campus Research Transit', vehicle: 'Executive Van #01', driver: 'Anil Singh', gps: 'Live • Highway 48', status: 'Delayed (10m)' },
   ];
 
-  const currentBusData = buses.find(b => b.id === selectedBus) || buses[0];
+  const handleDispatchShuttle = () => {
+    setDispatchSuccess(true);
+    setTimeout(() => setDispatchSuccess(false), 3500);
+  };
+
+  const filteredTransport = transportLedger.filter(item => 
+    item.route.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.vehicle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.driver.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.status.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
       {/* Top Header */}
-      <header className="border-b border-slate-800 bg-slate-900/50 px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-slate-800 bg-slate-900/50 px-6 py-4 flex items-center justify-between backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl">
+          <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl shadow-lg shadow-cyan-950">
             <Sparkles className="w-5 h-5 text-cyan-400" />
           </div>
           <div>
-            <h1 className="text-sm font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">SmartCampus OS</h1>
-            <span className="text-[10px] text-slate-400">GPS Telemetry & Fleet Management</span>
+            <h1 className="text-sm font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">SmartCampus AI</h1>
+            <span className="text-[10px] text-slate-400">www.smartcampusai.in • Transport & Fleet Hub</span>
           </div>
         </div>
 
         <Link href="/" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Home</span>
+          <span>Back to Control Center</span>
         </Link>
       </header>
 
@@ -39,122 +51,102 @@ export default function TransportModule() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-10 space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-extrabold tracking-tight">Live Fleet Telemetry & Bus Tracking</h2>
-            <p className="text-xs text-slate-400 mt-1">Real-time GPS tracking, speed monitoring, and automated parent transit notifications.</p>
+            <h2 className="text-2xl font-extrabold tracking-tight">Transport, Fleet & Parking Management</h2>
+            <p className="text-xs text-slate-400 mt-1">Manage real-time GPS fleet tracking, electric shuttle dispatch, smart parking slot allocations, and automated gate telemetry.</p>
           </div>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold rounded-full w-fit">
-            <Navigation className="w-3.5 h-3.5 animate-pulse" /> Live Telemetry Feed Active
-          </span>
+          <button
+            onClick={handleDispatchShuttle}
+            className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-cyan-950 flex items-center gap-2 cursor-pointer w-fit"
+          >
+            <Bus className="w-4 h-4" />
+            <span>Dispatch Emergency EV Shuttle</span>
+          </button>
         </div>
 
-        {/* Stats Row */}
+        {dispatchSuccess && (
+          <div className="p-4 bg-cyan-950/40 border border-cyan-500/30 rounded-2xl text-xs text-cyan-300 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span>Emergency EV shuttle successfully dispatched and live route synchronized with student commuter app.</span>
+          </div>
+        )}
+
+        {/* KPI Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl">
-            <div className="text-xs text-slate-400">Active Fleet Buses</div>
-            <div className="text-3xl font-extrabold mt-2">24 / 24</div>
-            <div className="text-[10px] text-cyan-400 mt-1">100% operational status</div>
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
+            <div className="text-xs text-slate-400">Active Fleet Vehicles</div>
+            <div className="text-3xl font-extrabold text-white">42 Units</div>
+            <div className="text-[10px] text-slate-400">100% electric & hybrid buses</div>
           </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl">
-            <div className="text-xs text-slate-400">Students in Transit</div>
-            <div className="text-3xl font-extrabold mt-2">1,120</div>
-            <div className="text-[10px] text-cyan-400 mt-1">RFID boarded verified</div>
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
+            <div className="text-xs text-slate-400">Daily Commuter Ridership</div>
+            <div className="text-3xl font-extrabold text-emerald-400">8,450 Riders</div>
+            <div className="text-[10px] text-emerald-400 font-medium">Students & faculty transit</div>
           </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl">
-            <div className="text-xs text-slate-400">On-Time Arrival Rate</div>
-            <div className="text-3xl font-extrabold mt-2">98.4%</div>
-            <div className="text-[10px] text-cyan-400 mt-1">Based on weekly average</div>
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
+            <div className="text-xs text-slate-400">Smart Parking Capacity</div>
+            <div className="text-3xl font-extrabold text-cyan-400">1,240 / 1,500</div>
+            <div className="text-[10px] text-slate-400">IoT sensor slots available</div>
           </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl">
-            <div className="text-xs text-slate-400">Geofence Alerts</div>
-            <div className="text-3xl font-extrabold mt-2 text-cyan-400">0</div>
-            <div className="text-[10px] text-slate-400 mt-1">No security breaches</div>
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
+            <div className="text-xs text-slate-400">Fleet Efficiency Score</div>
+            <div className="text-3xl font-extrabold text-white">99.4%</div>
+            <div className="text-[10px] text-slate-400">Optimized AI routing engine</div>
           </div>
         </div>
 
-        {/* Fleet Selector & Map Simulator */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Bus Selector Sidebar */}
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Bus className="w-4 h-4 text-cyan-400" />
-              <span>Select Active Bus</span>
+        {/* Transport Ledger */}
+        <div className="p-8 bg-slate-900 border border-slate-800 rounded-3xl space-y-6 shadow-2xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Navigation className="w-5 h-5 text-cyan-400" />
+              <span>Fleet GPS Tracking & Transit Routes Ledger</span>
             </h3>
 
-            <div className="space-y-3">
-              {buses.map((bus) => (
-                <button
-                  key={bus.id}
-                  onClick={() => setSelectedBus(bus.id)}
-                  className={`w-full text-left p-4 rounded-2xl border transition-all ${
-                    selectedBus === bus.id
-                      ? 'bg-cyan-950/40 border-cyan-500/50 shadow-lg'
-                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-xs text-white">{bus.id}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                      bus.status.includes('Delay') ? 'bg-amber-500/10 text-amber-400' : 'bg-cyan-500/10 text-cyan-400'
-                    }`}>
-                      {bus.status}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-slate-400">{bus.route}</div>
-                </button>
-              ))}
+            <div className="relative w-full md:w-72">
+              <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search route, vehicle, driver..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+              />
             </div>
           </div>
 
-          {/* Bus Telemetry Details & Map Display */}
-          <div className="lg:col-span-2 p-8 bg-slate-900 border border-slate-800 rounded-3xl space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-cyan-400" />
-                <span>Telemetry: {currentBusData.id}</span>
-              </h3>
-              <span className="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-xl border border-cyan-500/30">
-                Speed: {currentBusData.speed}
-              </span>
-            </div>
-
-            {/* Map Simulation Box */}
-            <div className="h-64 bg-slate-950 border border-slate-800 rounded-2xl relative overflow-hidden flex items-center justify-center p-6">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.1)_0,transparent_70%)]" />
-              <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
-                <div className="w-96 h-96 border border-cyan-500/30 rounded-full animate-ping" />
-              </div>
-              <div className="relative z-10 text-center space-y-2">
-                <div className="w-12 h-12 bg-cyan-500/20 border border-cyan-500 text-cyan-400 rounded-2xl flex items-center justify-center mx-auto shadow-2xl shadow-cyan-500/50">
-                  <Bus className="w-6 h-6 animate-pulse" />
+          <div className="space-y-3 text-xs">
+            {filteredTransport.map((item, idx) => (
+              <div key={idx} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="font-bold text-white text-sm">{item.route} • <span className="text-cyan-400">{item.vehicle}</span></div>
+                  <div className="text-slate-400 flex items-center gap-4 text-[11px]">
+                    <span>Driver: <strong className="text-slate-300">{item.driver}</strong></span>
+                    <span>GPS Telemetry: <strong className="text-emerald-400 font-mono">{item.gps}</strong></span>
+                  </div>
                 </div>
-                <div className="text-sm font-bold text-white">{currentBusData.id}</div>
-                <div className="text-xs text-cyan-400">GPS Coordinates: 28.6139° N, 77.2090° E (En Route to Campus)</div>
-              </div>
-            </div>
-
-            {/* Driver & Transit Specs */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
-                <div className="text-slate-400">Assigned Driver</div>
-                <div className="font-bold text-white">{currentBusData.driver}</div>
-                <div className="text-cyan-400 flex items-center gap-1 pt-1">
-                  <Phone className="w-3 h-3" /> {currentBusData.phone}
+                <div className="flex items-center gap-4">
+                  <span className={`px-3 py-1 rounded-full font-bold text-[10px] ${
+                    item.status === 'On Schedule' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' :
+                    item.status === 'Standby' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30' :
+                    'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                  }`}>
+                    {item.status}
+                  </span>
+                  <button className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-cyan-400 font-medium transition-colors cursor-pointer">
+                    View Live Map
+                  </button>
                 </div>
               </div>
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
-                <div className="text-slate-400">Expected Arrival (ETA)</div>
-                <div className="font-bold text-white text-base">{currentBusData.eta}</div>
-                <div className="text-cyan-400">Status: {currentBusData.status}</div>
-              </div>
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
-                <div className="text-slate-400">Boarded Students</div>
-                <div className="font-bold text-white text-base">{currentBusData.students} Students</div>
-                <div className="text-cyan-400">RFID Attendance Synced</div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-800 bg-slate-900/30 px-6 py-6 text-center text-xs text-slate-500 space-y-1">
+        <p>SmartCampus AI • www.smartcampusai.in • Enterprise Transport & Fleet Management</p>
+        <p className="text-[10px] text-cyan-400/80 font-medium">Engineered & Developed by ThomasG Technologies</p>
+      </footer>
     </div>
   );
 }
