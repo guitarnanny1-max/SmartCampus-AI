@@ -1,144 +1,136 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Building2, Shield, Lock, Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
-import Link from 'next/link';
+import { Sparkles, Lock, Mail, Building2, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [tenant, setTenant] = useState('Delhi Public International');
-  const [email, setEmail] = useState('admin@smartcampus.in');
+  const [email, setEmail] = useState('admin@smartcampus.os');
   const [password, setPassword] = useState('••••••••••••');
-  const [role, setRole] = useState<'admin' | 'crm_manager' | 'sales_exec' | 'teacher' | 'parent'>('crm_manager');
-  const [loading, setLoading] = useState(false);
+  const [tenant, setTenant] = useState('Silicon Valley Hub (Main Campus)');
+  const [isLoading, setIsLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setIsLoading(true);
 
     setTimeout(() => {
-      setLoading(false);
-      // Redirect based on selection
-      if (role === 'sales_exec' || role === 'crm_manager' || role === 'admin') {
-        router.push('/crm');
-      } else {
-        router.push('/portal');
-      }
+      setIsLoading(false);
+      setLoginSuccess(true);
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
     }, 1200);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between p-6 md:p-12">
-      {/* Top Header */}
-      <header className="max-w-7xl w-full mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl shadow-lg shadow-cyan-950">
-            <Sparkles className="w-5 h-5 text-cyan-400" />
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-center items-center p-6 selection:bg-cyan-500 selection:text-white relative overflow-hidden">
+      {/* Background ambient glow effects */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Login Card Container */}
+      <div className="max-w-md w-full bg-slate-900/80 border border-slate-800 rounded-3xl p-8 shadow-2xl backdrop-blur-xl space-y-8 relative z-10">
+        
+        {/* Header Logo */}
+        <div className="text-center space-y-3">
+          <div className="inline-flex p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl shadow-lg shadow-cyan-950">
+            <Sparkles className="w-6 h-6 text-cyan-400" />
           </div>
           <div>
-            <h1 className="text-sm font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">SmartCampus SaaS OS</h1>
-            <span className="text-[10px] text-slate-400">Enterprise Authentication Gateway</span>
+            <h1 className="text-xl font-extrabold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">SmartCampus SaaS OS</h1>
+            <p className="text-xs text-slate-400 mt-1">Enterprise Multi-Tenant Institutional Authentication</p>
           </div>
         </div>
 
-        <Link href="/" className="text-xs text-slate-400 hover:text-white transition-colors">
-          Back to Home →
-        </Link>
-      </header>
-
-      {/* Main Login Card */}
-      <main className="max-w-md w-full mx-auto p-8 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl space-y-6">
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl flex items-center justify-center mx-auto text-cyan-400">
-            <Lock className="w-5 h-5" />
+        {loginSuccess ? (
+          <div className="p-6 bg-cyan-950/50 border border-cyan-500/40 rounded-2xl text-center space-y-3 animate-fade-in">
+            <CheckCircle2 className="w-10 h-10 text-cyan-400 mx-auto" />
+            <div className="text-sm font-bold text-white">Authentication Successful!</div>
+            <p className="text-xs text-slate-300">Establishing encrypted AES-256 session and redirecting to Master Control Center...</p>
           </div>
-          <h2 className="text-xl font-extrabold tracking-tight text-white">Sign In to Your Workspace</h2>
-          <p className="text-xs text-slate-400">Select your institution tenant and credentials to access your post-login dashboard.</p>
-        </div>
-
-        <form onSubmit={handleLogin} className="space-y-4 text-xs">
-          <div>
-            <label className="block font-medium text-slate-300 mb-1">Select Institution Tenant</label>
-            <div className="relative">
-              <Building2 className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-500" />
+        ) : (
+          <form onSubmit={handleLogin} className="space-y-5">
+            {/* Tenant Selector */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Select Institution / Campus Workspace</span>
+              </label>
               <select
                 value={tenant}
                 onChange={(e) => setTenant(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 appearance-none"
+                className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               >
-                <option value="Delhi Public International">Delhi Public International</option>
-                <option value="Metro Global Academy">Metro Global Academy</option>
-                <option value="St. Xavier Collegiate">St. Xavier Collegiate</option>
+                <option>Silicon Valley Hub (Main Campus)</option>
+                <option>Boston Research Institute</option>
+                <option>London Global Technology Academy</option>
+                <option>Singapore Innovation Campus</option>
               </select>
             </div>
-          </div>
 
-          <div>
-            <label className="block font-medium text-slate-300 mb-1">Work Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-500" />
+            {/* Email Field */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Administrative Email</span>
+              </label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block font-medium text-slate-300 mb-1">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-500" />
+            {/* Password Field */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Password / Security Key</span>
+              </label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block font-medium text-slate-300 mb-1">Assigned Role (Post-Login View)</label>
-            <div className="relative">
-              <Shield className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-500" />
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as any)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 appearance-none"
-              >
-                <option value="crm_manager">CRM Manager (Sales Pipeline)</option>
-                <option value="sales_exec">Sales Executive</option>
-                <option value="admin">Tenant Super Administrator</option>
-                <option value="teacher">Teacher Portal</option>
-                <option value="parent">Parent Portal</option>
-              </select>
+            {/* Security Badge */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl text-[11px] text-slate-400">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Secured with multi-factor authentication & AES-256 encryption.</span>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl transition-all shadow-xl shadow-cyan-950 flex items-center justify-center gap-2 cursor-pointer mt-2"
-          >
-            <span>{loading ? 'Authenticating & Loading Workspace...' : 'Sign In to Dashboard'}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </form>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-2xl transition-all shadow-lg shadow-cyan-950 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {isLoading ? (
+                <span>Authenticating Node...</span>
+              ) : (
+                <>
+                  <span>Access Institution Dashboard</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        )}
 
-        <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-[11px] text-slate-400 text-center">
-          Secured by multi-tenant OAuth 2.0 & Role-Based Access Control (RBAC).
+        {/* Footer Link */}
+        <div className="text-center text-[11px] text-slate-500 pt-2 border-t border-slate-800/80">
+          SmartCampus SaaS OS • Powered by ThomasG Technologies
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="max-w-7xl w-full mx-auto text-center text-xs text-slate-500">
-        <p>© 2026 SmartCampus SaaS Inc. All rights reserved.</p>
-      </footer>
+      </div>
     </div>
   );
 }

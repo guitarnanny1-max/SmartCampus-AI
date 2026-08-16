@@ -1,35 +1,35 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #0f0b1e;
-  --foreground: #ffffff;
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased selection:bg-cyan-500 selection:text-white;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
 }
 
-body {
-  background: #0f0b1e;
-  color: #ffffff;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Custom styling matching the bronze-gold and purple design */
-.bronze-gradient-text {
-  background: linear-gradient(135deg, #ffffff 0%, #e8d0a9 50%, #c59b27 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.glass-card-purple {
-  background: rgba(30, 20, 60, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(197, 155, 39, 0.25);
-}
-html {
-  scroll-behavior: smooth;
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
 }
