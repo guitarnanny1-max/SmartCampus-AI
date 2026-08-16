@@ -1,23 +1,27 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import SchoolHeader from "@/components/SchoolHeader";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SmartCampusAI - Intelligent 360° Campus Operating System",
-  description: "Unified Cloud Operating System for Modern Institutions",
+  title: "SmartCampus AI - Multi-Tenant Platform",
+  description: "AI-powered campus operations across multiple institutions",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${inter.className} bg-[#0d091e] text-slate-100 min-h-screen selection:bg-[#e8d0a9] selection:text-black`}>
-        {children}
+    <html lang="en">
+      <body className={`${inter.className} bg-slate-900 text-slate-100 min-h-screen`}>
+        <SchoolHeader />
+        <main className="p-6 max-w-7xl mx-auto">
+          {children}
+        </main>
       </body>
     </html>
   );

@@ -1,47 +1,27 @@
 version: '3.8'
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: smartcampus-saas-os:latest
-    container_name: smartcampus_production_app
-    restart: always
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:secure_password@postgres:5432/smartcampus_db
-      - REDIS_URL=redis://redis:6379
-      - STRIPE_SECRET_KEY=sk_live_sample
-      - RAZORPAY_KEY_ID=rzp_live_sample
-    depends_on:
-      - postgres
-      - redis
-
   postgres:
     image: postgres:15-alpine
-    container_name: smartcampus_postgres
-    restart: always
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=secure_password
-      - POSTGRES_DB=smartcampus_db
+      POSTGRES_USER: smartcampus_admin
+      POSTGRES_PASSWORD: securepassword123
+      POSTGRES_DB: smartcampus_prod
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7-alpine
-    container_name: smartcampus_redis
     restart: always
+
+  app:
+    build: .
     ports:
-      - "6379:6379"
-    volumes:
-      - redisdata:/data
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://smartcampus_admin:securepassword123@postgres:5432/smartcampus_prod?schema=public
+    depends_on:
+      - postgres
+    restart: always
 
 volumes:
   pgdata:
-  redisdata:
