@@ -1,27 +1,13 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_USER: smartcampus_admin
-      POSTGRES_PASSWORD: securepassword123
-      POSTGRES_DB: smartcampus_prod
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    restart: always
-
-  app:
+  smartcampus:
     build: .
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=postgresql://smartcampus_admin:securepassword123@postgres:5432/smartcampus_prod?schema=public
-    depends_on:
-      - postgres
+      - DATABASE_URL=file:./dev.db
+      - NODE_ENV=production
+    volumes:
+      - ./prisma:/app/prisma
     restart: always
-
-volumes:
-  pgdata:

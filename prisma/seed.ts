@@ -4,6 +4,8 @@ const prisma = new PrismaClient();
 
 async function main() {
   await prisma.user.deleteMany({});
+  await prisma.apiKey.deleteMany({});
+  await prisma.auditLog.deleteMany({});
   await prisma.alert.deleteMany({});
   await prisma.placement.deleteMany({});
   await prisma.student.deleteMany({});
@@ -37,6 +39,16 @@ async function main() {
       alerts: {
         create: [
           { title: 'Solar Grid Peak', severity: 'INFO', message: 'Academic Block A solar output reached daily maximum capacity (45 kW).' },
+        ],
+      },
+      auditLogs: {
+        create: [
+          { action: 'UPDATE_SETTINGS', actor: 'admin@dps.edu', details: 'Updated institution display name and branding profile.' },
+        ],
+      },
+      apiKeys: {
+        create: [
+          { name: 'IoT Energy Sensor Hub', key: 'sc_live_dps_98f7a6bc543210' },
         ],
       },
       users: {
@@ -74,6 +86,16 @@ async function main() {
           { title: 'Eco Mode Engaged', severity: 'INFO', message: 'Science Wing successfully shifted to automated low-power cooling schedule.' },
         ],
       },
+      auditLogs: {
+        create: [
+          { action: 'CREATE_FACILITY', actor: 'admin@greenwood.edu', details: 'Provisioned new telemetry zone: Science Wing.' },
+        ],
+      },
+      apiKeys: {
+        create: [
+          { name: 'LMS Sync Bridge', key: 'sc_live_gwi_1234567890abcd' },
+        ],
+      },
       users: {
         create: [
           { name: 'Director Vance', email: 'admin@greenwood.edu', role: 'TENANT_ADMIN' },
@@ -90,7 +112,7 @@ async function main() {
     },
   });
 
-  console.log('Successfully seeded database with subscription tiers and metering records!');
+  console.log('Successfully seeded database with API keys and tenant records!');
 }
 
 main()
