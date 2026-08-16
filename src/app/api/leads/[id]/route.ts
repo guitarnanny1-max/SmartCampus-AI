@@ -402,7 +402,6 @@ export async function PATCH(
       error.message.includes("Missing NEXT_PUBLIC_SUPABASE_URL")
     ) {
       return NextResponse.json(
-        { error: "Lead service is not configured." },
         { status: 500 },
       );
     }
