@@ -8,17 +8,19 @@ datasource db {
 }
 
 model School {
-  id         String      @id @default(uuid())
-  name       String
-  subdomain  String      @unique
-  logoUrl    String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  facilities Facility[]
-  students   Student[]
-  placements Placement[]
-  alerts     Alert[]
-  users      User[]
+  id              String      @id @default(uuid())
+  name            String
+  subdomain       String      @unique
+  logoUrl         String?
+  subscriptionTier String     @default("PROFESSIONAL") // 'PROFESSIONAL' or 'ENTERPRISE'
+  maxStudents     Int         @default(500)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  facilities      Facility[]
+  students        Student[]
+  placements      Placement[]
+  alerts          Alert[]
+  users           User[]
 }
 
 model Facility {
@@ -55,7 +57,7 @@ model Alert {
   schoolId  String
   school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   title     String
-  severity  String   // e.g., 'INFO', 'WARNING', 'CRITICAL'
+  severity  String
   message   String
   createdAt DateTime @default(now())
 }

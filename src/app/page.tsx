@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import AiAssistant from '@/components/AiAssistant';
 import AddRecordModal from '@/components/AddRecordModal';
 import AiSustainabilityAudit from '@/components/AiSustainabilityAudit';
+import EnergyChart from '@/components/EnergyChart';
+import TenantBilling from '@/components/TenantBilling';
 
 export default async function DashboardPage() {
   const school = await getCurrentSchool();
@@ -44,6 +46,17 @@ export default async function DashboardPage() {
           <AddRecordModal />
         </div>
       </div>
+
+      {/* Tenant Billing & Metering */}
+      <TenantBilling 
+        schoolName={school.name} 
+        tier={school.subscriptionTier} 
+        currentStudents={students.length} 
+        maxStudents={school.maxStudents} 
+      />
+
+      {/* Energy Telemetry Chart */}
+      <EnergyChart schoolName={school.name} />
 
       {/* Incident & Alert Center */}
       <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">

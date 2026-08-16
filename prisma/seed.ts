@@ -15,6 +15,8 @@ async function main() {
       name: 'Delhi Public School',
       subdomain: 'dps',
       logoUrl: 'https://images.unsplash.com/photo-1594608661623-aa0bd3a69d98?w=100&h=100&fit=crop',
+      subscriptionTier: 'ENTERPRISE',
+      maxStudents: 2000,
       facilities: {
         create: [
           { zoneName: 'Academic Block A', solar: '45 kW', hvac: 'Optimized (22°C)', status: 'Optimal' },
@@ -35,7 +37,6 @@ async function main() {
       alerts: {
         create: [
           { title: 'Solar Grid Peak', severity: 'INFO', message: 'Academic Block A solar output reached daily maximum capacity (45 kW).' },
-          { title: 'HVAC Maintenance Due', severity: 'WARNING', message: 'Sports Complex air handling unit filter check recommended.' },
         ],
       },
       users: {
@@ -51,6 +52,8 @@ async function main() {
       name: 'Greenwood High International',
       subdomain: 'greenwood',
       logoUrl: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=100&h=100&fit=crop',
+      subscriptionTier: 'PROFESSIONAL',
+      maxStudents: 500,
       facilities: {
         create: [
           { zoneName: 'Science Wing', solar: '60 kW', hvac: 'Smart Auto (21°C)', status: 'Optimal' },
@@ -87,7 +90,7 @@ async function main() {
     },
   });
 
-  console.log('Successfully seeded database with alerts and tenant records!');
+  console.log('Successfully seeded database with subscription tiers and metering records!');
 }
 
 main()
