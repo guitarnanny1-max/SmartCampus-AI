@@ -5,15 +5,18 @@ import AddRecordModal from '@/components/AddRecordModal';
 import AiSustainabilityAudit from '@/components/AiSustainabilityAudit';
 import EnergyChart from '@/components/EnergyChart';
 import TenantBilling from '@/components/TenantBilling';
+import ExportReports from '@/components/ExportReports';
+import AuditLogViewer from '@/components/AuditLogViewer';
 
 export default async function DashboardPage() {
   const school = await getCurrentSchool();
 
-  const [facilities, students, placements, alerts] = await Promise.all([
+  const [facilities, students, placements, alerts, auditLogs] = await Promise.all([
     prisma.facility.findMany({ where: { schoolId: school.id } }),
     prisma.student.findMany({ where: { schoolId: school.id } }),
     prisma.placement.findMany({ where: { schoolId: school.id } }),
     prisma.alert.findMany({ where: { schoolId: school.id }, orderBy: { createdAt: 'desc' } }),
+    prisma.auditLog.findMany({ where: { schoolId: school.id }, orderBy: { createdAt: 'desc' } }),
   ]);
 
   return (
@@ -43,6 +46,7 @@ export default async function DashboardPage() {
               <span className="text-white font-bold text-sm">{alerts.length}</span>
             </div>
           </div>
+          <ExportReports />
           <AddRecordModal />
         </div>
       </div>
@@ -91,6 +95,9 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Audit Log Viewer */}
+      <AuditLogViewer logs={auditLogs} />
 
       {/* AI Sustainability Audit Section */}
       <AiSustainabilityAudit 

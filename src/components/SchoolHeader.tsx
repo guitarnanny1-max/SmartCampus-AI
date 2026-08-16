@@ -32,9 +32,14 @@ export default async function SchoolHeader() {
           <span className="font-mono text-cyan-400 font-bold">{currentRole}</span>
         </div>
 
-        {/* Admin Link */}
+        {/* Settings Link */}
+        <Link href="/settings" className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:border-cyan-500 transition-all font-medium">
+          🛠️ Settings
+        </Link>
+
+        {/* Admin Portal Link */}
         <Link href="/admin/schools" className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:border-cyan-500 transition-all font-medium">
-          ⚙️ Admin Portal
+          ⚙️ Super Admin
         </Link>
 
         {/* Tenant Switcher */}
