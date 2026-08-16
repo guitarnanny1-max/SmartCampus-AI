@@ -1,42 +1,21 @@
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
+import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
-export async function POST(request: Request) {
+export async function GET() {
   try {
-    const body = await request.json();
-    const { fullName, schoolName, email, phone, studentCount, requirements } = body;
-
-    if (!fullName || !schoolName || !email || !phone) {
-      return NextResponse.json(
-        { success: false, error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    const supabase = await supabaseServer();
-    const { error } = await supabase.from("leads").insert([
-      {
-        full_name: fullName,
-        school_name: schoolName,
-        email,
-        phone,
-        student_count: studentCount,
-        requirements,
-      },
-    ]);
+    const { data, error } = await supabase
+      .from('demo_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
+      console.error('Supabase Error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json(
-      { success: false, error: err.message || "Server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: true, data }, { status: 200 });
+  } catch (error) {
+    console.error('Server Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
