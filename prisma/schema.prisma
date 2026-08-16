@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Student {
+  id          String       @id @default(cuid())
+  name        String
+  grade       String
+  email       String       @unique
+  phone       String
+  attendance  Attendance[]
+  feePayments FeePayment[]
+  createdAt   DateTime     @default(now())
+}
+
+model Teacher {
+  id        String   @id @default(cuid())
+  name      String
+  subject   String
+  email     String   @unique
+  phone     String
+  createdAt DateTime @default(now())
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  date      DateTime @default(now())
+  status    String
+}
+
+model FeePayment {
+  id            String   @id @default(cuid())
+  studentId     String
+  student       Student  @relation(fields: [studentId], references: [id])
+  amount        Float
+  status        String
+  transactionId String   @unique
+  createdAt     DateTime @default(now())
+}
+
+model BusRoute {
+  id          String   @id @default(cuid())
+  routeName   String
+  driverName  String
+  driverPhone String
+  status      String
+  location    String
+  updatedAt   DateTime @updatedAt
+}
+
+model DemoRequest {
+  id        String   @id @default(cuid())
+  name      String
+  school    String
+  email     String
+  phone     String
+  createdAt DateTime @default(now())
+}

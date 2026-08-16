@@ -1,282 +1,179 @@
 'use client';
 
-import React, { useState } from 'react';
-import Navbar from '@/components/Navbar';
-import AIChatWidget from '@/components/AIChatWidget';
-import { Sparkles, Cpu, Layers, Users, Zap, CheckCircle2, ArrowRight, ShieldCheck, BarChart3, GraduationCap, DollarSign, Send } from 'lucide-react';
+import React from 'react';
+import { Sparkles, BookOpen, Bus, MessageSquare, Shield, DollarSign, Users, ArrowRight, Activity, CheckCircle2, Building2, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 
-export default function Home() {
-  const [formSubmitted, setFormSubmitted] = useState(false);
-  const [formData, setFormData] = useState({ name: '', school: '', email: '', phone: '' });
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormSubmitted(true);
-  };
+export default function MasterDashboard() {
+  const modules = [
+    {
+      title: 'AI Lesson & Curriculum Planner',
+      description: 'Generate CBSE/ICSE aligned lesson plans, learning objectives, and automated MCQ quizzes in seconds.',
+      icon: BookOpen,
+      href: '/academics',
+      badge: 'AI Powered',
+      color: 'from-cyan-500/20 to-blue-500/20 text-cyan-400 border-cyan-500/30'
+    },
+    {
+      title: 'GPS Telemetry & Fleet Tracking',
+      description: 'Real-time school bus tracking, live speeds, RFID attendance sync, and parent transit alerts.',
+      icon: Bus,
+      href: '/transport',
+      badge: 'Live GPS',
+      color: 'from-emerald-500/20 to-teal-500/20 text-emerald-400 border-emerald-500/30'
+    },
+    {
+      title: 'WhatsApp Enterprise Broadcasts',
+      description: 'Instant Meta-approved WhatsApp API messaging for fee reminders, attendance alerts, and announcements.',
+      icon: MessageSquare,
+      href: '/communications',
+      badge: 'Cloud API',
+      color: 'from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30'
+    },
+    {
+      title: 'Role-Based Access Portals (RBAC)',
+      description: 'Customized portals for Administrators, Teachers, Parents, and Students with tailored workflows.',
+      icon: Shield,
+      href: '/portal',
+      badge: 'Secure RBAC',
+      color: 'from-purple-500/20 to-indigo-500/20 text-purple-400 border-purple-500/30'
+    },
+    {
+      title: 'Fee Management & Finance',
+      description: 'Automated quarterly tuition invoicing, secure UPI/card payment gateway, and instant tax receipts.',
+      icon: DollarSign,
+      href: '/finance',
+      badge: 'PCI-DSS',
+      color: 'from-amber-500/20 to-orange-500/20 text-amber-400 border-amber-500/30'
+    },
+    {
+      title: 'Admissions CRM & Enrollment',
+      description: 'Track prospective student inquiries, campus tours, entrance exam scores, and automated lead conversions.',
+      icon: Users,
+      href: '/admissions',
+      badge: 'Pipeline',
+      color: 'from-blue-500/20 to-indigo-500/20 text-blue-400 border-blue-500/30'
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500 selection:text-black relative scroll-smooth">
-      <Navbar />
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
+      {/* Top Header */}
+      <header className="border-b border-slate-800 bg-slate-900/50 px-6 py-4 flex items-center justify-between backdrop-blur-md sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl shadow-lg shadow-cyan-950">
+            <Sparkles className="w-5 h-5 text-cyan-400" />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">SmartCampus OS</h1>
+            <span className="text-[10px] text-slate-400">Enterprise Institutional Operating System</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold rounded-full">
+            <Activity className="w-3.5 h-3.5 animate-pulse" /> All Systems Operational
+          </span>
+        </div>
+      </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-20 pb-28">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(6,182,212,0.15),transparent_50%)] pointer-events-none" />
-        
-        <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold mb-6">
-            <Sparkles className="w-4 h-4" /> Next-Gen School Operating System
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12 space-y-12">
+        <div className="text-center space-y-4 max-w-3xl mx-auto py-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-slate-900 border border-slate-800 rounded-full text-xs text-slate-300">
+            <Building2 className="w-3.5 h-3.5 text-cyan-400" /> Delhi Public International Campus Hub
           </div>
-          
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight max-w-5xl mx-auto mb-6 leading-tight">
-            SmartCampus AI — 360° School Operating System
-          </h1>
-          
-          <p className="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed">
-            <strong className="text-slate-200">Let AI help you run your school.</strong> Connect AI, Operations, Academics, Engagement, and School Data into a single intelligent platform.
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+            Next-Generation Educational Management
+          </h2>
+          <p className="text-sm md:text-base text-slate-400 leading-relaxed">
+            Empowering modern schools with AI-driven pedagogy, real-time bus telemetry, WhatsApp communications, and robust financial tracking in a single unified platform.
           </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a 
-              href="#contact" 
-              className="w-full sm:w-auto px-8 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl transition-all shadow-xl shadow-cyan-900/40 text-base"
-            >
-              Request a Live Demo
-            </a>
-            <a 
-              href="#explorer" 
-              className="w-full sm:w-auto px-8 py-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold rounded-xl transition-all text-base"
-            >
-              Explore Platform Interactively
-            </a>
-          </div>
         </div>
-      </section>
 
-      {/* Core Value Proposition Grid */}
-      <section className="py-20 bg-slate-900/50 border-y border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold tracking-tight">Built for Modern Educational Institutions</h2>
-            <p className="text-slate-400 mt-2 text-sm">Replace fragmented legacy ERPs with unified intelligence.</p>
+        {/* Global Stats Overview */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="p-6 bg-slate-900/80 border border-slate-800/80 rounded-2xl backdrop-blur-sm space-y-1">
+            <div className="text-xs text-slate-400">Active Students</div>
+            <div className="text-3xl font-extrabold text-white">2,480</div>
+            <div className="text-[10px] text-cyan-400 font-medium">99.8% attendance rate</div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-8 bg-slate-950 rounded-2xl border border-slate-800/80 hover:border-cyan-500/40 transition-all">
-              <div className="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl w-fit mb-6">
-                <Cpu className="w-7 h-7" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">AI-First Automation</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Move beyond static ERPs. Let AI predict student retention risks, recommend staff actions, and automate daily repetitive workflows.
-              </p>
-            </div>
-
-            <div className="p-8 bg-slate-950 rounded-2xl border border-slate-800/80 hover:border-cyan-500/40 transition-all">
-              <div className="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl w-fit mb-6">
-                <Layers className="w-7 h-7" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Unified Operations</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Manage admissions pipelines, fee collection engines, biometric staff HR, and fleet transport from a single cockpit.
-              </p>
-            </div>
-
-            <div className="p-8 bg-slate-950 rounded-2xl border border-slate-800/80 hover:border-cyan-500/40 transition-all">
-              <div className="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl w-fit mb-6">
-                <Users className="w-7 h-7" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Connected Academics & Engagement</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Bridge the communication gap between teachers, students, and parents via native mobile applications and WhatsApp automation.
-              </p>
+          <div className="p-6 bg-slate-900/80 border border-slate-800/80 rounded-2xl backdrop-blur-sm space-y-1">
+            <div className="text-xs text-slate-400">Faculty & Staff</div>
+            <div className="text-3xl font-extrabold text-white">142</div>
+            <div className="text-[10px] text-cyan-400 font-medium">Payroll fully reconciled</div>
+          </div>
+          <div className="p-6 bg-slate-900/80 border border-slate-800/80 rounded-2xl backdrop-blur-sm space-y-1">
+            <div className="text-xs text-slate-400">Active Bus Fleet</div>
+            <div className="text-3xl font-extrabold text-white">24</div>
+            <div className="text-[10px] text-cyan-400 font-medium">GPS telemetry online</div>
+          </div>
+          <div className="p-6 bg-slate-900/80 border border-slate-800/80 rounded-2xl backdrop-blur-sm space-y-1">
+            <div className="text-xs text-slate-400">Fee Collection Q2</div>
+            <div className="text-3xl font-extrabold text-white">₹1.84 Cr</div>
+            <div className="text-[10px] text-cyan-400 font-medium flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> +12.4% YoY
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Explorer Section */}
-      <section id="explorer" className="py-24 max-w-7xl mx-auto px-6">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="text-cyan-400 text-xs font-semibold tracking-widest uppercase">Platform Modules</span>
-          <h2 className="text-3xl font-bold tracking-tight mt-2">Explore the 360° Operating System</h2>
-          <p className="text-slate-400 text-sm mt-2">Every tool your school needs, integrated natively into one dashboard.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl">
-            <GraduationCap className="w-8 h-8 text-cyan-400 mb-4" />
-            <h4 className="font-bold text-base mb-2">Smart Academics</h4>
-            <p className="text-xs text-slate-400">Digital gradebooks, automated report cards, and outcome-based curriculum tracking.</p>
-          </div>
-          <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl">
-            <DollarSign className="w-8 h-8 text-cyan-400 mb-4" />
-            <h4 className="font-bold text-base mb-2">Fee Engine</h4>
-            <p className="text-xs text-slate-400">Automated recurring fee collection, payment gateway reconciliation, and instant reminders.</p>
-          </div>
-          <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl">
-            <BarChart3 className="w-8 h-8 text-cyan-400 mb-4" />
-            <h4 className="font-bold text-base mb-2">Analytics Cockpit</h4>
-            <p className="text-xs text-slate-400">Real-time attendance metrics, financial forecasts, and institutional health scorecards.</p>
-          </div>
-          <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl">
-            <ShieldCheck className="w-8 h-8 text-cyan-400 mb-4" />
-            <h4 className="font-bold text-base mb-2">Secure Portal</h4>
-            <p className="text-xs text-slate-400">Role-based access control for administrators, teachers, parents, and students.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-slate-900/30 border-t border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-cyan-400 text-xs font-semibold tracking-widest uppercase">Transparent Pricing</span>
-            <h2 className="text-3xl font-bold tracking-tight mt-2">Plans Scaled for Every Institution</h2>
-            <p className="text-slate-400 text-sm mt-2">Choose the right tier to transform your campus operations.</p>
+        {/* Modules Grid */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-cyan-400" />
+              <span>Platform Modules & Workflows</span>
+            </h3>
+            <span className="text-xs text-slate-400">Select any module to launch workspace</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-8 bg-slate-950 border border-slate-800 rounded-3xl flex flex-col justify-between">
-              <div>
-                <h3 className="text-xl font-bold mb-2">Starter Campus</h3>
-                <p className="text-xs text-slate-400 mb-6">Ideal for growing independent schools.</p>
-                <div className="text-3xl font-extrabold mb-6">Custom <span className="text-xs font-normal text-slate-400">/ per student</span></div>
-                <ul className="space-y-3 text-xs text-slate-300 mb-8">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-400" /> Core ERP & Attendance</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-400" /> Basic Fee Management</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-400" /> Parent Mobile App</li>
-                </ul>
-              </div>
-              <a href="#contact" className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-center font-bold rounded-xl text-xs border border-slate-700 transition-colors">Get Started</a>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {modules.map((mod, idx) => {
+              const Icon = mod.icon;
+              return (
+                <Link
+                  key={idx}
+                  href={mod.href}
+                  className="group p-8 bg-slate-900/90 border border-slate-800 hover:border-cyan-500/50 rounded-3xl transition-all duration-300 flex flex-col justify-between space-y-6 hover:shadow-2xl hover:shadow-cyan-950/50 relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-2xl group-hover:bg-cyan-500/10 transition-all" />
 
-            <div className="p-8 bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-cyan-500/50 rounded-3xl flex flex-col justify-between relative shadow-2xl shadow-cyan-950/50">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-cyan-600 text-white text-[10px] font-bold rounded-full uppercase tracking-wider">Most Popular</div>
-              <div>
-                <h3 className="text-xl font-bold mb-2">Professional OS</h3>
-                <p className="text-xs text-slate-400 mb-6">For established K-12 schools seeking automation.</p>
-                <div className="text-3xl font-extrabold mb-6">All-Inclusive <span className="text-xs font-normal text-slate-400">/ tailored</span></div>
-                <ul className="space-y-3 text-xs text-slate-300 mb-8">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-400" /> Full AI Command Center</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-400" /> Admissions CRM & WhatsApp Bot</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-400" /> Biometric HR & Payroll</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-400" /> Priority Support & Onboarding</li>
-                </ul>
-              </div>
-              <a href="#contact" className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white text-center font-bold rounded-xl text-xs transition-colors shadow-lg shadow-cyan-900/50">Request Proposal</a>
-            </div>
+                  <div className="space-y-4 relative z-10">
+                    <div className="flex items-center justify-between">
+                      <div className={`p-3 rounded-2xl border ${mod.color}`}>
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <span className={`text-[10px] px-3 py-1 rounded-full font-semibold border ${mod.color}`}>
+                        {mod.badge}
+                      </span>
+                    </div>
 
-            <div className="p-8 bg-slate-950 border border-slate-800 rounded-3xl flex flex-col justify-between">
-              <div>
-                <h3 className="text-xl font-bold mb-2">Enterprise Group</h3>
-                <p className="text-xs text-slate-400 mb-6">For multi-campus school chains & universities.</p>
-                <div className="text-3xl font-extrabold mb-6">Custom <span className="text-xs font-normal text-slate-400">/ enterprise</span></div>
-                <ul className="space-y-3 text-xs text-slate-300 mb-8">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-400" /> Multi-Campus Dashboard</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-400" /> Custom AI Model Fine-tuning</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-400" /> Dedicated Account Manager</li>
-                </ul>
-              </div>
-              <a href="#contact" className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-center font-bold rounded-xl text-xs border border-slate-700 transition-colors">Contact Enterprise</a>
-            </div>
+                    <div className="space-y-1.5">
+                      <h4 className="text-base font-bold text-white group-hover:text-cyan-400 transition-colors flex items-center justify-between">
+                        <span>{mod.title}</span>
+                        <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-cyan-400" />
+                      </h4>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        {mod.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400 relative z-10">
+                    <span className="group-hover:text-cyan-400 font-semibold transition-colors">Launch Module</span>
+                    <span className="font-mono text-[10px] text-slate-500">v2.6 OS</span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
-      </section>
-
-      {/* Contact & Demo Request Form Section */}
-      <section id="contact" className="py-24 max-w-4xl mx-auto px-6">
-        <div className="p-8 sm:p-12 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="text-center max-w-xl mx-auto mb-10">
-            <h2 className="text-3xl font-bold tracking-tight">Ready to Modernize Your Campus?</h2>
-            <p className="text-slate-400 text-sm mt-2">Schedule a personalized walkthrough with our educational technology experts.</p>
-          </div>
-
-          {formSubmitted ? (
-            <div className="p-8 bg-cyan-950/40 border border-cyan-500/30 rounded-2xl text-center space-y-3">
-              <CheckCircle2 className="w-12 h-12 text-cyan-400 mx-auto" />
-              <h3 className="text-xl font-bold text-white">Demo Request Received!</h3>
-              <p className="text-xs text-slate-300">Thank you, {formData.name || 'Principal'}. Our team will reach out to {formData.email || 'your email'} shortly to coordinate your live session.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Full Name</label>
-                  <input 
-                    type="text" 
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="Dr. Rajesh Sharma" 
-                    className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">School / Institution Name</label>
-                  <input 
-                    type="text" 
-                    required
-                    value={formData.school}
-                    onChange={(e) => setFormData({...formData, school: e.target.value})}
-                    placeholder="Delhi Public International" 
-                    className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Official Email Address</label>
-                  <input 
-                    type="email" 
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    placeholder="principal@school.edu" 
-                    className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Phone Number</label>
-                  <input 
-                    type="tel" 
-                    required
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    placeholder="+91 98765 43210" 
-                    className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-              </div>
-
-              <button 
-                type="submit"
-                className="w-full py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-cyan-900/40 text-sm mt-4 cursor-pointer flex items-center justify-center gap-2"
-              >
-                <span>Submit Demo Request</span>
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
-          )}
-        </div>
-      </section>
-
-      {/* Floating Interactive Chatbot Widget */}
-      <AIChatWidget />
+      </main>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-slate-800 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <span className="font-bold text-slate-300">SmartCampus AI</span> © 2026 ThomasG Technologies. All rights reserved.
-          </div>
-          <div className="flex gap-6">
-            <a href="https://www.smartcampusai.in" className="hover:text-cyan-400">www.smartcampusai.in</a>
-            <a href="#contact" className="hover:text-cyan-400">Contact Sales</a>
-          </div>
-        </div>
+      <footer className="border-t border-slate-800 bg-slate-900/30 px-6 py-6 text-center text-xs text-slate-500 space-y-1">
+        <p>SmartCampus OS • Enterprise Educational Infrastructure & Institutional Management</p>
+        <p>© 2026 SmartCampus Technologies Inc. All rights reserved.</p>
       </footer>
     </div>
   );
