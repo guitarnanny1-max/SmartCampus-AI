@@ -1,146 +1,77 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-model Tenant {
-  id           String          @id @default(uuid())
-  name         String
-  subdomain    String          @unique
-  plan         String          @default("ENTERPRISE")
-  status       String          @default("ACTIVE")
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  students     Student[]
-  staff        Staff[]
-  hostelRooms  HostelRoom[]
-  books        Book[]
-  vehicles     Vehicle[]
-  inventory    InventoryItem[]
-  visitors     Visitor[]
-  alumni       Alumni[]
-  reports      Report[]
-  attendance   Attendance[]
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model School {
+  id         String      @id @default(uuid())
+  name       String
+  subdomain  String      @unique
+  logoUrl    String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  facilities Facility[]
+  students   Student[]
+  placements Placement[]
+  alerts     Alert[]
+  users      User[]
+}
+
+model Facility {
+  id       String @id @default(uuid())
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  zoneName String
+  solar    String
+  hvac     String
+  status   String
 }
 
 model Student {
-  id           String   @id @default(uuid())
-  tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  rollNo       String
-  name         String
-  grade        String
-  attendance   Float    @default(100.0)
-  feeStatus    String   @default("Paid")
-  createdAt    DateTime @default(now())
+  id       String @id @default(uuid())
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name     String
+  rollNo   String
+  cgpa     Float
 }
 
-model Staff {
-  id           String   @id @default(uuid())
-  tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name         String
-  designation  String
-  department   String
-  salary       Float
-  leaveBalance Int      @default(15)
-  status       String   @default("Active")
-  createdAt    DateTime @default(now())
+model Placement {
+  id       String @id @default(uuid())
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  company  String
+  role     String
+  ctc      String
+  offers   String?
 }
 
-model HostelRoom {
-  id          String   @id @default(uuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  roomNo      String
-  block       String
-  occupants   Int      @default(0)
-  capacity    Int      @default(3)
-  status      String   @default("Available")
+model Alert {
+  id        String   @id @default(uuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  title     String
+  severity  String   // e.g., 'INFO', 'WARNING', 'CRITICAL'
+  message   String
+  createdAt DateTime @default(now())
 }
 
-model Book {
-  id          String   @id @default(uuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  title       String
-  author      String
-  isbn        String   @unique
-  totalCopies Int      @default(5)
-  available   Int      @default(5)
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      Role     @default(TENANT_ADMIN)
+  schoolId  String?
+  school    School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
-model Vehicle {
-  id          String   @id @default(uuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  routeNo     String
-  area        String
-  busNo       String   @unique
-  driver      String
-  status      String   @default("On Time")
-}
-
-model InventoryItem {
-  id          String   @id @default(uuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  itemName    String
-  category    String
-  stockQty    Int      @default(10)
-  unitCost    Float
-  supplier    String
-  status      String   @default("In Stock")
-}
-
-model Visitor {
-  id          String   @id @default(uuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  visitorName String
-  purpose     String
-  host        String
-  badgeNo     String   @unique
-  checkIn     String
-  status      String   @default("Checked In")
-}
-
-model Alumni {
-  id          String   @id @default(uuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name        String
-  batch       String
-  profession  String
-  company     String
-  donation    Float    @default(0.0)
-  status      String   @default("Active")
-}
-
-model Report {
-  id          String   @id @default(uuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  reportName  String
-  category    String
-  compiledBy  String
-  status      String   @default("Draft")
-  date        String
-}
-
-model Attendance {
-  id           String   @id @default(uuid())
-  tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name         String
-  rollNo       String
-  grade        String
-  checkInTime  String
-  status       String   @default("Present")
-  method       String   @default("Biometric Face ID")
-  createdAt    DateTime @default(now())
+enum Role {
+  PLATFORM_ADMIN
+  TENANT_ADMIN
+  VIEWER
 }
