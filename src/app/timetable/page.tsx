@@ -1,148 +1,201 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, Calendar, Clock, ArrowLeft, CheckCircle2, Search, Shuffle, Users, BookOpen } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-export default function TimetableModule() {
-  const [success, setSuccess] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+export default function TimetablePage() {
+  const [slots, setSlots] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dayOfWeek, setDayOfWeek] = useState('Monday');
+  const [timeSlot, setTimeSlot] = useState('09:00 AM - 10:30 AM');
+  const [courseName, setCourseName] = useState('');
+  const [roomNumber, setRoomNumber] = useState('');
+  const [instructor, setInstructor] = useState('');
+  const [scheduling, setScheduling] = useState(false);
 
-  const scheduleList = [
-    { id: 1, period: 'Period 1', time: '09:00 - 09:50', subject: 'Advanced Algorithms', teacher: 'Prof. A. Sharma', room: 'Lab 402', status: 'On Track' },
-    { id: 2, period: 'Period 2', time: '09:50 - 10:40', subject: 'Data Structures', teacher: 'Dr. B. Patel', room: 'Hall 101', status: 'Substitution Active' },
-    { id: 3, period: 'Period 3', time: '11:00 - 11:50', subject: 'Cloud Architecture', teacher: 'Prof. C. Iyer', room: 'Lab 405', status: 'On Track' },
-    { id: 4, period: 'Period 4', time: '11:50 - 12:40', subject: 'Machine Learning', teacher: 'Dr. D. Rao', room: 'Hall 202', status: 'On Track' },
-  ];
+  useEffect(() => {
+    fetch('/api/timetable')
+      .then(res => res.json())
+      .then(data => {
+        setSlots(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
-  const handleRunOptimization = () => {
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 3500);
+  const handleSchedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setScheduling(true);
+
+    try {
+      const res = await fetch('/api/timetable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dayOfWeek, timeSlot, courseName, roomNumber, instructor }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to schedule slot');
+
+      setSlots([data, ...slots]);
+      setCourseName('');
+      setRoomNumber('');
+      setInstructor('');
+      alert('AI conflict check passed. Lecture slot successfully scheduled.');
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setScheduling(false);
+    }
   };
 
-  const filteredSchedule = scheduleList.filter(item => 
-    item.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.teacher.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
-      {/* Top Header */}
-      <header className="border-b border-slate-800 bg-slate-900/50 px-6 py-4 flex items-center justify-between backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl shadow-lg shadow-cyan-950">
-            <Sparkles className="w-5 h-5 text-cyan-400" />
-          </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-8 space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
           <div>
-            <h1 className="text-sm font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">SmartCampusAI</h1>
-            <span className="text-[10px] text-slate-400">Timetable Automation & Scheduling Hub</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/35">
+                ACADEMIC OPERATIONS
+              </span>
+            </div>
+            <h1 className="text-2xl font-extrabold text-white">AI Timetable & Classroom Allocator</h1>
+            <p className="text-xs text-slate-400">Manage lecture schedules, prevent room clashes, and optimize campus facility utilization.</p>
           </div>
-        </div>
-
-        <Link href="/" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Home</span>
-        </Link>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-10 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-extrabold tracking-tight">Timetable Automation Engine</h2>
-            <p className="text-xs text-slate-400 mt-1">Real-time conflict resolution, faculty substitution automation, and resource utilization optimization.</p>
-          </div>
-          <button
-            onClick={handleRunOptimization}
-            className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-cyan-950 flex items-center gap-2 cursor-pointer w-fit"
+          <Link 
+            href="/?school=dps" 
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all border border-slate-700"
           >
-            <Shuffle className="w-4 h-4" />
-            <span>Run Schedule Optimization</span>
-          </button>
+            ← Back to Dashboard
+          </Link>
         </div>
 
-        {success && (
-          <div className="p-4 bg-cyan-950/40 border border-cyan-500/30 rounded-2xl text-xs text-cyan-300 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
-            <span>Timetable optimization engine executed. 3 substitutions applied, 0 conflicts detected.</span>
-          </div>
-        )}
+        <form onSubmit={handleSchedule} className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <span>📅</span> Schedule New Lecture Slot
+          </h3>
 
-        {/* Timetable KPI Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1">
-            <div className="text-xs text-slate-400">Active Schedules</div>
-            <div className="text-3xl font-extrabold text-white">48</div>
-            <div className="text-[10px] text-cyan-400 font-medium">Synced across departments</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1">
-            <div className="text-xs text-slate-400">Resource Conflicts</div>
-            <div className="text-3xl font-extrabold text-emerald-400">0</div>
-            <div className="text-[10px] text-slate-400">Engine status: Healthy</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1">
-            <div className="text-xs text-slate-400">Pending Substitutions</div>
-            <div className="text-3xl font-extrabold text-amber-400">1</div>
-            <div className="text-[10px] text-slate-400">Requires manual approval</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1">
-            <div className="text-xs text-slate-400">Avg. Faculty Utilization</div>
-            <div className="text-3xl font-extrabold text-cyan-400">82%</div>
-            <div className="text-[10px] text-slate-400">Balanced load distribution</div>
-          </div>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Day of Week</label>
+              <select 
+                value={dayOfWeek} 
+                onChange={e => setDayOfWeek(e.target.value)} 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none"
+              >
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+              </select>
+            </div>
 
-        {/* Schedule Grid */}
-        <div className="p-8 bg-slate-900 border border-slate-800 rounded-3xl space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-cyan-400" />
-              <span>Today's Academic Schedule</span>
-            </h3>
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Time Slot</label>
+              <select 
+                value={timeSlot} 
+                onChange={e => setTimeSlot(e.target.value)} 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none"
+              >
+                <option value="09:00 AM - 10:30 AM">09:00 AM - 10:30 AM</option>
+                <option value="11:00 AM - 12:30 PM">11:00 AM - 12:30 PM</option>
+                <option value="02:00 PM - 03:30 PM">02:00 PM - 03:30 PM</option>
+                <option value="04:00 PM - 05:30 PM">04:00 PM - 05:30 PM</option>
+              </select>
+            </div>
+          </div>
 
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
-              <input
-                type="text"
-                placeholder="Search subject, teacher..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Course Name</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Machine Learning 101" 
+                value={courseName} 
+                onChange={e => setCourseName(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Room Number / Hall</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Lecture Hall B" 
+                value={roomNumber} 
+                onChange={e => setRoomNumber(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Instructor</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Dr. Richard Feynman" 
+                value={instructor} 
+                onChange={e => setInstructor(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
               />
             </div>
           </div>
 
-          <div className="space-y-3 text-xs">
-            {filteredSchedule.map((item) => (
-              <div key={item.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="font-bold text-white text-sm">{item.subject} • <span className="text-cyan-400 font-mono">{item.time}</span></div>
-                  <div className="text-slate-400 flex items-center gap-4 text-[11px]">
-                    <span>Teacher: <strong className="text-slate-300">{item.teacher}</strong></span>
-                    <span>Room: <strong className="text-slate-300">{item.room}</strong></span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className={`px-3 py-1 rounded-full font-bold text-[10px] ${
-                    item.status === 'On Track' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                  }`}>
-                    {item.status}
-                  </span>
-                  <button className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-cyan-400 font-medium transition-colors cursor-pointer">
-                    Manage
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="flex justify-end pt-2">
+            <button 
+              type="submit" 
+              disabled={scheduling} 
+              className="px-6 py-3 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition-all disabled:opacity-50 shadow-lg shadow-cyan-500/20"
+            >
+              {scheduling ? 'Allocating Room...' : 'Schedule Lecture Slot →'}
+            </button>
+          </div>
+        </form>
+
+        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <span>🏛️</span> Active Timetable & Allocations ({slots.length})
+          </h3>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400">
+                  <th className="p-4 font-medium">Day</th>
+                  <th className="p-4 font-medium">Time Slot</th>
+                  <th className="p-4 font-medium">Course Name</th>
+                  <th className="p-4 font-medium">Room / Hall</th>
+                  <th className="p-4 font-medium text-right">Instructor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {slots.map((s) => (
+                  <tr key={s.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
+                    <td className="p-4 font-bold text-cyan-400">{s.dayOfWeek}</td>
+                    <td className="p-4 font-mono text-slate-300">{s.timeSlot}</td>
+                    <td className="p-4 font-semibold text-white">{s.courseName}</td>
+                    <td className="p-4">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                        {s.roomNumber}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right text-slate-300">{s.instructor}</td>
+                  </tr>
+                ))}
+                {slots.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={5} className="p-6 text-center text-slate-500">
+                      No timetable slots scheduled.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-800 bg-slate-900/30 px-6 py-6 text-center text-xs text-slate-500 space-y-1">
-        <p>SmartCampusAI • Enterprise Multi-Tenant Institutional Operating System</p>
-        <p className="text-[10px] text-cyan-400/80 font-medium">Powered by ThomasG Technologies</p>
-      </footer>
+      </div>
     </div>
   );
 }

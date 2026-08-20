@@ -1,148 +1,157 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, FileText, ShieldCheck, Lock, Award, ArrowLeft, CheckCircle2, Search, Cpu, AlertCircle } from 'lucide-react';
+import { 
+  FileText, 
+  Award, 
+  CheckCircle2, 
+  Clock, 
+  BookOpen, 
+  Calendar,
+  AlertCircle,
+  BarChart3
+} from 'lucide-react';
 import Link from 'next/link';
 
-export default function ExamsModule() {
-  const [vaultSuccess, setVaultSuccess] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+export default function ExamsPortal() {
+  const [grades] = useState([
+    { id: 1, subject: 'Advanced Calculus', code: 'MTH-501', grade: 'A+', score: '96%', credits: 4, term: 'Fall 2026' },
+    { id: 2, subject: 'Quantum Physics', code: 'PHY-402', grade: 'A', score: '92%', credits: 4, term: 'Fall 2026' },
+    { id: 3, subject: 'Organic Chemistry II', code: 'CHE-303', grade: 'B+', score: '88%', credits: 3, term: 'Fall 2026' },
+    { id: 4, subject: 'English Literature & Composition', code: 'ENG-201', grade: 'A+', score: '95%', credits: 3, term: 'Fall 2026' }
+  ]);
 
-  const activeExams = [
-    { code: 'CSE-401', name: 'Advanced Database Architecture', proctor: 'AI Face & Audio Mesh', students: '420 Enrolled', date: 'Aug 20, 2026 • 10:00 AM', status: 'Vault Secured' },
-    { code: 'AI-502', name: 'Deep Learning & Neural Networks', proctor: 'GPT-4o Browser Lockdown', students: '310 Enrolled', date: 'Aug 22, 2026 • 02:00 PM', status: 'Vault Secured' },
-    { code: 'ECE-303', name: 'VLSI Circuit Design', proctor: 'Biometric ID Verification', students: '280 Enrolled', date: 'Aug 25, 2026 • 11:00 AM', status: 'Preparing' },
-    { code: 'FIN-201', name: 'Quantitative Financial Modeling', proctor: 'AI Proctoring Active', students: '190 Enrolled', date: 'Sep 01, 2026 • 09:30 AM', status: 'Vault Secured' },
-  ];
-
-  const handleLockVault = () => {
-    setVaultSuccess(true);
-    setTimeout(() => setVaultSuccess(false), 3500);
-  };
-
-  const filteredExams = activeExams.filter(item => 
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.proctor.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [upcomingExams] = useState([
+    { id: 1, subject: 'Advanced Calculus Mid-Term', date: 'Sept 12, 2026', time: '09:00 AM', venue: 'Hall A' },
+    { id: 2, subject: 'Quantum Physics Practical Exam', date: 'Sept 15, 2026', time: '11:30 AM', venue: 'Lab 3' },
+    { id: 3, subject: 'Organic Chemistry Quiz', date: 'Sept 18, 2026', time: '02:00 PM', venue: 'Room 204' }
+  ]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
-      {/* Top Header */}
-      <header className="border-b border-slate-800 bg-slate-900/50 px-6 py-4 flex items-center justify-between backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl shadow-lg shadow-cyan-950">
-            <Sparkles className="w-5 h-5 text-cyan-400" />
-          </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-6">
           <div>
-            <h1 className="text-sm font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">SmartCampus AI</h1>
-            <span className="text-[10px] text-slate-400">www.smartcampusai.in • Examination & Proctoring Vault</span>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-mono rounded-full uppercase">
+                Portal: Examination & Academic Records
+              </span>
+            </div>
+            <h1 className="text-3xl font-extrabold text-white mt-1">Gradebook & Assessments 📊</h1>
+            <p className="text-slate-400 text-sm">Delhi Public School • Academic Performance & Transcripts</p>
+          </div>
+          <div className="flex gap-3">
+             <Link href="/dashboard" className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 transition-colors">
+                Master Hub
+             </Link>
           </div>
         </div>
 
-        <Link href="/" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Control Center</span>
-        </Link>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-10 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-extrabold tracking-tight">AI Examination & Proctoring Vault</h2>
-            <p className="text-xs text-slate-400 mt-1">Manage encrypted question paper vaults, AI facial proctoring telemetry, automated anti-cheating alerts, and secure digital transcripts.</p>
+        {/* Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+            <div className="flex items-center gap-3 mb-2">
+              <Award className="w-5 h-5 text-emerald-400" />
+              <span className="text-xs text-slate-400 font-mono">Current CGPA</span>
+            </div>
+            <span className="text-2xl font-bold text-emerald-400">3.92 / 4.0</span>
           </div>
-          <button
-            onClick={handleLockVault}
-            className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-cyan-950 flex items-center gap-2 cursor-pointer w-fit"
-          >
-            <Lock className="w-4 h-4" />
-            <span>Encrypt & Lock Question Vault</span>
-          </button>
-        </div>
-
-        {vaultSuccess && (
-          <div className="p-4 bg-cyan-950/40 border border-cyan-500/30 rounded-2xl text-xs text-cyan-300 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
-            <span>All upcoming examination question papers successfully encrypted with AES-256 and locked in the ThomasG secure vault.</span>
+          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+            <div className="flex items-center gap-3 mb-2">
+              <BookOpen className="w-5 h-5 text-indigo-400" />
+              <span className="text-xs text-slate-400 font-mono">Enrolled Credits</span>
+            </div>
+            <span className="text-2xl font-bold text-white">15</span>
           </div>
-        )}
-
-        {/* KPI Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Active Exam Sessions</div>
-            <div className="text-3xl font-extrabold text-white">18 Modules</div>
-            <div className="text-[10px] text-slate-400">Over 3,400 students evaluated</div>
+          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+            <div className="flex items-center gap-3 mb-2">
+              <Calendar className="w-5 h-5 text-cyan-400" />
+              <span className="text-xs text-slate-400 font-mono">Upcoming Exams</span>
+            </div>
+            <span className="text-2xl font-bold text-cyan-400">3</span>
           </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">AI Proctoring Accuracy</div>
-            <div className="text-3xl font-extrabold text-emerald-400">99.94%</div>
-            <div className="text-[10px] text-emerald-400 font-medium">Zero false anomaly reports</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Encrypted Vault Status</div>
-            <div className="text-3xl font-extrabold text-cyan-400">SECURE</div>
-            <div className="text-[10px] text-slate-400">Zero-knowledge cryptographic proof</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Transcript Generation</div>
-            <div className="text-3xl font-extrabold text-white">&lt; 1.2 secs</div>
-            <div className="text-[10px] text-slate-400">Instant blockchain-backed verification</div>
+          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+            <div className="flex items-center gap-3 mb-2">
+              <CheckCircle2 className="w-5 h-5 text-amber-400" />
+              <span className="text-xs text-slate-400 font-mono">Academic Standing</span>
+            </div>
+            <span className="text-2xl font-bold text-amber-400">Dean's List</span>
           </div>
         </div>
 
-        {/* Exams Ledger */}
-        <div className="p-8 bg-slate-900 border border-slate-800 rounded-3xl space-y-6 shadow-2xl">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <FileText className="w-5 h-5 text-cyan-400" />
-              <span>Scheduled Examinations & Proctoring Vault Ledger</span>
-            </h3>
-
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
-              <input
-                type="text"
-                placeholder="Search exam code, name, proctor..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
-              />
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Gradebook Table */}
+          <div className="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-cyan-400" />
+              Current Term Transcript
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase font-mono">
+                    <th className="py-3 px-4 font-semibold">Course</th>
+                    <th className="py-3 px-4 font-semibold">Code</th>
+                    <th className="py-3 px-4 font-semibold">Score</th>
+                    <th className="py-3 px-4 font-semibold">Grade</th>
+                    <th className="py-3 px-4 font-semibold">Credits</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {grades.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-sm text-slate-200">{item.subject}</td>
+                      <td className="py-3 px-4 font-mono text-xs text-slate-400">{item.code}</td>
+                      <td className="py-3 px-4 text-xs font-bold text-cyan-400">{item.score}</td>
+                      <td className="py-3 px-4">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          {item.grade}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-xs text-slate-400">{item.credits}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div className="space-y-3 text-xs">
-            {filteredExams.map((item, idx) => (
-              <div key={idx} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="font-bold text-white text-sm">{item.code} • <span className="text-cyan-400">{item.name}</span></div>
-                  <div className="text-slate-400 flex items-center gap-4 text-[11px]">
-                    <span>Proctor Mode: <strong className="text-slate-300">{item.proctor}</strong></span>
-                    <span>Enrollment: <strong className="text-slate-300">{item.students}</strong></span>
-                    <span>Exam Date: <strong className="text-slate-300 font-mono">{item.date}</strong></span>
+          {/* Upcoming Schedule */}
+          <div className="space-y-6">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-amber-400" />
+                Exam Schedule
+              </h2>
+              <div className="space-y-3">
+                {upcomingExams.map((exam) => (
+                  <div key={exam.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+                    <h3 className="font-semibold text-xs text-slate-200">{exam.subject}</h3>
+                    <p className="text-[10px] text-cyan-400 font-mono">{exam.date} • {exam.time}</p>
+                    <p className="text-[10px] text-slate-500">Venue: {exam.venue}</p>
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full font-bold text-[10px]">
-                    {item.status}
-                  </span>
-                  <button className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-cyan-400 font-medium transition-colors cursor-pointer">
-                    Manage Vault
-                  </button>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      </main>
+            </div>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800 bg-slate-900/30 px-6 py-6 text-center text-xs text-slate-500 space-y-1">
-        <p>SmartCampus AI • www.smartcampusai.in • Enterprise Examination & Proctoring Vault</p>
-        <p className="text-[10px] text-cyan-400/80 font-medium">Engineered & Developed by ThomasG Technologies</p>
-      </footer>
+            <div className="bg-gradient-to-r from-cyan-950/40 to-slate-900 border border-cyan-500/20 p-6 rounded-2xl">
+              <h3 className="font-bold text-white text-sm">Official Transcript Request</h3>
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                Need a verified digital copy of your transcript for universities or scholarships? Generate signed copies instantly.
+              </p>
+              <button className="mt-4 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-xs font-bold text-white transition-all">
+                Download Transcript (PDF)
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
     </div>
   );
 }

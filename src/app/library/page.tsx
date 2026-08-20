@@ -1,124 +1,172 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, BookOpen, FileText, ArrowLeft, CheckCircle2, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-export default function LibraryModule() {
-  const [success, setSuccess] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+export default function LibraryPage() {
+  const [books, setBooks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [title, setTitle] = useState('');
+  const [author, setAuthor] = useState('');
+  const [isbn, setIsbn] = useState('');
+  const [adding, setAdding] = useState(false);
 
-  const libraryLedger = [
-    { section: 'IEEE & ACM Research Journals', volume: '450,000+ Articles', access: 'Unlimited IP & VPN', status: 'Online Active' },
-    { section: 'Elsevier ScienceDirect', volume: '620,000+ E-Books', access: 'Campus-wide Access', status: 'Online Active' },
-    { section: 'Physical Stack Level 3 (AI & ML)', volume: '12,400 Volumes', access: 'RFID Self-Checkout', status: 'Open 24/7' },
-    { section: 'Rare Manuscripts & Archives', volume: '1,850 Volumes', access: 'Climate-Controlled Vault', status: 'Restricted Access' },
-  ];
+  useEffect(() => {
+    fetch('/api/library')
+      .then(res => res.json())
+      .then(data => {
+        setBooks(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
-  const handleSync = () => {
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 3500);
+  const handleAddBook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdding(true);
+
+    try {
+      const res = await fetch('/api/library', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, author, isbn }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to add book');
+
+      setBooks([data, ...books]);
+      setTitle('');
+      setAuthor('');
+      setIsbn('');
+      alert('New book successfully added to campus library inventory.');
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setAdding(false);
+    }
   };
 
-  const filtered = libraryLedger.filter(item => 
-    item.section.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.status.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
-      <header className="border-b border-slate-800 bg-slate-900/50 px-6 py-4 flex items-center justify-between backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl shadow-lg shadow-cyan-950">
-            <Sparkles className="w-5 h-5 text-cyan-400" />
-          </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-8 space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
           <div>
-            <h1 className="text-sm font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">SmartCampus AI</h1>
-            <span className="text-[10px] text-slate-400">www.smartcampusai.in • Library & Digital Hub</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/35">
+                CAMPUS LIBRARY & ARCHIVES
+              </span>
+            </div>
+            <h1 className="text-2xl font-extrabold text-white">Smart Library & Book Circulation</h1>
+            <p className="text-xs text-slate-400">Manage physical and digital book inventories, track circulations, and monitor student borrowings.</p>
           </div>
-        </div>
-        <Link href="/" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Control Center</span>
-        </Link>
-      </header>
-
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-10 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-extrabold tracking-tight">Library & Digital Resources</h2>
-            <p className="text-xs text-slate-400 mt-1">Manage RFID book tracking, e-journal subscriptions, AI research citations, and quiet zones.</p>
-          </div>
-          <button onClick={handleSync} className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-cyan-950 flex items-center gap-2 cursor-pointer w-fit">
-            <BookOpen className="w-4 h-4" />
-            <span>Sync Global E-Journal Subscriptions</span>
-          </button>
+          <Link 
+            href="/?school=dps" 
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all border border-slate-700"
+          >
+            ← Back to Dashboard
+          </Link>
         </div>
 
-        {success && (
-          <div className="p-4 bg-cyan-950/40 border border-cyan-500/30 rounded-2xl text-xs text-cyan-300 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
-            <span>Global e-journal subscriptions successfully synchronized with publisher APIs!</span>
-          </div>
-        )}
+        <form onSubmit={handleAddBook} className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <span>📚</span> Add Book to Library Inventory
+          </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Total E-Journals</div>
-            <div className="text-3xl font-extrabold text-white">1.8 Million</div>
-            <div className="text-[10px] text-slate-400">IEEE, ACM, Elsevier, Springer</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">RFID Book Inventory</div>
-            <div className="text-3xl font-extrabold text-emerald-400">120,000 Books</div>
-            <div className="text-[10px] text-emerald-400">Automated self-checkout active</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Daily Active Readers</div>
-            <div className="text-3xl font-extrabold text-cyan-400">3,400 Users</div>
-            <div className="text-[10px] text-slate-400">Peak study hours 2 PM - 8 PM</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Quiet Zone Occupancy</div>
-            <div className="text-3xl font-extrabold text-white">72% Seated</div>
-            <div className="text-[10px] text-slate-400">Acoustic sensor monitoring</div>
-          </div>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Book Title</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Deep Learning" 
+                value={title} 
+                onChange={e => setTitle(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
+              />
+            </div>
 
-        <div className="p-8 bg-slate-900 border border-slate-800 rounded-3xl space-y-6 shadow-2xl">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <FileText className="w-5 h-5 text-cyan-400" />
-              <span>Digital Subscriptions & Physical Archive Ledger</span>
-            </h3>
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
-              <input type="text" placeholder="Search section..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500" />
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Author(s)</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Ian Goodfellow" 
+                value={author} 
+                onChange={e => setAuthor(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">ISBN Number</label>
+              <input 
+                type="text" 
+                placeholder="e.g. 978-0262035613" 
+                value={isbn} 
+                onChange={e => setIsbn(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono text-cyan-400 focus:border-cyan-500 focus:outline-none" 
+              />
             </div>
           </div>
-          <div className="space-y-3 text-xs">
-            {filtered.map((item, idx) => (
-              <div key={idx} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="font-bold text-white text-sm">{item.section}</div>
-                  <div className="text-slate-400 flex items-center gap-4 text-[11px]">
-                    <span>Volume: <strong className="text-cyan-400">{item.volume}</strong></span>
-                    <span>Access: <strong className="text-slate-300">{item.access}</strong></span>
-                  </div>
-                </div>
-                <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full font-bold text-[10px] w-fit">
-                  {item.status}
-                </span>
-              </div>
-            ))}
+
+          <div className="flex justify-end pt-2">
+            <button 
+              type="submit" 
+              disabled={adding} 
+              className="px-6 py-3 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition-all disabled:opacity-50 shadow-lg shadow-cyan-500/20"
+            >
+              {adding ? 'Adding Book...' : 'Add to Inventory →'}
+            </button>
+          </div>
+        </form>
+
+        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <span>📖</span> Library Catalog & Circulation ({books.length})
+          </h3>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400">
+                  <th className="p-4 font-medium">Title</th>
+                  <th className="p-4 font-medium">Author</th>
+                  <th className="p-4 font-medium">ISBN</th>
+                  <th className="p-4 font-medium">Status</th>
+                  <th className="p-4 font-medium text-right">Borrower</th>
+                </tr>
+              </thead>
+              <tbody>
+                {books.map((b) => (
+                  <tr key={b.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
+                    <td className="p-4 font-semibold text-white">{b.title}</td>
+                    <td className="p-4 text-slate-300">{b.author}</td>
+                    <td className="p-4 font-mono text-cyan-400">{b.isbn}</td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                        b.status === 'AVAILABLE'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/35'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/35'
+                      }`}>
+                        {b.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right font-mono text-slate-400">{b.borrower || 'None'}</td>
+                  </tr>
+                ))}
+                {books.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={5} className="p-6 text-center text-slate-500">
+                      No books found in inventory.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      </main>
-
-      <footer className="border-t border-slate-800 bg-slate-900/30 px-6 py-6 text-center text-xs text-slate-500 space-y-1">
-        <p>SmartCampus AI • www.smartcampusai.in • Enterprise Library & Digital Hub</p>
-        <p className="text-[10px] text-cyan-400/80 font-medium">Engineered & Developed by ThomasG Technologies</p>
-      </footer>
+      </div>
     </div>
   );
 }

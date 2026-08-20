@@ -1,118 +1,34 @@
 import { PrismaClient } from '@prisma/client';
-
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.user.deleteMany({});
-  await prisma.apiKey.deleteMany({});
-  await prisma.auditLog.deleteMany({});
-  await prisma.alert.deleteMany({});
-  await prisma.placement.deleteMany({});
-  await prisma.student.deleteMany({});
-  await prisma.facility.deleteMany({});
-  await prisma.school.deleteMany({});
+  console.log('🌱 Seeding database...');
 
-  const dps = await prisma.school.create({
+  await prisma.invoice.deleteMany();
+  await prisma.maintenanceTicket.deleteMany();
+  await prisma.facility.deleteMany();
+  await prisma.student.deleteMany();
+  await prisma.staff.deleteMany();
+  await prisma.school.deleteMany();
+
+  await prisma.school.create({
     data: {
-      name: 'Delhi Public School',
-      subdomain: 'dps',
-      logoUrl: 'https://images.unsplash.com/photo-1594608661623-aa0bd3a69d98?w=100&h=100&fit=crop',
-      subscriptionTier: 'ENTERPRISE',
-      maxStudents: 2000,
-      facilities: {
-        create: [
-          { zoneName: 'Academic Block A', solar: '45 kW', hvac: 'Optimized (22°C)', status: 'Optimal' },
-          { zoneName: 'Sports Complex', solar: '30 kW', hvac: 'Standby', status: 'Active' },
-        ],
-      },
+      name: "Global Tech Academy",
+      code: "GTA01",
+      subdomain: "demo",
+      subscriptionStatus: "ACTIVE",
+      subscriptionTier: "ENTERPRISE",
+      primaryColor: "#0f172a",
       students: {
         create: [
-          { name: 'Aarav Sharma', rollNo: 'DPS-2026-01', cgpa: 9.4 },
-          { name: 'Ananya Patel', rollNo: 'DPS-2026-02', cgpa: 8.9 },
-        ],
-      },
-      placements: {
-        create: [
-          { company: 'Google', role: 'Software Engineering Intern', ctc: '₹45 LPA', offers: '2 Offers' },
-        ],
-      },
-      alerts: {
-        create: [
-          { title: 'Solar Grid Peak', severity: 'INFO', message: 'Academic Block A solar output reached daily maximum capacity (45 kW).' },
-        ],
-      },
-      auditLogs: {
-        create: [
-          { action: 'UPDATE_SETTINGS', actor: 'admin@dps.edu', details: 'Updated institution display name and branding profile.' },
-        ],
-      },
-      apiKeys: {
-        create: [
-          { name: 'IoT Energy Sensor Hub', key: 'sc_live_dps_98f7a6bc543210' },
-        ],
-      },
-      users: {
-        create: [
-          { name: 'Principal Sharma', email: 'admin@dps.edu', role: 'TENANT_ADMIN' },
-        ],
-      },
-    },
+          { studentId: "STU-001", name: "Alice Johnson", grade: "10th", email: "alice@gta.edu", gpa: 3.8 },
+          { studentId: "STU-002", name: "Bob Smith", grade: "11th", email: "bob@gta.edu", gpa: 3.5 }
+        ]
+      }
+    }
   });
 
-  const greenwood = await prisma.school.create({
-    data: {
-      name: 'Greenwood High International',
-      subdomain: 'greenwood',
-      logoUrl: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=100&h=100&fit=crop',
-      subscriptionTier: 'PROFESSIONAL',
-      maxStudents: 500,
-      facilities: {
-        create: [
-          { zoneName: 'Science Wing', solar: '60 kW', hvac: 'Smart Auto (21°C)', status: 'Optimal' },
-        ],
-      },
-      students: {
-        create: [
-          { name: 'Liam Johnson', rollNo: 'GWI-2026-01', cgpa: 9.6 },
-        ],
-      },
-      placements: {
-        create: [
-          { company: 'Apple', role: 'AI Researcher', ctc: '$120,000', offers: '1 Offer' },
-        ],
-      },
-      alerts: {
-        create: [
-          { title: 'Eco Mode Engaged', severity: 'INFO', message: 'Science Wing successfully shifted to automated low-power cooling schedule.' },
-        ],
-      },
-      auditLogs: {
-        create: [
-          { action: 'CREATE_FACILITY', actor: 'admin@greenwood.edu', details: 'Provisioned new telemetry zone: Science Wing.' },
-        ],
-      },
-      apiKeys: {
-        create: [
-          { name: 'LMS Sync Bridge', key: 'sc_live_gwi_1234567890abcd' },
-        ],
-      },
-      users: {
-        create: [
-          { name: 'Director Vance', email: 'admin@greenwood.edu', role: 'TENANT_ADMIN' },
-        ],
-      },
-    },
-  });
-
-  await prisma.user.create({
-    data: {
-      name: 'Global Super Admin',
-      email: 'root@smartcampus.ai',
-      role: 'PLATFORM_ADMIN',
-    },
-  });
-
-  console.log('Successfully seeded database with API keys and tenant records!');
+  console.log('✅ Seeding completed successfully!');
 }
 
 main()

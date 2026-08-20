@@ -1,13 +1,31 @@
 version: '3.8'
 
 services:
-  smartcampus:
-    build: .
-    ports:
-      - "3000:3000"
+  postgres:
+    image: postgres:16-alpine
+    container_name: smartcampus-db
     environment:
-      - DATABASE_URL=file:./dev.db
-      - NODE_ENV=production
+      POSTGRES_USER: campus_admin
+      POSTGRES_PASSWORD: secure_campus_password
+      POSTGRES_DB: smartcampus_db
+    ports:
+      - "5432:5432"
     volumes:
-      - ./prisma:/app/prisma
+      - postgres_data:/var/lib/postgresql/data
     restart: always
+
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartcampus-frontend
+    ports:
+      - "8501:3000"
+    environment:
+      - DATABASE_URL=postgresql://campus_admin:secure_campus_password@postgres:5432/smartcampus_db?schema=public
+    depends_on:
+      - postgres
+    restart: always
+
+volumes:
+  postgres_data:

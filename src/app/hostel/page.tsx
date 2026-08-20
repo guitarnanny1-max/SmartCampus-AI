@@ -1,125 +1,186 @@
+'default client';
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, Bed, ShieldCheck, ArrowLeft, CheckCircle2, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-export default function HostelModule() {
-  const [success, setSuccess] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+export default function HostelPage() {
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [roomNo, setRoomNo] = useState('');
+  const [blockName, setBlockName] = useState('Newton Hall (Boys)');
+  const [capacity, setCapacity] = useState('2');
+  const [occupancy, setOccupancy] = useState('0');
+  const [adding, setAdding] = useState(false);
 
-  const hostelLedger = [
-    { hostel: 'Aryabhata Hall (Block A - Men)', occupancy: '480 / 500', wardens: 'Dr. R. Sharma', pass: 'Biometric Gate Active', status: '96% Occupied' },
-    { hostel: 'Kalpana Chawla Hall (Block B - Women)', occupancy: '510 / 520', wardens: 'Prof. Anjali Sen', pass: 'Facial Turnstile Active', status: '98% Occupied' },
-    { hostel: 'Ramanujan Research Scholars Wing', occupancy: '180 / 200', wardens: 'Dr. V. Kulkarni', pass: 'Smart RFID Active', status: '90% Occupied' },
-    { hostel: 'International Faculty Residence', occupancy: '95 / 100', wardens: 'Col. M. Thapar', pass: 'Digital Keycard Active', status: '95% Occupied' },
-  ];
+  useEffect(() => {
+    fetch('/api/hostel')
+      .then(res => res.json())
+      .then(data => {
+        setRooms(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
-  const handleAudit = () => {
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 3500);
+  const handleAddRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdding(true);
+
+    try {
+      const res = await fetch('/api/hostel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomNo, blockName, capacity, occupancy }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to add room');
+
+      setRooms([data, ...rooms]);
+      setRoomNo('');
+      setCapacity('2');
+      setOccupancy('0');
+      alert('Hostel room successfully configured.');
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setAdding(false);
+    }
   };
 
-  const filtered = hostelLedger.filter(item => 
-    item.hostel.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.wardens.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
-      <header className="border-b border-slate-800 bg-slate-900/50 px-6 py-4 flex items-center justify-between backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl shadow-lg shadow-cyan-950">
-            <Sparkles className="w-5 h-5 text-cyan-400" />
-          </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-8 space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
           <div>
-            <h1 className="text-sm font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">SmartCampus AI</h1>
-            <span className="text-[10px] text-slate-400">www.smartcampusai.in • Hostel & Residential Hub</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/35">
+                RESIDENTIAL LIFE & HOUSING
+              </span>
+            </div>
+            <h1 className="text-2xl font-extrabold text-white">Campus Hostel & Room Allotment</h1>
+            <p className="text-xs text-slate-400">Manage student residential blocks, bed capacities, and real-time room occupancies.</p>
           </div>
-        </div>
-        <Link href="/" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Control Center</span>
-        </Link>
-      </header>
-
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-10 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-extrabold tracking-tight">Hostel & Residential Life</h2>
-            <p className="text-xs text-slate-400 mt-1">Manage room allocations, digital gate passes, mess menu feedback, and maintenance ticketing.</p>
-          </div>
-          <button onClick={handleAudit} className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-cyan-950 flex items-center gap-2 cursor-pointer w-fit">
-            <Bed className="w-4 h-4" />
-            <span>Run Residential Safety Audit</span>
-          </button>
+          <Link 
+            href="/?school=dps" 
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all border border-slate-700"
+          >
+            ← Back to Dashboard
+          </Link>
         </div>
 
-        {success && (
-          <div className="p-4 bg-cyan-950/40 border border-cyan-500/30 rounded-2xl text-xs text-cyan-300 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
-            <span>Residential safety audit passed successfully! All biometric turnsiles and visitor logs verified.</span>
-          </div>
-        )}
+        <form onSubmit={handleAddRoom} className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <span>🏠</span> Add New Hostel Room / Dorm
+          </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Total Resident Capacity</div>
-            <div className="text-3xl font-extrabold text-white">1,320 Beds</div>
-            <div className="text-[10px] text-slate-400">96.8% overall occupancy</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Digital Gate Passes</div>
-            <div className="text-3xl font-extrabold text-emerald-400">4,250 Issued</div>
-            <div className="text-[10px] text-emerald-400">Zero unauthorized exit</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Mess Feedback Rating</div>
-            <div className="text-3xl font-extrabold text-cyan-400">4.8 / 5.0</div>
-            <div className="text-[10px] text-slate-400">AI menu personalization active</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Maintenance SLA</div>
-            <div className="text-3xl font-extrabold text-white">&lt; 2 hours</div>
-            <div className="text-[10px] text-slate-400">Automated ticket dispatch</div>
-          </div>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Room Number</label>
+              <input 
+                type="text" 
+                placeholder="e.g. D-402" 
+                value={roomNo} 
+                onChange={e => setRoomNo(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
+              />
+            </div>
 
-        <div className="p-8 bg-slate-900 border border-slate-800 rounded-3xl space-y-6 shadow-2xl">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-cyan-400" />
-              <span>Residential Halls & Biometric Access Ledger</span>
-            </h3>
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
-              <input type="text" placeholder="Search hall or warden..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500" />
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Hostel Block Name</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Einstein Hall" 
+                value={blockName} 
+                onChange={e => setBlockName(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
+              />
             </div>
           </div>
-          <div className="space-y-3 text-xs">
-            {filtered.map((item, idx) => (
-              <div key={idx} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="font-bold text-white text-sm">{item.hostel}</div>
-                  <div className="text-slate-400 flex items-center gap-4 text-[11px]">
-                    <span>Occupancy: <strong className="text-emerald-400">{item.occupancy}</strong></span>
-                    <span>Warden: <strong className="text-slate-300">{item.wardens}</strong></span>
-                    <span>Access: <strong className="text-cyan-400">{item.pass}</strong></span>
-                  </div>
-                </div>
-                <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full font-bold text-[10px] w-fit">
-                  {item.status}
-                </span>
-              </div>
-            ))}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Total Bed Capacity</label>
+              <input 
+                type="number" 
+                value={capacity} 
+                onChange={e => setCapacity(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Current Occupancy</label>
+              <input 
+                type="number" 
+                value={occupancy} 
+                onChange={e => setOccupancy(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button 
+              type="submit" 
+              disabled={adding} 
+              className="px-6 py-3 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition-all disabled:opacity-50 shadow-lg shadow-cyan-500/20"
+            >
+              {adding ? 'Configuring Room...' : 'Allocate Room →'}
+            </button>
+          </div>
+        </form>
+
+        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <span>🏢</span> Residence Hall Directory ({rooms.length})
+          </h3>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400">
+                  <th className="p-4 font-medium">Room No</th>
+                  <th className="p-4 font-medium">Block</th>
+                  <th className="p-4 font-medium">Capacity</th>
+                  <th className="p-4 font-medium">Occupancy</th>
+                  <th className="p-4 font-medium text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rooms.map((r) => (
+                  <tr key={r.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
+                    <td className="p-4 font-mono font-bold text-cyan-400">{r.roomNo}</td>
+                    <td className="p-4 text-white font-semibold">{r.blockName}</td>
+                    <td className="p-4 font-mono text-slate-300">{r.capacity} Beds</td>
+                    <td className="p-4 font-mono text-slate-300">{r.occupancy} Occupied</td>
+                    <td className="p-4 text-right">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                        r.status === 'AVAILABLE'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/35'
+                          : 'bg-rose-500/10 text-rose-400 border-rose-500/35'
+                      }`}>
+                        {r.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {rooms.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={5} className="p-6 text-center text-slate-500">
+                      No hostel rooms configured.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      </main>
-
-      <footer className="border-t border-slate-800 bg-slate-900/30 px-6 py-6 text-center text-xs text-slate-500 space-y-1">
-        <p>SmartCampus AI • www.smartcampusai.in • Enterprise Hostel & Residential Hub</p>
-        <p className="text-[10px] text-cyan-400/80 font-medium">Engineered & Developed by ThomasG Technologies</p>
-      </footer>
+      </div>
     </div>
   );
 }
