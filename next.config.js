@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  allowedDevOrigins: ['localhost', '*.localhost'],
 };
 
-export default nextConfig;
+module.exports = nextConfig;

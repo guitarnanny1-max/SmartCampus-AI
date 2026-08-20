@@ -1,0 +1,248 @@
+#!/bin/bash
+set -e
+
+echo "=================================================="
+echo " 🛠️ Updating CounselingSession Model Fields"
+echo "=================================================="
+
+mkdir -p prisma
+
+cat << 'SCHEMA' > prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model School {
+  id                 String              @id @default(uuid())
+  name               String
+  code               String?             @unique
+  subdomain          String?             @unique
+  email              String?
+  tier               String              @default("ENTERPRISE")
+  maxStudents        Int                 @default(1000)
+  logoUrl            String?
+  stripeCustomerId   String?             @unique
+  stripeSubscription String?             @unique
+  stripeStatus       String              @default("ACTIVE")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  facilities         Facility[]
+  students           Student[]
+  placements         Placement[]
+  alerts             Alert[]
+  auditLogs          AuditLog[]
+  webhookLogs        WebhookLog[]
+  apiKeys            ApiKey[]
+  backupSnapshots    BackupSnapshot[]
+  invoices           Invoice[]
+  alumniEndowments   AlumniEndowment[]
+  smartAssetTrackers SmartAssetTracker[]
+  aiChats            AiChat[]
+  emergencyBroadcasts EmergencyBroadcast[]
+  cafeteriaOrders    CafeteriaOrder[]
+  counselingSessions CounselingSession[]
+}
+
+model Facility {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name        String   @default("Campus Zone")
+  type        String   @default("Assembly")
+  zoneName    String?
+  solar       String?
+  hvac        String?
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Student {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name        String
+  rollNo      String?
+  cgpa        Float?
+  email       String?  @unique
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Placement {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  company     String
+  role        String
+  package     Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Alert {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  severity    String   @default("INFO")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  action      String
+  details     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WebhookLog {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  endpoint    String
+  payload     String?
+  status      String   @default("SUCCESS")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name        String
+  key         String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BackupSnapshot {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  filename    String
+  size        String?
+  status      String   @default("SUCCESS")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Invoice {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  items       String   @default("Enterprise SaaS Tier License")
+  amount      Float
+  status      String   @default("PAID")
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AlumniEndowment {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  donorName   String
+  gradYear    Int?
+  amount      Float
+  campaign    String?
+  status      String   @default("COMPLETED")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SmartAssetTracker {
+  id           String   @id @default(uuid())
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  assetCode    String
+  assetName    String
+  category     String?
+  buildingName String?
+  currentRoom  String?
+  batteryPct   Float?
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AiChat {
+  id        String   @id @default(uuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  prompt    String
+  reply     String?
+  response  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmergencyBroadcast {
+  id             String   @id @default(uuid())
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  title          String
+  message        String?
+  severity       String   @default("HIGH")
+  channel        String   @default("SMS")
+  recipientCount Int      @default(0)
+  status         String   @default("SENT")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model CafeteriaOrder {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  studentName String
+  items       String?
+  amount      Float?
+  mealType    String?
+  itemTitle   String?
+  dietaryTag  String?
+  price       Float?
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CounselingSession {
+  id            String    @id @default(uuid())
+  schoolId      String
+  school        School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  studentName   String
+  counselorName String?
+  topic         String?
+  issueCategory String?
+  sessionDate   DateTime?
+  status        String    @default("SCHEDULED")
+  scheduledAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+SCHEMA
+
+echo "[1/3] Generating Prisma Client..."
+npx prisma generate
+
+echo "[2/3] Pushing database schema..."
+npx prisma db push --accept-data-loss
+
+echo "[3/3] Running Next.js Production Build..."
+npm run build
+
+echo "✨ Build completed successfully!"

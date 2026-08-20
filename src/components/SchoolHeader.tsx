@@ -10,8 +10,8 @@ export default async function SchoolHeader() {
   return (
     <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
       <div className="flex items-center gap-3">
-        {school.logoUrl ? (
-          <img src={school.logoUrl} alt={school.name} className="w-10 h-10 rounded-xl object-cover border border-cyan-500/30 shadow-md" />
+        {(school as any).logoUrl ? (
+          <img src={(school as any).logoUrl} alt={school.name} className="w-10 h-10 rounded-xl object-cover border border-cyan-500/30 shadow-md" />
         ) : (
           <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center font-bold text-cyan-400">
             {school.name.charAt(0)}

@@ -1,151 +1,221 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, HeartPulse, Stethoscope, Activity, Shield, ArrowLeft, CheckCircle2, Search, Ambulance, Pill } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-export default function HealthModule() {
-  const [ambulanceSuccess, setAmbulanceSuccess] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+export default function HealthPage() {
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [studentName, setStudentName] = useState('');
+  const [rollNo, setRollNo] = useState('');
+  const [symptoms, setSymptoms] = useState('');
+  const [diagnosis, setDiagnosis] = useState('');
+  const [doctorName, setDoctorName] = useState('');
+  const [status, setStatus] = useState('TREATED');
+  const [adding, setAdding] = useState(false);
 
-  const clinicVisits = [
-    { patient: 'Aarav Sharma', id: 'STD-2024-042', condition: 'Acute Viral Fever & Fatigue', doctor: 'Dr. Meena Swaminathan', time: '10:15 AM', status: 'Treated & Discharged' },
-    { patient: 'Rohan Gupta', id: 'STD-2025-019', condition: 'Sports Sprained Ankle (Basketball)', doctor: 'Dr. Ramesh Kumar', time: '11:00 AM', status: 'Under Observation' },
-    { patient: 'Diya Patel', id: 'STD-2024-118', condition: 'Allergic Reaction / Prescribed Antihistamine', doctor: 'Dr. Meena Swaminathan', time: '01:30 PM', status: 'Prescription Issued' },
-    { patient: 'Vikram Malhotra', id: 'STD-2023-902', condition: 'Routine Annual Health Checkup', doctor: 'Dr. Ananya Roy', time: '02:15 PM', status: 'Completed' },
-  ];
+  useEffect(() => {
+    fetch('/api/health')
+      .then(res => res.json())
+      .then(data => {
+        setRecords(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
-  const handleDispatchAmbulance = () => {
-    setAmbulanceSuccess(true);
-    setTimeout(() => setAmbulanceSuccess(false), 3500);
+  const handleAddRecord = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdding(true);
+
+    try {
+      const res = await fetch('/api/health', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentName, rollNo, symptoms, diagnosis, doctorName, status }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to record visit');
+
+      setRecords([data, ...records]);
+      setStudentName('');
+      setRollNo('');
+      setSymptoms('');
+      setDiagnosis('');
+      setDoctorName('');
+      alert('Medical visit successfully logged into campus clinic registry.');
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setAdding(false);
+    }
   };
 
-  const filteredVisits = clinicVisits.filter(item => 
-    item.patient.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.condition.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.doctor.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
-      {/* Top Header */}
-      <header className="border-b border-slate-800 bg-slate-900/50 px-6 py-4 flex items-center justify-between backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl shadow-lg shadow-cyan-950">
-            <Sparkles className="w-5 h-5 text-cyan-400" />
-          </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-8 space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
           <div>
-            <h1 className="text-sm font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">SmartCampus AI</h1>
-            <span className="text-[10px] text-slate-400">www.smartcampusai.in • Health & Wellness Center</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/35">
+                CAMPUS HEALTH & WELLNESS
+              </span>
+            </div>
+            <h1 className="text-2xl font-extrabold text-white">Student Medical Clinic Portal</h1>
+            <p className="text-xs text-slate-400">Manage student clinic visits, symptom logs, clinical diagnoses, and attending physician notes.</p>
           </div>
-        </div>
-
-        <Link href="/" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Control Center</span>
-        </Link>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-10 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-extrabold tracking-tight">Health & Wellness Center</h2>
-            <p className="text-xs text-slate-400 mt-1">Manage campus clinic appointments, electronic health records (EHR), emergency ambulance dispatch, and pharmacy stock.</p>
-          </div>
-          <button
-            onClick={handleDispatchAmbulance}
-            className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-red-950 flex items-center gap-2 cursor-pointer w-fit"
+          <Link 
+            href="/?school=dps" 
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all border border-slate-700"
           >
-            <Ambulance className="w-4 h-4" />
-            <span>Dispatch Emergency Ambulance</span>
-          </button>
+            ← Back to Dashboard
+          </Link>
         </div>
 
-        {ambulanceSuccess && (
-          <div className="p-4 bg-red-950/40 border border-red-500/30 rounded-2xl text-xs text-red-300 flex items-center gap-2 animate-pulse">
-            <Ambulance className="w-4 h-4 text-red-400 shrink-0" />
-            <span>EMERGENCY AMBULANCE DISPATCHED: Campus medical team and nearest transport unit notified with live GPS coordinates.</span>
-          </div>
-        )}
+        <form onSubmit={handleAddRecord} className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <span>🩺</span> Log Student Clinic Visit
+          </h3>
 
-        {/* KPI Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Daily Clinic Footfall</div>
-            <div className="text-3xl font-extrabold text-white">48 Patients</div>
-            <div className="text-[10px] text-slate-400">Average wait time &lt; 8 minutes</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Ambulance Response Time</div>
-            <div className="text-3xl font-extrabold text-emerald-400">2.1 mins</div>
-            <div className="text-[10px] text-emerald-400 font-medium">24/7 on-campus readiness</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Pharmacy Inventory Status</div>
-            <div className="text-3xl font-extrabold text-cyan-400">99.4% Stock</div>
-            <div className="text-[10px] text-slate-400">Automated essential medicine refill</div>
-          </div>
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-1 shadow-xl">
-            <div className="text-xs text-slate-400">Mental Health Counseling</div>
-            <div className="text-3xl font-extrabold text-white">310 Sessions</div>
-            <div className="text-[10px] text-slate-400">Confidential peer & expert support</div>
-          </div>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Student Full Name</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Jordan Lee" 
+                value={studentName} 
+                onChange={e => setStudentName(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
+              />
+            </div>
 
-        {/* Health Ledger */}
-        <div className="p-8 bg-slate-900 border border-slate-800 rounded-3xl space-y-6 shadow-2xl">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Stethoscope className="w-5 h-5 text-cyan-400" />
-              <span>Campus Clinic & Patient Consultation Ledger</span>
-            </h3>
-
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
-              <input
-                type="text"
-                placeholder="Search patient, ID, condition, doctor..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Student Roll / ID Number</label>
+              <input 
+                type="text" 
+                placeholder="e.g. CS-2026-301" 
+                value={rollNo} 
+                onChange={e => setRollNo(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono text-cyan-400 focus:border-cyan-500 focus:outline-none" 
               />
             </div>
           </div>
 
-          <div className="space-y-3 text-xs">
-            {filteredVisits.map((item, idx) => (
-              <div key={idx} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="font-bold text-white text-sm">{item.patient} • <span className="text-cyan-400">{item.id}</span></div>
-                  <div className="text-slate-400 flex items-center gap-4 text-[11px]">
-                    <span>Condition: <strong className="text-slate-300">{item.condition}</strong></span>
-                    <span>Attending Doctor: <strong className="text-slate-300">{item.doctor}</strong></span>
-                    <span>Time Logged: <strong className="text-slate-300 font-mono">{item.time}</strong></span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className={`px-3 py-1 rounded-full font-bold text-[10px] ${
-                    item.status === 'Completed' || item.status === 'Treated & Discharged' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                  }`}>
-                    {item.status}
-                  </span>
-                  <button className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-cyan-400 font-medium transition-colors cursor-pointer">
-                    View EHR Dossier
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Symptoms Presented</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Acute stomachache & nausea" 
+                value={symptoms} 
+                onChange={e => setSymptoms(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Clinical Diagnosis</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Mild Gastroenteritis" 
+                value={diagnosis} 
+                onChange={e => setDiagnosis(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Attending Physician</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Dr. Emily Thorne, MD" 
+                value={doctorName} 
+                onChange={e => setDoctorName(e.target.value)} 
+                required 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-400">Treatment Status</label>
+              <select 
+                value={status} 
+                onChange={e => setStatus(e.target.value)} 
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-cyan-500 focus:outline-none"
+              >
+                <option value="TREATED">TREATED & DISCHARGED</option>
+                <option value="OBSERVATION">MEDICAL OBSERVATION</option>
+                <option value="REFERRAL">HOSPITAL REFERRAL</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button 
+              type="submit" 
+              disabled={adding} 
+              className="px-6 py-3 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition-all disabled:opacity-50 shadow-lg shadow-cyan-500/20"
+            >
+              {adding ? 'Logging Visit...' : 'Record Medical Visit →'}
+            </button>
+          </div>
+        </form>
+
+        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <span>📋</span> Clinic Visit Records ({records.length})
+          </h3>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400">
+                  <th className="p-4 font-medium">Student</th>
+                  <th className="p-4 font-medium">Roll No</th>
+                  <th className="p-4 font-medium">Symptoms / Diagnosis</th>
+                  <th className="p-4 font-medium">Physician</th>
+                  <th className="p-4 font-medium text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((r) => (
+                  <tr key={r.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
+                    <td className="p-4 font-semibold text-white">{r.studentName}</td>
+                    <td className="p-4 font-mono text-cyan-400">{r.rollNo}</td>
+                    <td className="p-4 text-slate-300">
+                      <div>{r.symptoms}</div>
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">{r.diagnosis}</div>
+                    </td>
+                    <td className="p-4 text-slate-300">{r.doctorName}</td>
+                    <td className="p-4 text-right">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                        r.status === 'TREATED'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/35'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/35'
+                      }`}>
+                        {r.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {records.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={5} className="p-6 text-center text-slate-500">
+                      No medical records found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-800 bg-slate-900/30 px-6 py-6 text-center text-xs text-slate-500 space-y-1">
-        <p>SmartCampus AI • www.smartcampusai.in • Enterprise Health & Wellness Center</p>
-        <p className="text-[10px] text-cyan-400/80 font-medium">Engineered & Developed by ThomasG Technologies</p>
-      </footer>
+      </div>
     </div>
   );
 }

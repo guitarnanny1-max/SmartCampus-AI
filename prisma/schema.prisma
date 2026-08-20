@@ -4,97 +4,147 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL")
 }
 
 model School {
-  id               String      @id @default(uuid())
-  name             String
-  subdomain        String      @unique
-  logoUrl          String?
-  subscriptionTier String      @default("PROFESSIONAL")
-  maxStudents      Int         @default(500)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-  facilities       Facility[]
-  students         Student[]
-  placements       Placement[]
-  alerts           Alert[]
-  auditLogs        AuditLog[]
-  apiKeys          ApiKey[]
-  users            User[]
+  energyLogs         EnergyLog[]
+  libraryAssets      LibraryAsset[]
+  exams              Exam[]
+  applicants         Applicant[]
+  id                 String              @id @default(cuid())
+  name               String
+  code               String              @unique
+  subdomain          String              @unique
+  subscriptionStatus String              @default("ACTIVE")
+  subscriptionTier   String              @default("ENTERPRISE")
+  primaryColor       String              @default("#0f172a")
+  students           Student[]
+  facilities         Facility[]
+  tickets            MaintenanceTicket[]
+  staff              Staff[]
+  fees               Invoice[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model Facility {
-  id       String @id @default(uuid())
-  schoolId String
-  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  zoneName String
-  solar    String
-  hvac     String
-  status   String
+  id          String              @id @default(cuid())
+  name        String
+  type        String
+  schoolId    String
+  school      School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  tickets     MaintenanceTicket[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model MaintenanceTicket {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  status      String    @default("PENDING")
+  priority    String    @default("MEDIUM")
+  schoolId    String
+  school      School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  facilityId  String
+  facility    Facility  @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Student {
-  id       String @id @default(uuid())
-  schoolId String
-  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  name     String
-  rollNo   String
-  cgpa     Float
-}
-
-model Placement {
-  id       String @id @default(uuid())
-  schoolId String
-  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  company  String
-  role     String
-  ctc      String
-  offers   String?
-}
-
-model Alert {
-  id        String   @id @default(uuid())
-  schoolId  String
-  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  title     String
-  severity  String
-  message   String
-  createdAt DateTime @default(now())
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  schoolId  String
-  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  action    String
-  actor     String
-  details   String
-  createdAt DateTime @default(now())
-}
-
-model ApiKey {
-  id        String   @id @default(uuid())
-  schoolId  String
-  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  studentId String   @unique
   name      String
-  key       String   @unique
-  createdAt DateTime @default(now())
-}
-
-model User {
-  id        String   @id @default(uuid())
+  grade     String
   email     String   @unique
-  name      String
-  role      Role     @default(TENANT_ADMIN)
-  schoolId  String?
-  school    School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  status    String   @default("Active")
+  gpa       Float?
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 }
 
-enum Role {
-  PLATFORM_ADMIN
-  TENANT_ADMIN
-  VIEWER
+model Staff {
+  id         String   @id @default(cuid())
+  staffId    String   @unique
+  name       String
+  department String
+  role       String
+  email      String   @unique
+  status     String   @default("Active")
+  schoolId   String
+  school     School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+model LibraryBook {
+  id         String   @id @default(cuid())
+  bookId     String   @unique
+  title      String
+  author     String
+  category   String
+  status     String   @default("Available")
+  borrower   String?
+  createdAt  DateTime @default(now())
+}
+
+model Invoice {
+  id          String   @id @default(cuid())
+  invoiceId   String   @unique
+  studentName String
+  grade       String
+  amount      Float
+  status      String   @default("Pending")
+  dueDate     DateTime
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Applicant {
+  id           String   @id @default(cuid())
+  applicantId  String   @unique
+  name         String
+  email        String   @unique
+  gradeApplied String
+  status       String   @default("Reviewing")
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+}
+
+model Exam {
+  id          String   @id @default(cuid())
+  examId      String   @unique
+  title       String
+  subject     String
+  grade       String
+  date        DateTime
+  maxMarks    Int      @default(100)
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model LibraryAsset {
+  id          String   @id @default(cuid())
+  assetId     String   @unique
+  title       String
+  category    String   
+  status      String   @default("Available")
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model EnergyLog {
+  id          String   @id @default(cuid())
+  location    String
+  powerKwh    Float
+  status      String   @default("Optimal")
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
 }

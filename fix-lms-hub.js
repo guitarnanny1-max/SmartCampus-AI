@@ -1,0 +1,57 @@
+const fs = require("fs");
+const { execSync } = require("child_process");
+
+const schemaPath = "prisma/schema.prisma";
+let schema = fs.readFileSync(schemaPath, "utf8");
+
+schema = schema.replace(/model SmartLmsOpenSource \{[^}]+\}/g, "");
+schema = schema.replace(/model SmartLmsOpenSourceHub \{[^}]+\}/g, "");
+
+function ensureSchoolRelation(modelName) {
+  const schoolMatch = schema.match(/model School \{([^}]+)\}/);
+  if (schoolMatch) {
+    let schoolBody = schoolMatch[1];
+    const camelCase = modelName.charAt(0).toLowerCase() + modelName.slice(1);
+    if (!schoolBody.includes(camelCase)) {
+      const lines = schoolBody.split("\n");
+      const filteredLines = lines.filter(line => line.trim() !== "}" && !line.includes("smartLmsOpenSource"));
+      filteredLines.push(`  ${camelCase} ${modelName}[]`);
+      const newSchoolBody = filteredLines.join("\n");
+      schema = schema.replace(schoolMatch[0], `model School {\n${newSchoolBody}\n}`);
+    }
+  }
+}
+
+ensureSchoolRelation("SmartLmsOpenSourceHub");
+
+const newModel = `model SmartLmsOpenSourceHub {
+  id               String   @id @default(cuid())
+  schoolId         String
+  school           School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  lmsCode          String?
+  lmsName          String?
+  platformName     String?
+  courseCode       String?
+  courseName       String?
+  activeUsersCount Int?
+  syncStatus       String?
+  status           String?
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}`;
+
+schema += "\n" + newModel + "\n";
+
+fs.writeFileSync(schemaPath, schema, "utf8");
+console.log("✅ Updated model to SmartLmsOpenSourceHub and relation successfully.");
+
+console.log("🔄 Pushing database schema update...");
+execSync("npx prisma db push --accept-data-loss", { stdio: "inherit" });
+
+console.log("⚡ Generating Prisma Client types...");
+execSync("npx prisma generate", { stdio: "inherit" });
+
+console.log("🏗️ Running production build verification...");
+execSync("npm run build", { stdio: "inherit" });
+console.log("🎉 Build completed successfully!");

@@ -26,7 +26,7 @@ export default async function SettingsPage() {
         </Link>
       </div>
 
-      <TenantSettingsForm initialName={school.name} initialLogo={school.logoUrl} />
+      <TenantSettingsForm initialName={school.name} initialLogo={(school as any).logoUrl} />
       <ApiKeyManager initialKeys={apiKeys} />
     </div>
   );

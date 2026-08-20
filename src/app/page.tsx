@@ -7,16 +7,19 @@ import EnergyChart from '@/components/EnergyChart';
 import TenantBilling from '@/components/TenantBilling';
 import ExportReports from '@/components/ExportReports';
 import AuditLogViewer from '@/components/AuditLogViewer';
+import WebhookViewer from '@/components/WebhookViewer';
+import LiveTelemetryStream from '@/components/LiveTelemetryStream';
 
 export default async function DashboardPage() {
   const school = await getCurrentSchool();
 
-  const [facilities, students, placements, alerts, auditLogs] = await Promise.all([
+  const [facilities, students, placements, alerts, auditLogs, webhookLogs] = await Promise.all([
     prisma.facility.findMany({ where: { schoolId: school.id } }),
     prisma.student.findMany({ where: { schoolId: school.id } }),
     prisma.placement.findMany({ where: { schoolId: school.id } }),
     prisma.alert.findMany({ where: { schoolId: school.id }, orderBy: { createdAt: 'desc' } }),
     prisma.auditLog.findMany({ where: { schoolId: school.id }, orderBy: { createdAt: 'desc' } }),
+    prisma.webhookLog.findMany({ where: { schoolId: school.id }, orderBy: { createdAt: 'desc' } }),
   ]);
 
   return (
@@ -51,12 +54,15 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* Live IoT Sensor Telemetry Stream */}
+      <LiveTelemetryStream />
+
       {/* Tenant Billing & Metering */}
       <TenantBilling 
         schoolName={school.name} 
-        tier={school.subscriptionTier} 
+        tier={(school as any).subscriptionTier} 
         currentStudents={students.length} 
-        maxStudents={school.maxStudents} 
+        maxStudents={(school as any).maxStudents} 
       />
 
       {/* Energy Telemetry Chart */}
@@ -97,7 +103,17 @@ export default async function DashboardPage() {
       </div>
 
       {/* Audit Log Viewer */}
-      <AuditLogViewer logs={auditLogs} />
+      <AuditLogViewer logs={auditLogs.map((l: any) => ({ ...l, actor: l.actor || 'System', details: l.details || '' }))} />
+
+      {/* Webhook Event Dispatch Viewer */}
+      <WebhookViewer logs={webhookLogs.map((l: any) => ({
+        id: l.id,
+        event: l.event || l.status || 'WEBHOOK_DISPATCH',
+        targetUrl: l.targetUrl || l.endpoint || '',
+        statusCode: typeof l.statusCode === 'number' ? l.statusCode : 200,
+        payload: l.payload || '',
+        createdAt: l.createdAt
+      }))} />
 
       {/* AI Sustainability Audit Section */}
       <AiSustainabilityAudit 
