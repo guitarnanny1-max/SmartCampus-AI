@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Campus AI - Admissions CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen p-8">
+    <div class="max-w-6xl mx-auto space-y-8">
+        <div class="flex justify-between items-center border-b border-gray-800 pb-4">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-white">Admissions CRM & Leads</h1>
+                <p class="text-sm text-gray-400">Manage prospective student inquiries, track pipelines, and sync with your AI backend.</p>
+            </div>
+            <span class="px-3 py-1 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-semibold rounded-full">Live CRM Active</span>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-xl h-fit">
+                <h2 class="text-xl font-semibold mb-4 text-white">Capture New Lead</h2>
+                <form id="leadForm" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Full Name</label>
+                        <input type="text" id="name" required class="w-full bg-gray-950 border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-sm" placeholder="e.g. Alex Johnson">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Email Address</label>
+                        <input type="email" id="email" required class="w-full bg-gray-950 border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-sm" placeholder="alex@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Interested Course</label>
+                        <select id="course" class="w-full bg-gray-950 border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-sm">
+                            <option>B.Tech Computer Science</option>
+                            <option>MBA Business Analytics</option>
+                            <option>B.Sc Data Science</option>
+                            <option>Master of AI & Robotics</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg transition-colors text-sm">
+                        Add Lead to Pipeline
+                    </button>
+                </form>
+                <p id="formStatus" class="text-xs mt-3 text-center text-emerald-400 h-4"></p>
+            </div>
+            <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-white">Active Pipeline</h2>
+                    <button onclick="loadLeads()" class="text-xs text-emerald-400 hover:underline">Refresh Data</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-800 text-gray-400 text-xs uppercase">
+                                <th class="py-3 px-4">Name</th>
+                                <th class="py-3 px-4">Email</th>
+                                <th class="py-3 px-4">Course</th>
+                                <th class="py-3 px-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leadsTableBody" class="divide-y divide-gray-800/50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const API_URL = 'https://smartcampus-ai-ykbk.onrender.com/api/leads';
+        async function loadLeads() {
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                const tbody = document.getElementById('leadsTableBody');
+                tbody.innerHTML = '';
+                if (data.leads.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-gray-500">No leads captured yet. Add one using the form!</td></tr>';
+                    return;
+                }
+                data.leads.forEach(lead => {
+                    tbody.innerHTML += '<tr class="hover:bg-gray-800/30 transition-colors"><td class="py-3 px-4 font-medium text-white">' + lead.name + '</td><td class="py-3 px-4 text-gray-300">' + lead.email + '</td><td class="py-3 px-4 text-gray-300">' + lead.course + '</td><td class="py-3 px-4"><span class="px-2.5 py-1 bg-blue-500/15 text-blue-400 border border-blue-500/30 text-xs rounded-md font-medium">' + lead.status + '</span></td></tr>';
+                });
+            } catch (err) { console.error('Error fetching leads:', err); }
+        }
+        document.getElementById('leadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const course = document.getElementById('course').value;
+            const statusMsg = document.getElementById('formStatus');
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, course, status: 'New Inquiry' })
+                });
+                const data = await res.json();
+                statusMsg.textContent = data.message;
+                statusMsg.className = 'text-xs mt-3 text-center text-emerald-400 h-4';
+                document.getElementById('leadForm').reset();
+                loadLeads();
+                setTimeout(() => statusMsg.textContent = '', 4000);
+            } catch (err) {
+                statusMsg.textContent = 'Error saving lead.';
+                statusMsg.className = 'text-xs mt-3 text-center text-red-400 h-4';
+            }
+        });
+        loadLeads();
+    </script>
+</body>
+</html>
