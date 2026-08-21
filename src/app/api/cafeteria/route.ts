@@ -1,66 +1,63 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
 
-export async function GET() {
+
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    let orders = await prisma.cafeteriaOrder.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { searchParams } = new URL(req.url);
+    const tenantId = searchParams.get("tenantId");
 
-    if (orders.length === 0) {
-      const defaultOrders = [
-        { studentName: 'Alex Mercer', mealType: 'LUNCH', itemTitle: 'Grilled Chicken & Quinoa Bowl', dietaryTag: 'STANDARD', price: 8.50, status: 'SERVED' },
-        { studentName: 'Elena Rostova', mealType: 'BREAKFAST', itemTitle: 'Avocado Toast & Oat Milk Latte', dietaryTag: 'VEGAN', price: 6.00, status: 'SERVED' },
-        { studentName: 'Marcus Vance', mealType: 'DINNER', itemTitle: 'Tofu Stir Fry with Jasmine Rice', dietaryTag: 'GLUTEN_FREE', price: 9.25, status: 'PREPARING' },
-      ];
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
 
-      for (const o of defaultOrders) {
-        await prisma.cafeteriaOrder.create({
-          data: { schoolId: school.id, ...o },
-        });
-      }
-
-      orders = await prisma.cafeteriaOrder.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
-      });
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
     }
 
-    return NextResponse.json(orders);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch cafeteria orders' }, { status: 500 });
+    const orders = await (prisma as any).cafeteriaOrder.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ orders });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    const { studentName, mealType, itemTitle, dietaryTag, price } = await req.json();
+    const body = await req.json();
+    const { tenantId, itemName, buyerName, status } = body;
 
-    if (!studentName || !mealType || !itemTitle || !price) {
-      return NextResponse.json({ error: 'Student name, meal type, item title, and price are required' }, { status: 400 });
+    if (!itemName || !buyerName) {
+      return NextResponse.json({ error: "Item name and buyer name are required" }, { status: 400 });
     }
 
-    const order = await prisma.cafeteriaOrder.create({
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
+
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
+    }
+
+    const order = await (prisma as any).cafeteriaOrder.create({
       data: {
-        schoolId: school.id,
-        studentName,
-        mealType,
-        itemTitle,
-        dietaryTag: dietaryTag || 'STANDARD',
-        price: parseFloat(price),
-        status: 'SERVED',
+        tenantId: tenant.id,
+        itemName,
+        buyerName,
+        status: status || "PENDING",
       },
     });
 
-    return NextResponse.json(order);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to record cafeteria transaction' }, { status: 500 });
+    return NextResponse.json({ success: true, order }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

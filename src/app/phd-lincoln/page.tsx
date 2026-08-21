@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -62,7 +64,7 @@ export default function PhdLincolnPortal() {
   const [isGeneratingThesis, setIsGeneratingThesis] = useState(false);
 
   const toggleTask = (id: number) => {
-    setChecklist(checklist.map(item => {
+    setChecklist(checklist.map((item: any) => {
       if (item.id === id) {
         return {
           ...item,
@@ -404,7 +406,7 @@ ${enhanced}
               <span className="text-xs text-slate-400 font-mono">Click item to toggle status</span>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-2xl divide-y divide-slate-800 overflow-hidden">
-              {checklist.map((item) => (
+              {checklist.map((item: any) => (
                 <div 
                   key={item.id} 
                   onClick={() => toggleTask(item.id)}

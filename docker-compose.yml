@@ -1,31 +1,24 @@
-version: '3.8'
-
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: smartcampus-db
-    environment:
-      POSTGRES_USER: campus_admin
-      POSTGRES_PASSWORD: secure_campus_password
-      POSTGRES_DB: smartcampus_db
+  backend:
+    build: ./smartcampus-backend
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
     restart: always
 
-  webapp:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: smartcampus-frontend
+  frontend:
+    build: ./smartcampus-frontend
     ports:
-      - "8501:3000"
-    environment:
-      - DATABASE_URL=postgresql://campus_admin:secure_campus_password@postgres:5432/smartcampus_db?schema=public
+      - "80:80"
     depends_on:
-      - postgres
+      - backend
     restart: always
-
-volumes:
-  postgres_data:

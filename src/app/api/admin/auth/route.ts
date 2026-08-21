@@ -1,7 +1,8 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
-export async function POST(request: Request) {
+export async function POST(request: any): Promise<NextResponse> {
   try {
     const body = await request.json().catch(() => ({}));
     const { email, password } = body;

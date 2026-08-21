@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -132,7 +134,7 @@ export default function SmartTeacherPrepPage() {
           </h3>
 
           <div className="space-y-4">
-            {records.map((rec) => (
+            {records.map((rec: any) => (
               <div key={rec.id} className="bg-[#130d2a]/70 border border-purple-900/50 rounded-2xl p-6 space-y-3 shadow-lg">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs border-b border-purple-900/40 pb-3">
                   <div>

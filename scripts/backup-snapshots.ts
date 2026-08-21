@@ -1,35 +1,36 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
+import * as fs from "fs";
+import * as path from "path";
 
 const prisma = new PrismaClient();
 
-async function runBackups() {
-  console.log('🔄 Initiating Automated Enterprise Backup Snapshots...');
+async function main() {
+  console.log("🔄 Initiating Automated Enterprise Backup Snapshots...");
 
-  const schools = await prisma.school.findMany();
+  const tenants = await prisma.tenant.findMany({
+    include: { students: true, invoices: true, auditLogs: true, announcements: true, alerts: true, energyLogs: true, exams: true, libraryAssets: true, staff: true }
+  });
 
-  for (const school of schools) {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `backup_${school.code}_${timestamp}.enc.tar.gz`;
-    const size = `${(Math.random() * 5 + 1.2).toFixed(2)} MB`;
-
-    await prisma.backupSnapshot.create({
-      data: {
-        schoolId: school.id,
-        filename,
-        size,
-        status: 'SUCCESS',
-      },
-    });
-
-    console.log(`✅ Successfully generated backup for [${school.name}]: ${filename} (${size})`);
+  const backupDir = path.join(process.cwd(), "backups");
+  if (!fs.existsSync(backupDir)) {
+    fs.mkdirSync(backupDir, { recursive: true });
   }
 
-  console.log('🎉 All tenant backup snapshots completed successfully.');
+  for (const tenant of tenants) {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const filename = `${tenant.subdomain}-${timestamp}.json`;
+    const filepath = path.join(backupDir, filename);
+
+    fs.writeFileSync(filepath, JSON.stringify(tenant, null, 2));
+    console.log(`✅ Backed up workspace: ${tenant.name} (${tenant.subdomain}) -> ${filename}`);
+  }
+
+  console.log(`✨ Backup complete! Total tenants backed up: ${tenants.length}`);
 }
 
-runBackups()
+main()
   .catch((e) => {
-    console.error(e);
+    console.error("Backup failed:", e);
     process.exit(1);
   })
   .finally(async () => {

@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function HRModule() {
     setTimeout(() => setHrSuccess(false), 3500);
   };
 
-  const filteredStaff = staffList.filter(s => 
+  const filteredStaff = staffList.filter((s: any) => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.department.toLowerCase().includes(searchQuery.toLowerCase())
@@ -114,7 +116,7 @@ export default function HRModule() {
           </div>
 
           <div className="space-y-3 text-xs">
-            {filteredStaff.map((staff) => (
+            {filteredStaff.map((staff: any) => (
               <div key={staff.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="font-bold text-white text-sm">{staff.name} • <span className="text-cyan-400">{staff.designation}</span></div>

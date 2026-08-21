@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -111,7 +113,7 @@ export default function SmartHelpdeskPage() {
           </h3>
 
           <div className="space-y-4">
-            {tickets.map((t) => (
+            {tickets.map((t: any) => (
               <div key={t.id} className="bg-[#130d2a]/70 border border-purple-900/50 rounded-2xl p-6 space-y-3 shadow-lg">
                 <div className="flex justify-between items-center text-xs">
                   <div className="flex items-center gap-2">

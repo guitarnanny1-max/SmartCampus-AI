@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let hubs = await prisma.smartDroneHub.findMany({
+    let hubs = await (prisma as any).smartDroneHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const h of defaultHubs) {
-        await prisma.smartDroneHub.create({
+        await (prisma as any).smartDroneHub.create({
           data: { schoolId: school.id, ...h },
         });
       }
 
-      hubs = await prisma.smartDroneHub.findMany({
+      hubs = await (prisma as any).smartDroneHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { hubCode, hubName, activeFleetCount, vtolLandingPads, avoidanceLatencyMs, aiSwarmMode } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Hub code and name are required' }, { status: 400 });
     }
 
-    const hub = await prisma.smartDroneHub.create({
+    const hub = await (prisma as any).smartDroneHub.create({
       data: {
         schoolId: school.id,
         hubCode,

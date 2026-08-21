@@ -1,70 +1,63 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
-import crypto from 'crypto';
+import { NextResponse } from "next/server";
 
-export async function GET() {
+
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    let credentials = await prisma.digitalCredential.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { searchParams } = new URL(req.url);
+    const tenantId = searchParams.get("tenantId");
 
-    if (credentials.length === 0) {
-      const defaultCreds = [
-        { studentName: 'Alan Turing', rollNo: 'CS-2024-001', credentialTitle: 'Bachelor of Science in Computer Science', credentialType: 'DEGREE', issueHash: '0x8f3c9a1e7b4d2f6...a91c', status: 'VERIFIED' },
-        { studentName: 'Ada Lovelace', rollNo: 'MA-2024-088', credentialTitle: 'Master of Science in Artificial Intelligence', credentialType: 'TRANSCRIPT', issueHash: '0x4d2b1e7c9f8a3e6...b42f', status: 'VERIFIED' },
-        { studentName: 'Grace Hopper', rollNo: 'SE-2025-014', credentialTitle: 'Advanced Software Engineering Certificate', credentialType: 'CERTIFICATE', issueHash: '0x9e1a4f3d2c7b8e5...c18d', status: 'ISSUED' },
-      ];
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
 
-      for (const cred of defaultCreds) {
-        await prisma.digitalCredential.create({
-          data: { schoolId: school.id, ...cred },
-        });
-      }
-
-      credentials = await prisma.digitalCredential.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
-      });
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
     }
 
-    return NextResponse.json(credentials);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch digital credentials' }, { status: 500 });
+    const credentials = await (prisma as any).digitalCredential.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ credentials });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    const { studentName, rollNo, credentialTitle, credentialType } = await req.json();
+    const body = await req.json();
+    const { tenantId, studentName, credential, issuedBy } = body;
 
-    if (!studentName || !rollNo || !credentialTitle) {
-      return NextResponse.json({ error: 'Student name, roll no, and credential title are required' }, { status: 400 });
+    if (!studentName || !credential) {
+      return NextResponse.json({ error: "Student name and credential are required" }, { status: 400 });
     }
 
-    const rawData = `${school.id}-${rollNo}-${credentialTitle}-${Date.now()}`;
-    const issueHash = `0x${crypto.createHash('sha256').update(rawData).digest('hex')}`;
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
 
-    const credential = await prisma.digitalCredential.create({
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
+    }
+
+    const newCredential = await (prisma as any).digitalCredential.create({
       data: {
-        schoolId: school.id,
+        tenantId: tenant.id,
         studentName,
-        rollNo,
-        credentialTitle,
-        credentialType: credentialType || 'DEGREE',
-        issueHash,
-        status: 'VERIFIED',
+        credential,
+        issuedBy: issuedBy || "Administration",
       },
     });
 
-    return NextResponse.json(credential);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to issue digital credential' }, { status: 500 });
+    return NextResponse.json({ success: true, credential: newCredential }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

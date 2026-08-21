@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -169,7 +171,7 @@ export default function WasteHubPage() {
                 </tr>
               </thead>
               <tbody>
-                {bins.map((b) => (
+                {bins.map((b: any) => (
                   <tr key={b.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4">
                       <p className="font-semibold text-white">{b.binCode}</p>

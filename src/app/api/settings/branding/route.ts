@@ -1,8 +1,9 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const school = await db.school.findFirst();
     if (!school) {
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function PATCH(req: NextRequest) {
+export async function PATCH(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
     const { name, tagline, logoUrl, primaryColor, accentColor, whiteLabelBrandName, whiteLabelLogoUrl, customDomain } = body;

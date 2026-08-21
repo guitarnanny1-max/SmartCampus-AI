@@ -1,8 +1,9 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(request: Request) {
+export async function POST(request: any): Promise<NextResponse> {
   try {
     const body = await request.json();
     const { question, schoolId, userId } = body;
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
 
     let ticket = null;
     try {
-      ticket = await prisma.smartHelpdeskTicket.create({
+      ticket = await (prisma as any).smartHelpdeskTicket.create({
         data: {
           question,
           aiResponse,

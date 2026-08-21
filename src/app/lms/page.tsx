@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -102,7 +104,7 @@ export default function LMSModule() {
             </h3>
 
             <div className="space-y-3 text-xs">
-              {courses.map((course) => (
+              {courses.map((course: any) => (
                 <div
                   key={course.id}
                   onClick={() => setSelectedCourse(course.title)}
@@ -133,7 +135,7 @@ export default function LMSModule() {
             </div>
 
             <div className="space-y-3 text-xs">
-              {assignments.map((item) => (
+              {assignments.map((item: any) => (
                 <div key={item.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-1">
                     <div className="font-bold text-white text-sm">{item.title}</div>

@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function AdmissionsModule() {
     setTimeout(() => setPublishSuccess(false), 3500);
   };
 
-  const filteredApplicants = applicantsList.filter(item => 
+  const filteredApplicants = applicantsList.filter((item: any) => 
     item.candidate.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.appId.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.program.toLowerCase().includes(searchQuery.toLowerCase()) ||

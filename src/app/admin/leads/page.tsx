@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 "use client";
 
 import { useEffect, useState } from "react";
@@ -51,8 +53,8 @@ export default function LeadsPage() {
   const exportCSV = () => {
     const csv = [
       ["ID", "Name", "School", "Email", "Phone", "Status", "Created At"],
-      ...leads.map(l => [l.id, l.fullName, l.schoolName, l.email, l.phone, l.status, l.createdAt])
-    ].map(row => row.join(",")).join("\n");
+      ...leads.map((l: any) => [l.id, l.fullName, l.schoolName, l.email, l.phone, l.status, l.createdAt])
+    ].map((row: any) => row.join(",")).join("\n");
     
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -62,7 +64,7 @@ export default function LeadsPage() {
     a.click();
   };
 
-  const filteredLeads = leads.filter(l => 
+  const filteredLeads = leads.filter((l: any) => 
     l.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     l.schoolName.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -87,11 +89,11 @@ export default function LeadsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-2xl border border-white/10 bg-[#16102f] p-5">
           <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">New Leads</p>
-          <h3 className="text-2xl font-black text-white">{leads.filter(l => l.status === "New Lead").length}</h3>
+          <h3 className="text-2xl font-black text-white">{leads.filter((l: any) => l.status === "New Lead").length}</h3>
         </div>
         <div className="rounded-2xl border border-white/10 bg-[#16102f] p-5">
           <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Demo Scheduled</p>
-          <h3 className="text-2xl font-black text-[#e8d0a9]">{leads.filter(l => l.status === "Demo Scheduled").length}</h3>
+          <h3 className="text-2xl font-black text-[#e8d0a9]">{leads.filter((l: any) => l.status === "Demo Scheduled").length}</h3>
         </div>
         <div className="rounded-2xl border border-white/10 bg-[#16102f] p-5">
           <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Pipeline</p>
@@ -128,7 +130,7 @@ export default function LeadsPage() {
           <tbody className="divide-y divide-white/10">
             {loading ? (
               <tr><td colSpan={5} className="p-8 text-center text-slate-400">Loading Pipeline...</td></tr>
-            ) : filteredLeads.map((lead) => (
+            ) : filteredLeads.map((lead: any) => (
               <tr key={lead.id} className="hover:bg-white/5 transition-colors">
                 <td className="p-4">
                   <div className="font-bold text-white">{lead.fullName}</div>

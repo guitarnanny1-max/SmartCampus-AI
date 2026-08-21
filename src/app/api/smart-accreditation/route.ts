@@ -1,9 +1,10 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 // Placeholder for actual implementation if it differs
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
     const { schoolId, defaultRecords } = body;

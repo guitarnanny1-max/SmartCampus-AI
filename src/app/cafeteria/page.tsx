@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -79,7 +81,7 @@ export default function CafeteriaPortal() {
           <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
             <div>
               <p className="text-xs text-slate-400 font-mono">Active Orders</p>
-              <h3 className="text-2xl font-bold mt-1 text-white">{orders.filter(o => o.status !== 'Collected').length}</h3>
+              <h3 className="text-2xl font-bold mt-1 text-white">{orders.filter((o: any) => o.status !== 'Collected').length}</h3>
             </div>
             <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-400">
               <ShoppingBag className="w-6 h-6" />
@@ -106,7 +108,7 @@ export default function CafeteriaPortal() {
               Today's Menu & Pre-Orders
             </h2>
             <div className="space-y-3">
-              {menu.map((item) => (
+              {menu.map((item: any) => (
                 <div key={item.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center">
                   <div>
                     <div className="flex items-center gap-2">

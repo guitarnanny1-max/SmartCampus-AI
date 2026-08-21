@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let sessions = await prisma.examProctoringSession.findMany({
+    let sessions = await (prisma as any).examProctoringSession.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const ses of defaultSessions) {
-        await prisma.examProctoringSession.create({
+        await (prisma as any).examProctoringSession.create({
           data: { schoolId: school.id, ...ses },
         });
       }
 
-      sessions = await prisma.examProctoringSession.findMany({
+      sessions = await (prisma as any).examProctoringSession.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { examTitle, roomNumber, totalStudents, flaggedIncidentsCount, invigilatorName } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Exam title, room number and invigilator are required' }, { status: 400 });
     }
 
-    const session = await prisma.examProctoringSession.create({
+    const session = await (prisma as any).examProctoringSession.create({
       data: {
         schoolId: school.id,
         examTitle,

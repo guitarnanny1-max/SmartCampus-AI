@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -153,7 +155,7 @@ export default function VisitorManagementPage() {
                 </tr>
               </thead>
               <tbody>
-                {visitors.map((v) => (
+                {visitors.map((v: any) => (
                   <tr key={v.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4 font-semibold text-white">{v.visitorName}</td>
                     <td className="p-4 text-slate-300">{v.hostName}</td>

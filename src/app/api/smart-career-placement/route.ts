@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let placements = await prisma.smartCareerPlacementHub.findMany({
+    let placements = await (prisma as any).smartCareerPlacementHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const p of defaultPlacements) {
-        await prisma.smartCareerPlacementHub.create({
+        await (prisma as any).smartCareerPlacementHub.create({
           data: { schoolId: school.id, ...p },
         });
       }
 
-      placements = await prisma.smartCareerPlacementHub.findMany({
+      placements = await (prisma as any).smartCareerPlacementHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { studentName, degreeMajor, corporatePartner, salaryOfferUsd, aiInterviewScore, placementStatus } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Student name and corporate partner are required' }, { status: 400 });
     }
 
-    const placement = await prisma.smartCareerPlacementHub.create({
+    const placement = await (prisma as any).smartCareerPlacementHub.create({
       data: {
         schoolId: school.id,
         studentName,

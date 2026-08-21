@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -181,7 +183,7 @@ export default function AssetTrackerPage() {
                 </tr>
               </thead>
               <tbody>
-                {assets.map((a) => (
+                {assets.map((a: any) => (
                   <tr key={a.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4">
                       <p className="font-semibold text-white">{a.assetCode}</p>

@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let greenhouses = await prisma.smartGreenhouseBotany.findMany({
+    let greenhouses = await (prisma as any).smartGreenhouseBotany.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const g of defaultGreenhouses) {
-        await prisma.smartGreenhouseBotany.create({
+        await (prisma as any).smartGreenhouseBotany.create({
           data: { schoolId: school.id, ...g },
         });
       }
 
-      greenhouses = await prisma.smartGreenhouseBotany.findMany({
+      greenhouses = await (prisma as any).smartGreenhouseBotany.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { greenhouseCode, greenhouseName, soilNutrientPpm, temperatureC, humidityPct, ledSpectrumMode, aiHealthStatus } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Greenhouse code and name are required' }, { status: 400 });
     }
 
-    const greenhouse = await prisma.smartGreenhouseBotany.create({
+    const greenhouse = await (prisma as any).smartGreenhouseBotany.create({
       data: {
         schoolId: school.id,
         greenhouseCode,

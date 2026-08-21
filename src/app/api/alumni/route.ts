@@ -1,64 +1,59 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
 
-export async function GET() {
+
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    let endowments = await prisma.alumniEndowment.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { searchParams } = new URL(req.url);
+    const tenantId = searchParams.get("tenantId");
 
-    if (endowments.length === 0) {
-      const defaultEndowments = [
-        { donorName: 'Dr. Marcus Vance (Google VP)', gradYear: 2012, amount: 250000, campaign: 'AI & Robotics Research Lab Fund' },
-        { donorName: 'Elena Rostova (Stripe Director)', gradYear: 2015, amount: 100000, campaign: 'Underprivileged Student Scholarship' },
-        { donorName: 'David Sterling (Y Combinator Partner)', gradYear: 2010, amount: 500000, campaign: 'Campus Solar Microgrid Endowment' },
-      ];
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
 
-      for (const d of defaultEndowments) {
-        await prisma.alumniEndowment.create({
-          data: { schoolId: school.id, ...d },
-        });
-      }
-
-      endowments = await prisma.alumniEndowment.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
-      });
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
     }
 
-    return NextResponse.json(endowments);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch alumni endowments' }, { status: 500 });
+    const endowments = await (prisma as any).alumniEndowment.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ endowments });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    const { donorName, gradYear, amount, campaign } = await req.json();
+    const body = await req.json();
+    const { tenantId, donorName, amount, purpose } = body;
 
-    if (!donorName || !gradYear || !amount || !campaign) {
-      return NextResponse.json({ error: 'Donor name, graduation year, amount, and campaign are required' }, { status: 400 });
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
+
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
     }
 
-    const endowment = await prisma.alumniEndowment.create({
+    const endowment = await (prisma as any).alumniEndowment.create({
       data: {
-        schoolId: school.id,
+        tenantId: tenant.id,
         donorName,
-        gradYear: parseInt(gradYear),
-        amount: parseFloat(amount),
-        campaign,
+        amount: parseFloat(amount || 0),
+        purpose,
       },
     });
 
-    return NextResponse.json(endowment);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to record alumni contribution' }, { status: 500 });
+    return NextResponse.json({ success: true, endowment }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

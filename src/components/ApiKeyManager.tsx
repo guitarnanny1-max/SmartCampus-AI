@@ -66,7 +66,7 @@ export default function ApiKeyManager({ initialKeys }: { initialKeys: { id: stri
       </form>
 
       <div className="space-y-3">
-        {keys.map((k) => (
+        {keys.map((k: any) => (
           <div key={k.id} className="p-4 bg-slate-900/40 border border-slate-800 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <h4 className="font-semibold text-white text-xs">{k.name}</h4>

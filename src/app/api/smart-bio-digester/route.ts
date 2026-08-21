@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let digesters = await prisma.smartBioDigesterHub.findMany({
+    let digesters = await (prisma as any).smartBioDigesterHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const d of defaultDigesters) {
-        await prisma.smartBioDigesterHub.create({
+        await (prisma as any).smartBioDigesterHub.create({
           data: { schoolId: school.id, ...d },
         });
       }
 
-      digesters = await prisma.smartBioDigesterHub.findMany({
+      digesters = await (prisma as any).smartBioDigesterHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { digesterCode, facilityName, methaneCaptureM3, organicFeedstockKg, microbialHealth, aiBiogasOptimization } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Digester code and facility name are required' }, { status: 400 });
     }
 
-    const digester = await prisma.smartBioDigesterHub.create({
+    const digester = await (prisma as any).smartBioDigesterHub.create({
       data: {
         schoolId: school.id,
         digesterCode,

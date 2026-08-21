@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -44,7 +46,7 @@ export default function ParentDashboard() {
   ]);
 
   const handlePayFee = (id: number) => {
-    setFees(fees.map(f => f.id === id ? { ...f, status: 'Paid' } : f));
+    setFees(fees.map((f: any) => f.id === id ? { ...f, status: 'Paid' } : f));
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -86,7 +88,7 @@ export default function ParentDashboard() {
 
         {/* Child Selector Tabs */}
         <div className="flex gap-3 overflow-x-auto pb-2">
-          {children.map(child => (
+          {children.map((child: any) => (
             <button
               key={child.id}
               onClick={() => setSelectedChild(child.id)}
@@ -165,7 +167,7 @@ export default function ParentDashboard() {
               </div>
 
               <div className="space-y-3">
-                {fees.map(fee => (
+                {fees.map((fee: any) => (
                   <div key={fee.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
                       <h3 className="font-semibold text-slate-200 text-sm">{fee.term}</h3>

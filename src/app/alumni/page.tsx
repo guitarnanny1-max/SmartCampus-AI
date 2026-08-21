@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,7 +24,7 @@ export default function AlumniPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const totalRaised = endowments.reduce((acc, e) => acc + (e.amount || 0), 0);
+  const totalRaised = endowments.reduce((acc: any, e: any) => acc + (e.amount || 0), 0);
 
   const handleDonate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +162,7 @@ export default function AlumniPage() {
                 </tr>
               </thead>
               <tbody>
-                {endowments.map((e) => (
+                {endowments.map((e: any) => (
                   <tr key={e.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4 font-semibold text-white">{e.donorName}</td>
                     <td className="p-4 font-mono text-cyan-400">{e.gradYear}</td>

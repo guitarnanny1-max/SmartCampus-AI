@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let fleets = await prisma.smartAutonomousFleetHub.findMany({
+    let fleets = await (prisma as any).smartAutonomousFleetHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const f of defaultFleets) {
-        await prisma.smartAutonomousFleetHub.create({
+        await (prisma as any).smartAutonomousFleetHub.create({
           data: { schoolId: school.id, ...f },
         });
       }
 
-      fleets = await prisma.smartAutonomousFleetHub.findMany({
+      fleets = await (prisma as any).smartAutonomousFleetHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { fleetCode, vehicleName, payloadCapacityKg, batteryRangePct, navigationAccuracyPct, aiFleetOptimization } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Fleet code and vehicle name are required' }, { status: 400 });
     }
 
-    const fleet = await prisma.smartAutonomousFleetHub.create({
+    const fleet = await (prisma as any).smartAutonomousFleetHub.create({
       data: {
         schoolId: school.id,
         fleetCode,

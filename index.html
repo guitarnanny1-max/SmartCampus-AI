@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Campus AI Assistant</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --container-bg: white;
+            --header-bg: #007bff;
+            --header-text: white;
+            --chat-bg: #fafafa;
+            --text-color: #333;
+            --ai-bubble: #e4e6eb;
+            --ai-text: #333;
+            --user-bubble: #007bff;
+            --user-text: white;
+            --input-bg: white;
+            --input-border: #ccc;
+            --input-text: #333;
+        }
+
+        body.dark-mode {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --header-bg: #1f1f1f;
+            --header-text: #e0e0e0;
+            --chat-bg: #181818;
+            --text-color: #e0e0e0;
+            --ai-bubble: #2d2d2d;
+            --ai-text: #e0e0e0;
+            --user-bubble: #0d6efd;
+            --user-text: white;
+            --input-bg: #2d2d2d;
+            --input-border: #444;
+            --input-text: #e0e0e0;
+        }
+
+        body { font-family: Arial, sans-serif; background: var(--bg-color); margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; transition: background 0.3s ease; }
+        .chat-container { width: 100%; max-width: 600px; height: 85vh; background: var(--container-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden; transition: background 0.3s ease; }
+        .chat-header { background: var(--header-bg); color: var(--header-text); padding: 15px 20px; font-size: 1.1em; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .theme-toggle { background: none; border: 1px solid var(--header-text); color: var(--header-text); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em; }
+        .theme-toggle:hover { opacity: 0.8; }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: var(--chat-bg); }
+        .message { max-width: 75%; padding: 12px 16px; border-radius: 12px; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
+        .message.user { background: var(--user-bubble); color: var(--user-text); align-self: flex-end; border-bottom-right-radius: 2px; }
+        .message.ai { background: var(--ai-bubble); color: var(--ai-text); align-self: flex-start; border-bottom-left-radius: 2px; }
+        .chat-input-area { display: flex; padding: 15px; background: var(--container-bg); border-top: 1px solid var(--input-border); }
+        .chat-input-area input { flex: 1; padding: 12px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--input-text); border-radius: 6px; outline: none; font-size: 1em; }
+        .chat-input-area button { margin-left: 10px; padding: 12px 20px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .chat-input-area button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <span>Smart Campus AI Assistant</span>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai">Hello! I'm your Smart Campus AI Assistant. How can I help you navigate campus life, classes, or resources today?</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="promptInput" placeholder="Ask about dining, buildings, schedules..." onkeydown="handleKey(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            body.classList.toggle('dark-mode');
+            const btn = document.querySelector('.theme-toggle');
+            if (body.classList.contains('dark-mode')) {
+                btn.innerText = "☀️ Light Mode";
+            } else {
+                btn.innerText = "🌙 Dark Mode";
+            }
+        }
+
+        async function sendMessage() {
+            const inputField = document.getElementById('promptInput');
+            const chatMessages = document.getElementById('chatMessages');
+            const promptText = inputField.value.trim();
+
+            if (!promptText) return;
+
+            appendMessage(promptText, 'user');
+            inputField.value = '';
+
+            const aiMessageDiv = appendMessage("", 'ai');
+
+            try {
+                const res = await fetch('http://127.0.0.1:8000/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: promptText })
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json();
+                    aiMessageDiv.innerText = "Error: " + (errData.detail || "Unknown error");
+                    return;
+                }
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let fullText = "";
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    fullText += decoder.decode(value, { stream: true });
+                    aiMessageDiv.innerText = fullText;
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            } catch (error) {
+                aiMessageDiv.innerText = "Error connecting to backend.";
+            }
+        }
+
+        function appendMessage(text, sender) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerText = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return messageDiv;
+        }
+
+        function handleKey(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>

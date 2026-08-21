@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -115,7 +117,7 @@ export default function AICopilotModule() {
             </h3>
 
             <div className="space-y-3">
-              {insights.map((ins) => (
+              {insights.map((ins: any) => (
                 <div key={ins.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-white text-xs">{ins.title}</span>

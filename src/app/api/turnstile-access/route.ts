@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let accesses = await prisma.smartTurnstileAccess.findMany({
+    let accesses = await (prisma as any).smartTurnstileAccess.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const a of defaultAccesses) {
-        await prisma.smartTurnstileAccess.create({
+        await (prisma as any).smartTurnstileAccess.create({
           data: { schoolId: school.id, ...a },
         });
       }
 
-      accesses = await prisma.smartTurnstileAccess.findMany({
+      accesses = await (prisma as any).smartTurnstileAccess.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { gateCode, locationName, visitorName, hostName, accessMethod, status } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Gate code and visitor name are required' }, { status: 400 });
     }
 
-    const access = await prisma.smartTurnstileAccess.create({
+    const access = await (prisma as any).smartTurnstileAccess.create({
       data: {
         schoolId: school.id,
         gateCode,

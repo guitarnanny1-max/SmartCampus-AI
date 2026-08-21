@@ -1,27 +1,30 @@
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
-export async function POST(request: Request) {
+
+
+export async function POST(req: Request) {
   try {
-    const { subdomain, tier } = await request.json();
+    const { subdomain, plan } = await req.json();
 
-    if (!subdomain || !tier) {
-      return NextResponse.json({ error: "Subdomain and tier are required." }, { status: 400 });
+    if (!subdomain || !plan) {
+      return NextResponse.json({ success: false, error: "Subdomain and plan are required." }, { status: 400 });
     }
 
-    const updatedSchool = await prisma.school.update({
+    const mrr = plan === "digital-starter" ? 999 : plan === "school-growth" ? 2999 : 5999;
+
+    const updatedTenant = await prisma.tenant.update({
       where: { subdomain },
       data: {
-        subscriptionTier: tier,
-        subscriptionStatus: "ACTIVE"
+        plan,
+        mrr
       }
     });
 
-    return NextResponse.json({ success: true, school: updatedSchool }, { status: 200 });
-  } catch (err) {
-    console.error("Upgrade error:", err);
-    return NextResponse.json({ error: "Failed to upgrade subscription." }, { status: 500 });
+    return NextResponse.json({ success: true, tenant: updatedTenant });
+  } catch (error: any) {
+    console.error("Upgrade API Error:", error);
+    return NextResponse.json({ success: false, error: error.message || "Internal server error." }, { status: 500 });
   }
 }

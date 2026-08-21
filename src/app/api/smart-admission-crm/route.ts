@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let leads = await prisma.smartAdmissionCrmHub.findMany({
+    let leads = await (prisma as any).smartAdmissionCrmHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const l of defaultLeads) {
-        await prisma.smartAdmissionCrmHub.create({
+        await (prisma as any).smartAdmissionCrmHub.create({
           data: { schoolId: school.id, ...l },
         });
       }
 
-      leads = await prisma.smartAdmissionCrmHub.findMany({
+      leads = await (prisma as any).smartAdmissionCrmHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { applicantName, entranceExamScore, targetProgram, counselorName, leadStatus, contactEmail } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Applicant name and contact email are required' }, { status: 400 });
     }
 
-    const lead = await prisma.smartAdmissionCrmHub.create({
+    const lead = await (prisma as any).smartAdmissionCrmHub.create({
       data: {
         schoolId: school.id,
         applicantName,

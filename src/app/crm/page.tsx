@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -16,7 +18,7 @@ export default function CRMDashboardModule() {
   ]);
 
   // Filter leads based on tenant selection
-  const filteredLeads = leads.filter(l => tenant === 'All Tenants' || l.school === tenant);
+  const filteredLeads = leads.filter((l: any) => tenant === 'All Tenants' || l.school === tenant);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
@@ -184,7 +186,7 @@ export default function CRMDashboardModule() {
               {filteredLeads.length === 0 ? (
                 <div className="p-8 text-center text-slate-500">No leads found for this tenant selection.</div>
               ) : (
-                filteredLeads.map((lead) => (
+                filteredLeads.map((lead: any) => (
                   <div key={lead.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="font-bold text-white text-sm">{lead.name} <span className="text-slate-400 font-normal text-xs">({lead.grade})</span></div>

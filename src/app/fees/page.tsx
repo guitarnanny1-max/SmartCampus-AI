@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -35,7 +37,7 @@ export default function FeesPortal() {
   const [newAmount, setNewAmount] = useState('');
 
   const handleMarkPaid = (id: number) => {
-    setFeeRecords(feeRecords.map(r => r.id === id ? { ...r, status: 'Paid' } : r));
+    setFeeRecords(feeRecords.map((r: any) => r.id === id ? { ...r, status: 'Paid' } : r));
   };
 
   const handleAddInvoice = (e: React.FormEvent) => {
@@ -60,7 +62,7 @@ export default function FeesPortal() {
     setNewAmount('');
   };
 
-  const filteredRecords = feeRecords.filter(r => 
+  const filteredRecords = feeRecords.filter((r: any) => 
     r.student.toLowerCase().includes(searchTerm.toLowerCase()) || 
     r.roll.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -158,7 +160,7 @@ export default function FeesPortal() {
             </div>
 
             <div className="space-y-3 max-h-[480px] overflow-y-auto">
-              {filteredRecords.map(rec => (
+              {filteredRecords.map((rec: any) => (
                 <div key={rec.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">

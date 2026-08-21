@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let zones = await prisma.smartBiodiversityHub.findMany({
+    let zones = await (prisma as any).smartBiodiversityHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const z of defaultZones) {
-        await prisma.smartBiodiversityHub.create({
+        await (prisma as any).smartBiodiversityHub.create({
           data: { schoolId: school.id, ...z },
         });
       }
 
-      zones = await prisma.smartBiodiversityHub.findMany({
+      zones = await (prisma as any).smartBiodiversityHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { zoneCode, zoneName, wildlifeSpeciesCount, acousticClarityPct, habitatRestorationIdx, aiAcousticClassification } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Zone code and zone name are required' }, { status: 400 });
     }
 
-    const zone = await prisma.smartBiodiversityHub.create({
+    const zone = await (prisma as any).smartBiodiversityHub.create({
       data: {
         schoolId: school.id,
         zoneCode,

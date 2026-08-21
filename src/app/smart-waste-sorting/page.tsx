@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -178,7 +180,7 @@ export default function SmartWasteSortingPage() {
                 </tr>
               </thead>
               <tbody>
-                {units.map((u) => (
+                {units.map((u: any) => (
                   <tr key={u.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4">
                       <p className="font-semibold text-white">{u.sortingUnitCode}</p>

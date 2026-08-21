@@ -1,67 +1,58 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
-export async function GET() {
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    let units = await prisma.smartHvacUnit.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { searchParams } = new URL(req.url);
+    const schoolId = searchParams.get("schoolId");
 
-    if (units.length === 0) {
-      const defaultUnits = [
-        { unitCode: 'HVAC-AUDITORIUM-01', buildingName: 'Main Convocation Hall', targetTempC: 22.0, currentTempC: 22.4, co2Ppm: 450, airQualityIndex: 'EXCELLENT', status: 'OPTIMIZED' },
-        { unitCode: 'HVAC-LAB-BIO-03', buildingName: 'Life Sciences Block', targetTempC: 20.5, currentTempC: 21.0, co2Ppm: 580, airQualityIndex: 'GOOD', status: 'OPTIMIZED' },
-        { unitCode: 'HVAC-LIBRARY-02', buildingName: 'Central Learning Hub', targetTempC: 23.0, currentTempC: 24.2, co2Ppm: 720, airQualityIndex: 'MODERATE', status: 'ADJUSTING' },
-      ];
-
-      for (const u of defaultUnits) {
-        await prisma.smartHvacUnit.create({
-          data: { schoolId: school.id, ...u },
-        });
-      }
-
-      units = await prisma.smartHvacUnit.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
+    let units: any[] = [];
+    if (schoolId) {
+      units = await (prisma as any).smartHvacUnit.findMany({
+        where: { schoolId },
+        orderBy: { createdAt: "desc" },
       });
     }
 
-    return NextResponse.json(units);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch HVAC units' }, { status: 500 });
+    if (units.length === 0) {
+      units = await (prisma as any).smartHvacUnit.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+    }
+
+    return NextResponse.json({ units });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    const { unitCode, buildingName, targetTempC, currentTempC, co2Ppm, airQualityIndex, status } = await req.json();
+    const body = await req.json();
+    const { schoolId, tenantId, name, temperature, status } = body;
 
-    if (!unitCode || !buildingName) {
-      return NextResponse.json({ error: 'Unit code and building name are required' }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: "HVAC unit name is required" }, { status: 400 });
     }
 
-    const unit = await prisma.smartHvacUnit.create({
+    const unit = await (prisma as any).smartHvacUnit.create({
       data: {
-        schoolId: school.id,
-        unitCode,
-        buildingName,
-        targetTempC: parseFloat(targetTempC) || 22.5,
-        currentTempC: parseFloat(currentTempC) || 23.0,
-        co2Ppm: parseInt(co2Ppm) || 450,
-        airQualityIndex: airQualityIndex || 'EXCELLENT',
-        status: status || 'OPTIMIZED',
+        schoolId: schoolId || null,
+        tenantId: tenantId || null,
+        name,
+        temperature: temperature !== undefined ? Number(temperature) : 22.0,
+        status: status || "ACTIVE",
       },
     });
 
-    return NextResponse.json(unit);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to create HVAC unit' }, { status: 500 });
+    return NextResponse.json({ success: true, unit }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

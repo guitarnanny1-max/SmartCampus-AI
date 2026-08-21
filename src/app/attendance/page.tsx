@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function AttendanceModule() {
     setTimeout(() => setSyncSuccess(false), 3500);
   };
 
-  const filteredLogs = attendanceLog.filter(item => 
+  const filteredLogs = attendanceLog.filter((item: any) => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -113,7 +115,7 @@ export default function AttendanceModule() {
           </div>
 
           <div className="space-y-3 text-xs">
-            {filteredLogs.map((log) => (
+            {filteredLogs.map((log: any) => (
               <div key={log.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="font-bold text-white text-sm">{log.name} • <span className="text-cyan-400">{log.role}</span></div>

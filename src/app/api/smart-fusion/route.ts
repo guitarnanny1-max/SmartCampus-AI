@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let reactors = await prisma.smartFusionHub.findMany({
+    let reactors = await (prisma as any).smartFusionHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const r of defaultReactors) {
-        await prisma.smartFusionHub.create({
+        await (prisma as any).smartFusionHub.create({
           data: { schoolId: school.id, ...r },
         });
       }
 
-      reactors = await prisma.smartFusionHub.findMany({
+      reactors = await (prisma as any).smartFusionHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { reactorCode, reactorName, plasmaTempMillionCelsius, magneticFieldTesla, containmentStabilityPct, aiMhdInstabilityMode } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Reactor code and name are required' }, { status: 400 });
     }
 
-    const reactor = await prisma.smartFusionHub.create({
+    const reactor = await (prisma as any).smartFusionHub.create({
       data: {
         schoolId: school.id,
         reactorCode,

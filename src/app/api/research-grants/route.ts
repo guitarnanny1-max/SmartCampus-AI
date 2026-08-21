@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let grants = await prisma.researchGrant.findMany({
+    let grants = await (prisma as any).researchGrant.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const g of defaultGrants) {
-        await prisma.researchGrant.create({
+        await (prisma as any).researchGrant.create({
           data: { schoolId: school.id, ...g },
         });
       }
 
-      grants = await prisma.researchGrant.findMany({
+      grants = await (prisma as any).researchGrant.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { title, principalInvestigator, fundingAgency, budgetAmount, status } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Title, principal investigator, funding agency, and budget amount are required' }, { status: 400 });
     }
 
-    const grant = await prisma.researchGrant.create({
+    const grant = await (prisma as any).researchGrant.create({
       data: {
         schoolId: school.id,
         title,

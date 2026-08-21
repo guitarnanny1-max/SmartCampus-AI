@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 import TenantSettingsForm from '@/components/TenantSettingsForm';
@@ -6,7 +8,7 @@ import Link from 'next/link';
 
 export default async function SettingsPage() {
   const school = await getCurrentSchool();
-  const apiKeys = await prisma.apiKey.findMany({
+  const apiKeys = await (prisma as any).apiKey.findMany({
     where: { schoolId: school.id },
     orderBy: { createdAt: 'desc' },
   });

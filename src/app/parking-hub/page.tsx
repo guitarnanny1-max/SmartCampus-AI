@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -166,7 +168,7 @@ export default function ParkingHubPage() {
                 </tr>
               </thead>
               <tbody>
-                {bays.map((bay) => (
+                {bays.map((bay: any) => (
                   <tr key={bay.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4">
                       <p className="font-semibold text-white">{bay.bayNo}</p>

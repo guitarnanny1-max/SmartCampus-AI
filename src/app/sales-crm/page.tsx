@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -146,11 +148,11 @@ export default function SalesCrmPortal() {
                 <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                   <h4 className="font-bold text-white text-sm">{stageName}</h4>
                   <span className="px-2 py-0.5 bg-slate-800 text-slate-300 font-mono text-[10px] rounded-full">
-                    {leads.filter(l => l.stage === stageName).length}
+                    {leads.filter((l: any) => l.stage === stageName).length}
                   </span>
                 </div>
                 <div className="space-y-3">
-                  {leads.filter(l => l.stage === stageName).map(lead => (
+                  {leads.filter((l: any) => l.stage === stageName).map((lead: any) => (
                     <div key={lead.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
                       <div className="font-bold text-white text-sm">{lead.name}</div>
                       <div className="text-xs text-slate-400">{lead.institution}</div>
@@ -160,7 +162,7 @@ export default function SalesCrmPortal() {
                       </div>
                     </div>
                   ))}
-                  {leads.filter(l => l.stage === stageName).length === 0 && (
+                  {leads.filter((l: any) => l.stage === stageName).length === 0 && (
                     <div className="text-xs text-slate-500 italic p-2 text-center">No accounts in this stage</div>
                   )}
                 </div>
@@ -220,7 +222,7 @@ export default function SalesCrmPortal() {
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 lg:col-span-2">
               <h3 className="text-lg font-bold text-white">Active Client Directory</h3>
               <div className="space-y-3">
-                {leads.map(lead => (
+                {leads.map((lead: any) => (
                   <div key={lead.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                     <div>
                       <div className="font-bold text-white text-sm">{lead.name}</div>

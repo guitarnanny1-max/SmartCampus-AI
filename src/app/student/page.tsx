@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -73,7 +75,7 @@ export default function StudentDashboard() {
                 Upcoming Assignments
               </h2>
               <div className="space-y-3">
-                {assignments.map(assign => (
+                {assignments.map((assign: any) => (
                   <div key={assign.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center">
                     <div>
                       <h3 className="font-semibold text-slate-200">{assign.title}</h3>

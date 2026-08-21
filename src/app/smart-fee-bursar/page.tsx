@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -162,7 +164,7 @@ export default function SmartFeeBursarPage() {
                 </tr>
               </thead>
               <tbody>
-                {records.map((r) => (
+                {records.map((r: any) => (
                   <tr key={r.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4">
                       <p className="font-semibold text-white">{r.studentName}</p>

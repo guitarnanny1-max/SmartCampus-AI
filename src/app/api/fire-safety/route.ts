@@ -1,66 +1,58 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
-export async function GET() {
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    let systems = await prisma.smartFireSafetySystem.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { searchParams } = new URL(req.url);
+    const schoolId = searchParams.get("schoolId");
 
-    if (systems.length === 0) {
-      const defaultSystems = [
-        { panelCode: 'FIRE-PANEL-SCI-01', locationName: 'Science & Chemistry Labs Wing', smokePpm: 0.04, sprinklerPsi: 125.0, temperatureC: 21.5, alarmStatus: 'NORMAL' },
-        { panelCode: 'FIRE-PANEL-DORM-03', locationName: 'Freshman Residential Dormitory Block', smokePpm: 0.06, sprinklerPsi: 118.5, temperatureC: 23.0, alarmStatus: 'NORMAL' },
-        { panelCode: 'FIRE-PANEL-LIB-02', locationName: 'Central Library Archives & Rare Books', smokePpm: 0.02, sprinklerPsi: 130.0, temperatureC: 20.0, alarmStatus: 'NORMAL' },
-      ];
-
-      for (const s of defaultSystems) {
-        await prisma.smartFireSafetySystem.create({
-          data: { schoolId: school.id, ...s },
-        });
-      }
-
-      systems = await prisma.smartFireSafetySystem.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
+    let systems: any[] = [];
+    if (schoolId) {
+      systems = await (prisma as any).smartFireSafetySystem.findMany({
+        where: { schoolId },
+        orderBy: { createdAt: "desc" },
       });
     }
 
-    return NextResponse.json(systems);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch fire safety systems' }, { status: 500 });
+    if (systems.length === 0) {
+      systems = await (prisma as any).smartFireSafetySystem.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+    }
+
+    return NextResponse.json({ systems });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    const { panelCode, locationName, smokePpm, sprinklerPsi, temperatureC, alarmStatus } = await req.json();
+    const body = await req.json();
+    const { schoolId, tenantId, name, status, location } = body;
 
-    if (!panelCode || !locationName) {
-      return NextResponse.json({ error: 'Panel code and location name are required' }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: "System name is required" }, { status: 400 });
     }
 
-    const system = await prisma.smartFireSafetySystem.create({
+    const system = await (prisma as any).smartFireSafetySystem.create({
       data: {
-        schoolId: school.id,
-        panelCode,
-        locationName,
-        smokePpm: parseFloat(smokePpm) || 0.05,
-        sprinklerPsi: parseFloat(sprinklerPsi) || 120.0,
-        temperatureC: parseFloat(temperatureC) || 22.0,
-        alarmStatus: alarmStatus || 'NORMAL',
+        schoolId: schoolId || null,
+        tenantId: tenantId || null,
+        name,
+        status: status || "ACTIVE",
+        location: location || "",
       },
     });
 
-    return NextResponse.json(system);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to create fire safety system' }, { status: 500 });
+    return NextResponse.json({ success: true, system }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

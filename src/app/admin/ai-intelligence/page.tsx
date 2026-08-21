@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 "use client";
 
 import { useEffect, useState } from "react";
@@ -86,7 +88,7 @@ SmartCampus AI Intelligence Division`;
         <div className="rounded-2xl border border-white/10 bg-[#16102f] p-4 space-y-3">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-300 px-2">Select Prospect Lead</h2>
           <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-            {leads.map((lead) => (
+            {leads.map((lead: any) => (
               <button
                 key={lead.id}
                 onClick={() => handleSelectLead(lead)}

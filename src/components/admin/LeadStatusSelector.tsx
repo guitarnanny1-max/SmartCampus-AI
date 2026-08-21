@@ -36,7 +36,7 @@ export default function LeadStatusSelector({ leadId, currentStatus }: LeadStatus
         disabled={loading}
         className="appearance-none rounded-xl border border-white/10 bg-[#1f173d] px-3 py-1.5 pr-7 text-[10px] font-bold text-white uppercase tracking-wider outline-none focus:border-[#e8d0a9] cursor-pointer disabled:opacity-50"
       >
-        {statuses.map((s) => (
+        {statuses.map((s: any) => (
           <option key={s} value={s} className="bg-[#16102f] text-white">
             {s.replace("_", " ")}
           </option>

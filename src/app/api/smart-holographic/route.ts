@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let halls = await prisma.smartHolographicHub.findMany({
+    let halls = await (prisma as any).smartHolographicHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const h of defaultHalls) {
-        await prisma.smartHolographicHub.create({
+        await (prisma as any).smartHolographicHub.create({
           data: { schoolId: school.id, ...h },
         });
       }
 
-      halls = await prisma.smartHolographicHub.findMany({
+      halls = await (prisma as any).smartHolographicHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { lectureHallCode, hallName, holographicFidelityPct, audioLatencyMs, concurrentAvatarsCount, aiRealTimeTranslationMode } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Lecture hall code and name are required' }, { status: 400 });
     }
 
-    const hall = await prisma.smartHolographicHub.create({
+    const hall = await (prisma as any).smartHolographicHub.create({
       data: {
         schoolId: school.id,
         lectureHallCode,

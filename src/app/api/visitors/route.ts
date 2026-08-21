@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let visitors = await prisma.visitorLog.findMany({
+    let visitors = await (prisma as any).visitorLog.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -18,12 +19,12 @@ export async function GET() {
       ];
 
       for (const v of defaultVisitors) {
-        await prisma.visitorLog.create({
+        await (prisma as any).visitorLog.create({
           data: { schoolId: school.id, ...v },
         });
       }
 
-      visitors = await prisma.visitorLog.findMany({
+      visitors = await (prisma as any).visitorLog.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -36,7 +37,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { visitorName, hostName, purpose, badgeNo } = await req.json();
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Visitor name, host name, and badge number are required' }, { status: 400 });
     }
 
-    const visitor = await prisma.visitorLog.create({
+    const visitor = await (prisma as any).visitorLog.create({
       data: {
         schoolId: school.id,
         visitorName,

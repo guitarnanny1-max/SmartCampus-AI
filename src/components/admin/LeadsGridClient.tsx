@@ -31,7 +31,7 @@ export default function LeadsGridClient({ initialLeads }: LeadsGridClientProps) 
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   const filteredLeads = useMemo(() => {
-    return initialLeads.filter((lead) => {
+    return initialLeads.filter((lead: any) => {
       const currentStatus = lead.status || lead.lead_status || "NEW";
       const currentPriority = lead.priority || "MEDIUM";
 
@@ -51,7 +51,7 @@ export default function LeadsGridClient({ initialLeads }: LeadsGridClientProps) 
 
   const exportToCSV = () => {
     const headers = ["School Name,Contact Name,Email,Phone,Status,Priority,Student Count,Created At,Notes"];
-    const rows = filteredLeads.map((l) => [
+    const rows = filteredLeads.map((l: any) => [
       `"${l.school_name}"`,
       `"${l.contact_name}"`,
       `"${l.contact_email}"`,
@@ -148,7 +148,7 @@ export default function LeadsGridClient({ initialLeads }: LeadsGridClientProps) 
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredLeads.map((lead) => {
+          {filteredLeads.map((lead: any) => {
             const priority = lead.priority || "MEDIUM";
             const priorityBadgeStyle =
               priority === "HIGH"

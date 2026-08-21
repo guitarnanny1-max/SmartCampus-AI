@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -98,7 +100,7 @@ export default function HRPayrollModule() {
           </div>
 
           <div className="space-y-3 text-xs">
-            {staff.map((member) => (
+            {staff.map((member: any) => (
               <div key={member.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="font-bold text-white text-sm">{member.name}</div>

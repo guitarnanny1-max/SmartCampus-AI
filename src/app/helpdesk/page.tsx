@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function HelpdeskModule() {
     setTimeout(() => setTicketSuccess(false), 3500);
   };
 
-  const filteredTickets = ticketList.filter(item => 
+  const filteredTickets = ticketList.filter((item: any) => 
     item.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.requester.toLowerCase().includes(searchQuery.toLowerCase())
@@ -114,7 +116,7 @@ export default function HelpdeskModule() {
           </div>
 
           <div className="space-y-3 text-xs">
-            {filteredTickets.map((ticket) => (
+            {filteredTickets.map((ticket: any) => (
               <div key={ticket.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="font-bold text-white text-sm">{ticket.subject} • <span className="text-cyan-400">{ticket.category}</span></div>

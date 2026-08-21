@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let records = await prisma.smartFeatureToggleHub.findMany({
+    let records = await (prisma as any).smartFeatureToggleHub.findMany({
       where: { schoolId: school.id },
       orderBy: { featureName: 'asc' },
     });
@@ -23,12 +24,12 @@ export async function GET() {
       ];
 
       for (const f of defaultFeatures) {
-        await prisma.smartFeatureToggleHub.create({
+        await (prisma as any).smartFeatureToggleHub.create({
           data: { schoolId: school.id, ...f },
         });
       }
 
-      records = await prisma.smartFeatureToggleHub.findMany({
+      records = await (prisma as any).smartFeatureToggleHub.findMany({
         where: { schoolId: school.id },
         orderBy: { featureName: 'asc' },
       });
@@ -41,7 +42,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { id, isEnabled } = await req.json();
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Feature ID is required' }, { status: 400 });
     }
 
-    const updated = await prisma.smartFeatureToggleHub.update({
+    const updated = await (prisma as any).smartFeatureToggleHub.update({
       where: { id },
       data: { isEnabled },
     });

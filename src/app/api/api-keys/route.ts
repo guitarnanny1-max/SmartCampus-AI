@@ -1,40 +1,62 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
-import { headers } from 'next/headers';
-import crypto from 'crypto';
+import { NextResponse } from "next/server";
 
-export async function POST(req: Request) {
+import crypto from "crypto";
+
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const headerList = headers();
-    const userRole = headerList.get('x-user-role') || 'TENANT_ADMIN';
+    const { searchParams } = new URL(req.url);
+    const tenantId = searchParams.get("tenantId");
 
-    if (userRole === 'VIEWER') {
-      return NextResponse.json({ error: 'Permission denied: Viewers cannot create API keys' }, { status: 403 });
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
+
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
     }
 
-    const school = await getCurrentSchool();
-    const { name } = await req.json();
+    const apiKeys = await (prisma as any).apiKey.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { createdAt: "desc" },
+    });
 
-    if (!name) {
-      return NextResponse.json({ error: 'Integration name is required' }, { status: 400 });
+    return NextResponse.json({ apiKeys });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function POST(req: any): Promise<NextResponse> {
+  try {
+    const body = await req.json();
+    const { tenantId, name } = body;
+
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
+
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
     }
 
-    const randomString = crypto.randomBytes(16).toString('hex');
-    const key = `sc_live_${school.subdomain}_${randomString}`;
+    const randomString = crypto.randomBytes(16).toString("hex");
+    const key = `sc_live_${tenant.subdomain}_${randomString}`;
 
-    const apiKey = await prisma.apiKey.create({
+    const apiKey = await (prisma as any).apiKey.create({
       data: {
-        schoolId: school.id,
-        name,
+        tenantId: tenant.id,
+        name: name || "Default API Key",
         key,
       },
     });
 
-    return NextResponse.json(apiKey);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to create API key' }, { status: 500 });
+    return NextResponse.json({ success: true, apiKey }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

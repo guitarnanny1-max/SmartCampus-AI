@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function PlacementsModule() {
     setTimeout(() => setSuccess(false), 3500);
   };
 
-  const filtered = placementLedger.filter(item => 
+  const filtered = placementLedger.filter((item: any) => 
     item.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.role.toLowerCase().includes(searchQuery.toLowerCase())
   );

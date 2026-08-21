@@ -1,69 +1,58 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
-export async function GET() {
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    let rooms = await prisma.hostelRoom.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { searchParams } = new URL(req.url);
+    const schoolId = searchParams.get("schoolId");
 
-    if (rooms.length === 0) {
-      const defaultRooms = [
-        { roomNo: 'A-204', blockName: 'Newton Hall (Boys)', capacity: 2, occupancy: 2, status: 'FULL' },
-        { roomNo: 'B-112', blockName: 'Curie Hall (Girls)', capacity: 2, occupancy: 1, status: 'AVAILABLE' },
-        { roomNo: 'C-305', blockName: 'Turing Hall (Co-Ed)', capacity: 1, occupancy: 0, status: 'AVAILABLE' },
-      ];
-
-      for (const r of defaultRooms) {
-        await prisma.hostelRoom.create({
-          data: { schoolId: school.id, ...r },
-        });
-      }
-
-      rooms = await prisma.hostelRoom.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
+    let rooms: any[] = [];
+    if (schoolId) {
+      rooms = await (prisma as any).hostelRoom.findMany({
+        where: { schoolId },
+        orderBy: { createdAt: "desc" },
       });
     }
 
-    return NextResponse.json(rooms);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch hostel rooms' }, { status: 500 });
+    if (rooms.length === 0) {
+      rooms = await (prisma as any).hostelRoom.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+    }
+
+    return NextResponse.json({ rooms });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    const { roomNo, blockName, capacity, occupancy } = await req.json();
+    const body = await req.json();
+    const { schoolId, tenantId, roomNumber, capacity, status } = body;
 
-    if (!roomNo || !blockName || capacity === undefined) {
-      return NextResponse.json({ error: 'Room number, block name, and capacity are required' }, { status: 400 });
+    if (!roomNumber) {
+      return NextResponse.json({ error: "Room number is required" }, { status: 400 });
     }
 
-    const occ = occupancy ? parseInt(occupancy) : 0;
-    const cap = parseInt(capacity);
-    const status = occ >= cap ? 'FULL' : 'AVAILABLE';
-
-    const room = await prisma.hostelRoom.create({
+    const room = await (prisma as any).hostelRoom.create({
       data: {
-        schoolId: school.id,
-        roomNo,
-        blockName,
-        capacity: cap,
-        occupancy: occ,
-        status,
+        schoolId: schoolId || null,
+        tenantId: tenantId || null,
+        roomNumber,
+        capacity: capacity !== undefined ? Number(capacity) : 2,
+        status: status || "AVAILABLE",
       },
     });
 
-    return NextResponse.json(room);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to add hostel room' }, { status: 500 });
+    return NextResponse.json({ success: true, room }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -176,7 +178,7 @@ export default function SmartGlobalBoardroomPage() {
                 </tr>
               </thead>
               <tbody>
-                {regions.map((r) => (
+                {regions.map((r: any) => (
                   <tr key={r.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4">
                       <p className="font-semibold text-white">{r.regionCode}</p>

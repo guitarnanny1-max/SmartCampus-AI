@@ -1,84 +1,46 @@
-"use client";
+import Link from "next/link";
 
-import React from 'react';
-import { usePathname } from 'next/navigation';
+interface SidebarProps {
+  schoolName?: string;
+  subdomain?: string;
+  role?: string;
+  setRole?: (role: string) => void;
+}
 
-export default function Sidebar({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
-  const navItems = [
-    { name: 'Main Dashboard', href: '/', icon: '📊' },
-    { name: 'Admissions CRM', href: '/admissions', icon: '📋' },
-    { name: 'Student Management', href: '/students', icon: '👨‍🎓' },
-    { name: 'Staff & HR', href: '/staff', icon: '👔' },
-    { name: 'Examinations', href: '/exams', icon: '📝' },
-    { name: 'Library & Assets', href: '/library', icon: '📚' },
-    { name: 'Energy & Power', href: '/energy', icon: '⚡' },
-    { name: 'Transport & Fleet', href: '/transport', icon: '🚌' },
-    { name: 'Fee & Finance', href: '/finance', icon: '💳' },
-    { name: 'Pricing & Tiers', href: '/pricing', icon: '🏷️' },
-  ];
-
+export default function Sidebar({ schoolName = "SmartCampus", subdomain = "app", role = "ADMIN", setRole }: SidebarProps) {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0f172a', color: '#f8fafc', fontFamily: 'sans-serif' }}>
-      
-      {/* Sidebar Navigation */}
-      <aside style={{ width: '260px', background: '#1e293b', borderRight: '1px solid #334155', padding: '24px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-        <div>
-          {/* Logo / Brand */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '35px', paddingLeft: '8px' }}>
-            <span style={{ background: '#3b82f6', color: 'white', padding: '8px', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold' }}>🎓</span>
-            <div>
-              <h2 style={{ fontSize: '16px', margin: 0, color: 'white', fontWeight: 'bold' }}>SmartCampusAI</h2>
-              <span style={{ fontSize: '11px', color: '#94a3b8' }}>Enterprise Campus ERP</span>
-            </div>
-          </div>
+    <aside style={{ width: "260px", background: "#0f172a", color: "#f8fafc", padding: "24px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+      <div>
+        <div style={{ fontWeight: "bold", fontSize: "16px", marginBottom: "4px", color: "#38bdf8" }}>{schoolName}</div>
+        <div style={{ fontSize: "11px", color: "#94a3b8", fontFamily: "monospace", marginBottom: "24px" }}>{subdomain}.smartcampus.ai</div>
+        
+        <nav style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px" }}>
+          <Link href="/" style={{ color: "#e2e8f0", textDecoration: "none", padding: "8px 12px", borderRadius: "6px" }}>Dashboard</Link>
+          <Link href="/students" style={{ color: "#e2e8f0", textDecoration: "none", padding: "8px 12px", borderRadius: "6px" }}>Students</Link>
+          <Link href="/staff" style={{ color: "#e2e8f0", textDecoration: "none", padding: "8px 12px", borderRadius: "6px" }}>Staff</Link>
+          <Link href="/finance" style={{ color: "#e2e8f0", textDecoration: "none", padding: "8px 12px", borderRadius: "6px" }}>Finance</Link>
+          <Link href="/energy" style={{ color: "#e2e8f0", textDecoration: "none", padding: "8px 12px", borderRadius: "6px" }}>Energy</Link>
+          <Link href="/exams" style={{ color: "#e2e8f0", textDecoration: "none", padding: "8px 12px", borderRadius: "6px" }}>Exams</Link>
+          <Link href="/library" style={{ color: "#e2e8f0", textDecoration: "none", padding: "8px 12px", borderRadius: "6px" }}>Library</Link>
+          <Link href="/transport" style={{ color: "#e2e8f0", textDecoration: "none", padding: "8px 12px", borderRadius: "6px" }}>Transport</Link>
+          <Link href="/reports" style={{ color: "#e2e8f0", textDecoration: "none", padding: "8px 12px", borderRadius: "6px" }}>Reports</Link>
+        </nav>
+      </div>
 
-          {/* Navigation Links */}
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '12px 14px',
-                    borderRadius: '8px',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    fontWeight: isActive ? 'bold' : 'normal',
-                    color: isActive ? 'white' : '#94a3b8',
-                    background: isActive ? '#3b82f6' : 'transparent',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <span style={{ fontSize: '16px' }}>{item.icon}</span>
-                  <span>{item.name}</span>
-                </a>
-              );
-            })}
-          </nav>
+      {setRole && (
+        <div style={{ marginTop: "24px", borderTop: "1px solid #1e293b", paddingTop: "16px" }}>
+          <div style={{ fontSize: "11px", color: "#94a3b8", marginBottom: "8px" }}>Current Role: {role}</div>
+          <select 
+            value={role} 
+            onChange={(e) => setRole(e.target.value)}
+            style={{ width: "100%", padding: "6px", background: "#1e293b", color: "#fff", border: "1px solid #334155", borderRadius: "4px", fontSize: "12px" }}
+          >
+            <option value="ADMIN">Admin</option>
+            <option value="TEACHER">Teacher</option>
+            <option value="STUDENT">Student</option>
+          </select>
         </div>
-
-        {/* Footer Profile / Status */}
-        <div style={{ background: '#0f172a', padding: '12px', borderRadius: '10px', border: '1px solid #334155' }}>
-          <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'white', marginBottom: '2px' }}>Campus Admin</div>
-          <div style={{ fontSize: '11px', color: '#22c55e', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: '6px', height: '6px', background: '#22c55e', borderRadius: '50%' }}></span>
-            PostgreSQL DB Connected
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content Viewport */}
-      <main style={{ flex: 1, overflowY: 'auto' }}>
-        {children}
-      </main>
-
-    </div>
+      )}
+    </aside>
   );
 }

@@ -1,66 +1,58 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
-export async function GET() {
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    let events = await prisma.eventClub.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { searchParams } = new URL(req.url);
+    const schoolId = searchParams.get("schoolId");
 
-    if (events.length === 0) {
-      const defaultEvents = [
-        { eventName: 'TechnoHack 2026 Annual Hackathon', clubName: 'Google Developer Student Club', venue: 'Main Auditorium & Labs', eventDate: '2026-04-15', budget: 5000.00, status: 'APPROVED' },
-        { eventName: 'Annual Cultural Fest: Symphony', clubName: 'Music & Arts Society', venue: 'Open Air Theatre', eventDate: '2026-05-02', budget: 12500.00, status: 'APPROVED' },
-        { eventName: 'RoboWars National Championship', clubName: 'Robotics & Mechatronics Club', venue: 'Indoor Sports Complex', eventDate: '2026-05-20', budget: 3500.00, status: 'PENDING' },
-      ];
-
-      for (const e of defaultEvents) {
-        await prisma.eventClub.create({
-          data: { schoolId: school.id, ...e },
-        });
-      }
-
-      events = await prisma.eventClub.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
+    let events: any[] = [];
+    if (schoolId) {
+      events = await (prisma as any).eventClub.findMany({
+        where: { schoolId },
+        orderBy: { createdAt: "desc" },
       });
     }
 
-    return NextResponse.json(events);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch campus events' }, { status: 500 });
+    if (events.length === 0) {
+      events = await (prisma as any).eventClub.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+    }
+
+    return NextResponse.json({ events });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    const { eventName, clubName, venue, eventDate, budget } = await req.json();
+    const body = await req.json();
+    const { schoolId, tenantId, name, description, category } = body;
 
-    if (!eventName || !clubName || !venue || !eventDate || budget === undefined) {
-      return NextResponse.json({ error: 'All event fields are required' }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: "Event or club name is required" }, { status: 400 });
     }
 
-    const event = await prisma.eventClub.create({
+    const event = await (prisma as any).eventClub.create({
       data: {
-        schoolId: school.id,
-        eventName,
-        clubName,
-        venue,
-        eventDate,
-        budget: parseFloat(budget),
-        status: 'APPROVED',
+        schoolId: schoolId || null,
+        tenantId: tenantId || null,
+        name,
+        description: description || "",
+        category: category || "CLUB",
       },
     });
 
-    return NextResponse.json(event);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
+    return NextResponse.json({ success: true, event }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState } from 'react';
@@ -113,7 +115,7 @@ export default function EmergencyBroadcastPage() {
           </h3>
 
           <div className="space-y-3">
-            {broadcasts.map((item) => (
+            {broadcasts.map((item: any) => (
               <div key={item.id} className="p-4 bg-slate-950/60 border border-slate-800 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">

@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 "app/admin/login/page.tsx"
 "use client";
 

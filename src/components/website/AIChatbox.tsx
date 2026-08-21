@@ -324,7 +324,7 @@ export default function AIChatbox({
           </div>
 
           <div className="h-80 space-y-4 overflow-y-auto bg-slate-50 p-4">
-            {messages.map((item) => (
+            {messages.map((item: any) => (
               <div
                 key={item.id}
                 className={`flex gap-2 ${

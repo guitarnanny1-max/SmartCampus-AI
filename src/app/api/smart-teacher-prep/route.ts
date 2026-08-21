@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    const records = await prisma.smartTeacherPrepHub.findMany({
+    const records = await (prisma as any).smartTeacherPrepHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
       take: 20,
@@ -18,7 +19,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { teacherName, subjectName, topic, prepType } = await req.json();
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
         `   - Formulated 3 critical-thinking assignments for student evaluation.`;
     }
 
-    const record = await prisma.smartTeacherPrepHub.create({
+    const record = await (prisma as any).smartTeacherPrepHub.create({
       data: {
         schoolId: school.id,
         teacherName,

@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 
 export default async function SchoolHeader() {
   const school = await getCurrentSchool();
-  const headerList = headers();
+  const headerList = await headers();
   const currentRole = headerList.get('x-user-role') || 'TENANT_ADMIN';
 
   return (

@@ -27,7 +27,7 @@ function statusLabel(status: string) {
   return normalizeStatus(status)
     .toLowerCase()
     .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word: any) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
@@ -102,7 +102,7 @@ export default function LeadStatusSelect({
         aria-label="Change lead status"
         className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {STATUSES.map((item) => (
+        {STATUSES.map((item: any) => (
           <option key={item} value={item}>
             {statusLabel(item)}
           </option>

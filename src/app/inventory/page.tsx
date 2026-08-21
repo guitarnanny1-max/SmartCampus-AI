@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function InventoryModule() {
     setTimeout(() => setOrderSuccess(false), 3500);
   };
 
-  const filteredInventory = inventoryList.filter(item => 
+  const filteredInventory = inventoryList.filter((item: any) => 
     item.item.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.vendor.toLowerCase().includes(searchQuery.toLowerCase())

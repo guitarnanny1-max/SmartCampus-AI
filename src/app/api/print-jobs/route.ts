@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let jobs = await prisma.printJob.findMany({
+    let jobs = await (prisma as any).printJob.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const j of defaultJobs) {
-        await prisma.printJob.create({
+        await (prisma as any).printJob.create({
           data: { schoolId: school.id, ...j },
         });
       }
 
-      jobs = await prisma.printJob.findMany({
+      jobs = await (prisma as any).printJob.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { studentName, documentTitle, pagesCount, colorMode } = await req.json();
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
     const costPerPg = isColor ? 0.10 : 0.05;
     const cost = parseFloat((pages * costPerPg).toFixed(2));
 
-    const job = await prisma.printJob.create({
+    const job = await (prisma as any).printJob.create({
       data: {
         schoolId: school.id,
         studentName,

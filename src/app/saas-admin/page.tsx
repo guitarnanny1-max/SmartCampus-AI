@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -164,7 +166,7 @@ export default function SaaSAdminModule() {
             </div>
 
             <div className="space-y-3 text-xs">
-              {tenants.map((tenant) => (
+              {tenants.map((tenant: any) => (
                 <div key={tenant.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="font-bold text-white text-sm">{tenant.name} <span className="text-cyan-400 font-semibold text-xs">({tenant.plan})</span></div>

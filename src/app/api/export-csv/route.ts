@@ -1,41 +1,54 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
 
-export async function GET(req: Request) {
+
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const url = new URL(req.url);
-    const type = url.searchParams.get('type') || 'students';
-    const school = await getCurrentSchool();
+    const { searchParams } = new URL(req.url);
+    const type = searchParams.get("type") || "students";
+    const tenantId = searchParams.get("tenantId");
 
-    let csvContent = '';
-    let filename = '';
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
 
-    if (type === 'students') {
-      const students = await prisma.student.findMany({ where: { schoolId: school.id } });
-      filename = `${school.subdomain}-students-export.csv`;
-      csvContent = 'Name,RollNo,CGPA\n' + students.map(s => `"${s.name}","${s.rollNo}",${s.cgpa}`).join('\n');
-    } else if (type === 'facilities') {
-      const facilities = await prisma.facility.findMany({ where: { schoolId: school.id } });
-      filename = `${school.subdomain}-facilities-export.csv`;
-      csvContent = 'ZoneName,Solar,HVAC,Status\n' + facilities.map(f => `"${f.zoneName}","${f.solar}","${f.hvac}","${f.status}"`).join('\n');
-    } else if (type === 'placements') {
-      const placements = await prisma.placement.findMany({ where: { schoolId: school.id } });
-      filename = `${school.subdomain}-placements-export.csv`;
-      csvContent = 'Company,Role,CTC,Offers\n' + placements.map(p => `"${p.company}","${p.role}","${p.ctc}","${p.offers || ''}"`).join('\n');
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
+    }
+
+    let csvContent = "";
+    let filename = `${tenant.subdomain}-export.csv`;
+
+    if (type === "students") {
+      const students = await (prisma as any).student.findMany({
+        where: { tenantId: tenant.id },
+      });
+      filename = `${tenant.subdomain}-students-export.csv`;
+      csvContent = "Name,AdmissionNumber,Grade,Status\n" + 
+        students.map((s: any) => `"${s.name}","${s.admissionNumber}","${s.grade}","${s.status}"`).join("\n");
+    } else if (type === "staff") {
+      const staffList = await (prisma as any).staff.findMany({
+        where: { tenantId: tenant.id },
+      });
+      filename = `${tenant.subdomain}-staff-export.csv`;
+      csvContent = "Name,Role,Email\n" + 
+        staffList.map((st: any) => `"${st.name}","${st.role}","${st.email || ""}"`).join("\n");
     } else {
-      return NextResponse.json({ error: 'Invalid export type' }, { status: 400 });
+      csvContent = "ID,TenantId,CreatedAt\n" + `"${tenant.id}","${tenant.subdomain}","${tenant.createdAt}"`;
     }
 
     return new NextResponse(csvContent, {
+      status: 200,
       headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        "Content-Type": "text/csv",
+        "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to generate export' }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

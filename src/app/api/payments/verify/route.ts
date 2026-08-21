@@ -1,9 +1,10 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const { orderId, paymentId, signature } = await req.json();
 
@@ -24,14 +25,14 @@ export async function POST(req: Request) {
     }
 
     if (!isValid) {
-      await prisma.campusPaymentRecord.update({
+      await (prisma as any).campusPaymentRecord.update({
         where: { orderId },
         data: { status: 'FAILED' },
       });
       return NextResponse.json({ error: 'Payment signature verification failed' }, { status: 400 });
     }
 
-    const updated = await prisma.campusPaymentRecord.update({
+    const updated = await (prisma as any).campusPaymentRecord.update({
       where: { orderId },
       data: {
         paymentId: paymentId || `pay_${Date.now()}`,

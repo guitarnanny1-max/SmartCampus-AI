@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let permits = await prisma.parkingPermit.findMany({
+    let permits = await (prisma as any).parkingPermit.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const p of defaultPermits) {
-        await prisma.parkingPermit.create({
+        await (prisma as any).parkingPermit.create({
           data: { schoolId: school.id, ...p },
         });
       }
 
-      permits = await prisma.parkingPermit.findMany({
+      permits = await (prisma as any).parkingPermit.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { ownerName, vehicleNo, permitType, slotNo, status } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Owner name, vehicle number, and slot number are required' }, { status: 400 });
     }
 
-    const permit = await prisma.parkingPermit.create({
+    const permit = await (prisma as any).parkingPermit.create({
       data: {
         schoolId: school.id,
         ownerName,

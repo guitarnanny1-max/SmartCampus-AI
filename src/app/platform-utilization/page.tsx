@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,7 +19,7 @@ export default function PlatformUtilizationPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const maxScore = Math.max(...data.map(d => d.totalScore), 1);
+  const maxScore = Math.max(...data.map((d: any) => d.totalScore), 1);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8 space-y-8">
@@ -51,7 +53,7 @@ export default function PlatformUtilizationPage() {
           <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-lg">
             <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Average Platform Health</h3>
             <p className="text-3xl font-extrabold text-emerald-400 mt-2">
-              {data.length > 0 ? Math.round(data.reduce((a, b) => a + b.totalScore, 0) / data.length) : 0} <span className="text-sm text-slate-500">units/active</span>
+              {data.length > 0 ? Math.round(data.reduce((a: any, b: any) => a + b.totalScore, 0) / data.length) : 0} <span className="text-sm text-slate-500">units/active</span>
             </p>
           </div>
         </div>

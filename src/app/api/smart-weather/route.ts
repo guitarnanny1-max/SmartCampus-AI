@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let stations = await prisma.smartWeatherStation.findMany({
+    let stations = await (prisma as any).smartWeatherStation.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const s of defaultStations) {
-        await prisma.smartWeatherStation.create({
+        await (prisma as any).smartWeatherStation.create({
           data: { schoolId: school.id, ...s },
         });
       }
 
-      stations = await prisma.smartWeatherStation.findMany({
+      stations = await (prisma as any).smartWeatherStation.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { stationCode, stationName, windSpeedKmh, barometricPressureHpa, uvIndex, precipitationMm, weatherAlertStatus } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Station code and name are required' }, { status: 400 });
     }
 
-    const station = await prisma.smartWeatherStation.create({
+    const station = await (prisma as any).smartWeatherStation.create({
       data: {
         schoolId: school.id,
         stationCode,

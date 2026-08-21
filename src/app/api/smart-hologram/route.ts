@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let pods = await prisma.smartHologramHub.findMany({
+    let pods = await (prisma as any).smartHologramHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const p of defaultPods) {
-        await prisma.smartHologramHub.create({
+        await (prisma as any).smartHologramHub.create({
           data: { schoolId: school.id, ...p },
         });
       }
 
-      pods = await prisma.smartHologramHub.findMany({
+      pods = await (prisma as any).smartHologramHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { podCode, podName, holographicFps, spatialLatencyMs, bandwidthGbps, aiImmersiveMode } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Pod code and name are required' }, { status: 400 });
     }
 
-    const pod = await prisma.smartHologramHub.create({
+    const pod = await (prisma as any).smartHologramHub.create({
       data: {
         schoolId: school.id,
         podCode,

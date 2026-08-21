@@ -1,206 +1,93 @@
-import { prisma } from '@/lib/prisma';
-import { provisionTenant } from './actions/provision';
+import { prisma } from "@/lib/prisma";
+
+
+
 
 export default async function SuperAdminDashboard() {
-  const schools = await prisma.school.findMany({
-    include: { students: true, facilities: true, tickets: true, staff: true, fees: true }
-  });
-  
-  const totalStudents = await prisma.student.count();
-  const allTickets = schools.flatMap(s => s.tickets);
-  
-  let totalMRR = 0;
-  let enterpriseCount = 0;
-  let proCount = 0;
-  let trialCount = 0;
-
-  schools.forEach(s => {
-    if (s.subscriptionTier === 'ENTERPRISE') {
-      totalMRR += 119999;
-      enterpriseCount++;
-    } else if (s.subscriptionTier === 'PRO') {
-      totalMRR += 39999;
-      proCount++;
-    } else {
-      trialCount++;
-    }
+  const tenants = await prisma.tenant.findMany({
+    include: { 
+      students: true, 
+      invoices: true, 
+      announcements: true, 
+      alerts: true, 
+      energyLogs: true, 
+      exams: true, 
+      libraryAssets: true 
+    },
+    orderBy: { createdAt: "desc" }
   });
 
-  const recentStudents = await prisma.student.findMany({
-    include: { school: true },
-    orderBy: { createdAt: 'desc' },
-    take: 5
-  });
+  const totalMRR = tenants.reduce((acc: any, t: any) => acc + (t.mrr || 0), 0);
+  const totalStudents = tenants.reduce((acc: any, t: any) => acc + t.students.length, 0);
 
   return (
-    <div className="p-8 bg-slate-950 min-h-screen text-slate-100 font-sans">
-      <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
-        <div>
-          <span className="text-xs uppercase tracking-widest px-3 py-1 bg-blue-500/10 text-blue-400 rounded-full font-semibold border border-blue-500/20">
-            Global Hub
-          </span>
-          <h1 className="text-3xl font-extrabold mt-2 tracking-tight">Super Admin Control Panel</h1>
-          <p className="text-slate-400 text-sm mt-1">Multi-tenant infrastructure orchestrator, global revenue telemetry, and billing engine.</p>
-        </div>
-        <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span className="text-xs font-medium text-slate-300">All Systems Operational</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Platform MRR</p>
-          <p className="text-3xl font-black mt-2 text-emerald-400">₹{totalMRR.toLocaleString()}/mo</p>
-        </div>
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Tenants</p>
-          <p className="text-3xl font-black mt-2 text-blue-400">{schools.length} Schools</p>
-        </div>
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Students Enrolled</p>
-          <p className="text-3xl font-black mt-2 text-indigo-400">{totalStudents} Students</p>
-        </div>
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Open Support Tickets</p>
-          <p className="text-3xl font-black mt-2 text-amber-400">{allTickets.length} Tickets</p>
-        </div>
-      </div>
-
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl mb-8 shadow-lg">
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <span>📊 Global Revenue & Tier Analytics Breakdown</span>
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-            <div className="text-xs font-semibold text-blue-400 uppercase">Enterprise Tier</div>
-            <div className="text-2xl font-bold mt-1">{enterpriseCount} Tenant(s)</div>
-            <div className="text-xs text-slate-400 mt-1">Revenue Contribution: ₹{(enterpriseCount * 119999).toLocaleString()}/mo</div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
+          <div>
+            <span className="text-xs uppercase tracking-widest px-3 py-1 bg-indigo-500/15 text-indigo-400 rounded-full font-semibold border border-indigo-500/20">
+              Global Control Tower
+            </span>
+            <h1 className="text-3xl font-extrabold text-white mt-2">SuperAdmin Multi-Tenant Workspace</h1>
+            <p className="text-slate-400 text-sm mt-1">Manage school SaaS tenants, billing telemetry, and system-wide provisioning.</p>
           </div>
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-            <div className="text-xs font-semibold text-purple-400 uppercase">Pro Tier</div>
-            <div className="text-2xl font-bold mt-1">{proCount} Tenant(s)</div>
-            <div className="text-xs text-slate-400 mt-1">Revenue Contribution: ₹{(proCount * 39999).toLocaleString()}/mo</div>
-          </div>
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-            <div className="text-xs font-semibold text-emerald-400 uppercase">Trial / Free Tier</div>
-            <div className="text-2xl font-bold mt-1">{trialCount} Tenant(s)</div>
-            <div className="text-xs text-slate-400 mt-1">Conversion Pipeline Active</div>
+          <div className="flex gap-4">
+            <div className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs">
+              <div className="text-slate-400">Total MRR</div>
+              <div className="text-emerald-400 font-mono font-bold text-sm">${totalMRR.toLocaleString()}</div>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs">
+              <div className="text-slate-400">Total Tenants</div>
+              <div className="text-indigo-400 font-mono font-bold text-sm">{tenants.length}</div>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs">
+              <div className="text-slate-400">Enrolled Students</div>
+              <div className="text-purple-400 font-mono font-bold text-sm">{totalStudents.toLocaleString()}</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="mb-8">
-        <h3 className="text-lg font-bold mb-4">🏢 Tenant Institutions ({schools.length})</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {schools.map(school => (
-            <div key={school.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <span className="text-xs px-2.5 py-1 bg-blue-500/10 text-blue-400 font-semibold rounded-lg border border-blue-500/20 uppercase">
-                      {school.subscriptionTier} PLAN
+        {/* Tenants Table */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div className="px-6 py-4 border-b border-slate-800 font-bold text-sm text-slate-200 flex justify-between items-center">
+            <span>Active School Tenants</span>
+            <span className="text-xs font-mono text-slate-400">{tenants.length} Connected Workspaces</span>
+          </div>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-950 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-800">
+                <th className="px-6 py-3 font-semibold">School / Institution</th>
+                <th className="px-6 py-3 font-semibold">Subdomain</th>
+                <th className="px-6 py-3 font-semibold">Plan</th>
+                <th className="px-6 py-3 font-semibold">MRR</th>
+                <th className="px-6 py-3 font-semibold">Students</th>
+                <th className="px-6 py-3 font-semibold">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800 text-xs">
+              {tenants.map((tenant: any) => (
+                <tr key={tenant.id} className="hover:bg-slate-800/40 transition">
+                  <td className="px-6 py-4 font-bold text-white">{tenant.name}</td>
+                  <td className="px-6 py-4 font-mono text-indigo-400">{tenant.subdomain}</td>
+                  <td className="px-6 py-4 text-slate-300 capitalize">{tenant.plan}</td>
+                  <td className="px-6 py-4 font-mono text-emerald-400">${tenant.mrr.toLocaleString()}</td>
+                  <td className="px-6 py-4 font-mono text-slate-300">{tenant.students.length}</td>
+                  <td className="px-6 py-4">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      {tenant.status}
                     </span>
-                    <h4 className="text-xl font-bold mt-3">{school.name}</h4>
-                    <p className="text-xs text-slate-400 font-mono mt-1">Subdomain: {school.subdomain}.localhost:3000</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 gap-2 my-4 bg-slate-950 p-3 rounded-xl border border-slate-800/60 text-center">
-                  <div>
-                    <div className="text-[10px] text-slate-400 uppercase font-medium">Students</div>
-                    <div className="font-bold text-sm mt-0.5">{school.students.length}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-slate-400 uppercase font-medium">Facilities</div>
-                    <div className="font-bold text-sm mt-0.5">{school.facilities.length}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-slate-400 uppercase font-medium">Staff</div>
-                    <div className="font-bold text-sm mt-0.5">{school.staff.length}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-slate-400 uppercase font-medium">Invoices</div>
-                    <div className="font-bold text-sm mt-0.5">{school.fees.length}</div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-between items-center pt-3 border-t border-slate-800">
-                <a 
-                  href={`/${school.subdomain}`} 
-                  target="_blank" 
-                  className="text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl transition shadow"
-                >
-                  Launch Tenant Portal ↗
-                </a>
-              </div>
-            </div>
-          ))}
+                  </td>
+                </tr>
+              ))}
+              {tenants.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">No school tenants registered yet.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      </div>
-
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg mb-8">
-        <h3 className="text-lg font-bold mb-4">📋 Platform Audit & Activity Stream (Newest First)</h3>
-        <div className="space-y-3">
-          {recentStudents.map(st => (
-            <div key={st.id} className="p-4 bg-slate-950 rounded-xl border border-slate-800/80 flex justify-between items-center">
-              <div>
-                <span className="text-[10px] uppercase font-bold px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20">
-                  STUDENT ENROLLED
-                </span>
-                <p className="text-sm font-medium mt-1.5">
-                  Enrolled <span className="font-bold text-slate-200">{st.name}</span> (ID: {st.studentId}, GPA: {st.gpa ?? 'N/A'})
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">Institution: {st.school?.name}</p>
-              </div>
-              <div className="text-right">
-                <span className="text-xs font-mono text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-                  {new Date(st.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            </div>
-          ))}
-          {recentStudents.length === 0 && (
-            <p className="text-slate-500 text-center py-4">No recent activity recorded.</p>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg">
-        <h3 className="text-lg font-bold mb-2">🚀 Onboard Monetized Institution Tenant</h3>
-        <p className="text-slate-400 text-sm mb-6">Provision an isolated multi-tenant instance with custom brand colors and INR billing tiers instantly.</p>
-        
-        <form action={provisionTenant} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input 
-            type="text" 
-            name="name" 
-            placeholder="Institution Name (e.g., Apex Academy)" 
-            required 
-            className="bg-slate-950 border border-slate-800 px-4 py-3 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-blue-500"
-          />
-          <input 
-            type="text" 
-            name="subdomain" 
-            placeholder="Subdomain (e.g., apex)" 
-            required 
-            className="bg-slate-950 border border-slate-800 px-4 py-3 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-blue-500"
-          />
-          <select 
-            name="plan" 
-            className="bg-slate-950 border border-slate-800 px-4 py-3 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-blue-500"
-          >
-            <option value="ENTERPRISE">Enterprise Tier (₹1,19,999/mo)</option>
-            <option value="PRO">Pro Tier (₹39,999/mo)</option>
-            <option value="TRIAL">14-Day Free Trial (₹0)</option>
-          </select>
-          <div className="md:col-span-3">
-            <button 
-              type="submit" 
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-emerald-900/20"
-            >
-              ⚡ Provision Monetized Tenant Instance
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );

@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let records = await prisma.smartBiometricAttendanceHub.findMany({
+    let records = await (prisma as any).smartBiometricAttendanceHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const r of defaultRecords) {
-        await prisma.smartBiometricAttendanceHub.create({
+        await (prisma as any).smartBiometricAttendanceHub.create({
           data: { schoolId: school.id, ...r },
-        });
+        } as any);
       }
 
-      records = await prisma.smartBiometricAttendanceHub.findMany({
+      records = await (prisma as any).smartBiometricAttendanceHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { studentOrFacultyName, roleType, biometricDeviceCode, attendanceStatus } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Name and biometric device code are required' }, { status: 400 });
     }
 
-    const record = await prisma.smartBiometricAttendanceHub.create({
+    const record = await (prisma as any).smartBiometricAttendanceHub.create({
       data: {
         schoolId: school.id,
         studentOrFacultyName,
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
         biometricDeviceCode,
         attendanceStatus: attendanceStatus || 'PRESENT',
       },
-    });
+    } as any);
 
     return NextResponse.json(record);
   } catch (error) {

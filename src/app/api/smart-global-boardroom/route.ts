@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let regions = await prisma.smartGlobalBoardroomHub.findMany({
+    let regions = await (prisma as any).smartGlobalBoardroomHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const r of defaultRegions) {
-        await prisma.smartGlobalBoardroomHub.create({
+        await (prisma as any).smartGlobalBoardroomHub.create({
           data: { schoolId: school.id, ...r },
         });
       }
 
-      regions = await prisma.smartGlobalBoardroomHub.findMany({
+      regions = await (prisma as any).smartGlobalBoardroomHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { regionCode, regionName, totalEnrolledStudents, treasuryRevenueUsd, aiComputeEfficiencyPercent, boardroomStatus } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Region code and name are required' }, { status: 400 });
     }
 
-    const region = await prisma.smartGlobalBoardroomHub.create({
+    const region = await (prisma as any).smartGlobalBoardroomHub.create({
       data: {
         schoolId: school.id,
         regionCode,
