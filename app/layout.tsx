@@ -1,5 +1,7 @@
 import "./globals.css";
+
 import type { Metadata } from "next";
+
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 
@@ -10,15 +12,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="bg-slate-950 text-slate-100 antialiased min-h-screen flex">
         <Sidebar />
+
         <div className="flex-1 flex flex-col h-screen overflow-hidden">
           <Header />
+
           <main className="flex-1 overflow-y-auto">
             {children}
           </main>

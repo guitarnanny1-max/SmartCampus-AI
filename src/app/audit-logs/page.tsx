@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -16,7 +18,7 @@ export default function AuditLogsModule() {
     { id: 5, event: 'PAYMENT_GATEWAY_RECONCILED', user: 'finance@delhipublic.edu.in', tenant: 'Delhi Public International', ip: '152.57.19.88', severity: 'Info', time: '5 hours ago' },
   ];
 
-  const filteredLogs = logs.filter(log => {
+  const filteredLogs = logs.filter((log: any) => {
     const matchesSearch = log.event.toLowerCase().includes(searchTerm.toLowerCase()) || log.user.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSeverity = severityFilter === 'All' || log.severity === severityFilter;
     return matchesSearch && matchesSeverity;
@@ -112,7 +114,7 @@ export default function AuditLogsModule() {
             {filteredLogs.length === 0 ? (
               <div className="p-8 text-center text-slate-500">No audit logs matching your search criteria.</div>
             ) : (
-              filteredLogs.map((log) => (
+              filteredLogs.map((log: any) => (
                 <div key={log.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">

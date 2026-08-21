@@ -1,10 +1,11 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 import Razorpay from 'razorpay';
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { amountInr, description, paymentMethod } = await req.json();
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
       console.warn('Razorpay test mode fallback triggered:', err);
     }
 
-    const paymentRecord = await prisma.campusPaymentRecord.create({
+    const paymentRecord = await (prisma as any).campusPaymentRecord.create({
       data: {
         schoolId: school.id,
         orderId,

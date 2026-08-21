@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let records = await prisma.smartPlacementHub.findMany({
+    let records = await (prisma as any).smartPlacementHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const r of defaultRecords) {
-        await prisma.smartPlacementHub.create({
+        await (prisma as any).smartPlacementHub.create({
           data: { schoolId: school.id, ...r },
         });
       }
 
-      records = await prisma.smartPlacementHub.findMany({
+      records = await (prisma as any).smartPlacementHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { studentName, companyName, packageCpaInLakhs, jobRole, offerStatus } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Student name and company name are required' }, { status: 400 });
     }
 
-    const record = await prisma.smartPlacementHub.create({
+    const record = await (prisma as any).smartPlacementHub.create({
       data: {
         schoolId: school.id,
         studentName,

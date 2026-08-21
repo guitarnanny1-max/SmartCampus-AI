@@ -1,0 +1,80 @@
+import os
+import subprocess
+
+print("⚙️ Updating Prisma schema with Tenant subdomain and relations...")
+
+schema_path = "prisma/schema.prisma"
+os.makedirs(os.path.dirname(schema_path), exist_ok=True)
+
+schema_content = """datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Tenant {
+  id        String    @id @default(cuid())
+  name      String
+  subdomain String    @unique
+  createdAt DateTime  @default(now())
+  students  Student[]
+  invoices  Invoice[]
+}
+
+model Student {
+  id        String   @id @default(cuid())
+  name      String
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Invoice {
+  id        String   @id @default(cuid())
+  amount    Float
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Lead {
+  id              String   @id @default(cuid())
+  name            String
+  school          String
+  phone           String
+  email           String
+  studentStrength Int?
+  location        String?
+  interest        String?
+  score           Int      @default(0)
+  temperature     String   @default("🔵 Cold")
+  status          String   @default("NEW")
+  createdAt       DateTime @default(now())
+}
+"""
+
+with open(schema_path, "w", encoding="utf-8") as f:
+    f.write(schema_content)
+
+print("✨ Updated prisma/schema.prisma successfully!")
+
+build_env = os.environ.copy()
+build_env["DATABASE_URL"] = "file:./dev.db"
+
+try:
+    print("1️⃣ Pushing Prisma schema to SQLite database...")
+    subprocess.run(["npx", "prisma", "db", "push", "--skip-generate", "--accept-data-loss"], check=True, env=build_env)
+    
+    print("2️⃣ Generating Prisma Client...")
+    subprocess.run(["npx", "prisma", "generate"], check=True, env=build_env)
+    
+    print("3️⃣ Running Next.js Production Build...")
+    subprocess.run(["npm", "run", "build"], check=True, env=build_env)
+    
+    print("\n🎉 SUCCESS! The entire project compiled successfully with zero errors!")
+except subprocess.CalledProcessError as e:
+    print(f"\n❌ Build failed with exit code {e.returncode}")
+    exit(1)

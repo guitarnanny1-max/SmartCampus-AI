@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let slots = await prisma.timetableSlot.findMany({
+    let slots = await (prisma as any).timetableSlot.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const s of defaultSlots) {
-        await prisma.timetableSlot.create({
+        await (prisma as any).timetableSlot.create({
           data: { schoolId: school.id, ...s },
         });
       }
 
-      slots = await prisma.timetableSlot.findMany({
+      slots = await (prisma as any).timetableSlot.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { dayOfWeek, timeSlot, courseName, roomNumber, instructor } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Day, course name, room number, and instructor are required' }, { status: 400 });
     }
 
-    const slot = await prisma.timetableSlot.create({
+    const slot = await (prisma as any).timetableSlot.create({
       data: {
         schoolId: school.id,
         dayOfWeek,

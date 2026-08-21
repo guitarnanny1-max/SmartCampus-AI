@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function PTMModule() {
     setTimeout(() => setPtmSuccess(false), 3500);
   };
 
-  const filteredAppointments = appointments.filter(apt => 
+  const filteredAppointments = appointments.filter((apt: any) => 
     apt.parentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     apt.teacher.toLowerCase().includes(searchQuery.toLowerCase()) ||
     apt.student.toLowerCase().includes(searchQuery.toLowerCase())
@@ -114,7 +116,7 @@ export default function PTMModule() {
           </div>
 
           <div className="space-y-3 text-xs">
-            {filteredAppointments.map((apt) => (
+            {filteredAppointments.map((apt: any) => (
               <div key={apt.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="font-bold text-white text-sm">{apt.parentName} & <span className="text-cyan-400">{apt.teacher}</span></div>

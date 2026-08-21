@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -24,7 +26,7 @@ export default function OnboardingPortal() {
   ]);
 
   const toggleOnboardingTask = (id: number) => {
-    setTasks(tasks.map(t => {
+    setTasks(tasks.map((t: any) => {
       if (t.id === id) {
         return {
           ...t,
@@ -35,7 +37,7 @@ export default function OnboardingPortal() {
     }));
   };
 
-  const completedCount = tasks.filter(t => t.status === 'completed').length;
+  const completedCount = tasks.filter((t: any) => t.status === 'completed').length;
   const progressPercentage = Math.round((completedCount / tasks.length) * 100);
 
   return (
@@ -124,7 +126,7 @@ export default function OnboardingPortal() {
           </div>
           
           <div className="bg-slate-900 border border-slate-800 rounded-2xl divide-y divide-slate-800 overflow-hidden">
-            {tasks.map(task => (
+            {tasks.map((task: any) => (
               <div
                 key={task.id}
                 onClick={() => toggleOnboardingTask(task.id)}

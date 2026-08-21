@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -154,7 +156,7 @@ export default function ResearchGrantsPage() {
                 </tr>
               </thead>
               <tbody>
-                {grants.map((g) => (
+                {grants.map((g: any) => (
                   <tr key={g.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4 font-semibold text-white">{g.title}</td>
                     <td className="p-4 text-cyan-400">{g.principalInvestigator}</td>

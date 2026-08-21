@@ -1,8 +1,9 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const { data, error } = await supabase
       .from('demo_requests')

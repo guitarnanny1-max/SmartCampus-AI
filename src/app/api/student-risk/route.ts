@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let risks = await prisma.studentRiskAssessment.findMany({
+    let risks = await (prisma as any).studentRiskAssessment.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const r of defaultRisks) {
-        await prisma.studentRiskAssessment.create({
+        await (prisma as any).studentRiskAssessment.create({
           data: { schoolId: school.id, ...r },
         });
       }
 
-      risks = await prisma.studentRiskAssessment.findMany({
+      risks = await (prisma as any).studentRiskAssessment.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { studentName, rollNo, attendancePct, cgpa } = await req.json();
@@ -51,13 +52,13 @@ export async function POST(req: Request) {
 
     if (attendancePct < 70 || cgpa < 6.0) {
       riskLevel = 'HIGH';
-      aiReason = 'Critical alert: Attendance and CGPA fall below institutional academic continuity threshold.';
+      aiReason = 'Critical alert: any and CGPA fall below institutional academic continuity threshold.';
     } else if (attendancePct < 85 || cgpa < 7.5) {
       riskLevel = 'MEDIUM';
-      aiReason = 'Moderate warning: Minor dips in attendance or assignment submission velocity detected.';
+      aiReason = 'Moderate warning: any dips in attendance or assignment submission velocity detected.';
     }
 
-    const assessment = await prisma.studentRiskAssessment.create({
+    const assessment = await (prisma as any).studentRiskAssessment.create({
       data: {
         schoolId: school.id,
         studentName,

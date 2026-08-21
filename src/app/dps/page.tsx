@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -132,11 +134,11 @@ export default function DpsUltimateTenantDashboard() {
   };
 
   const updateLeadStatus = (id: number, newSt: string) => {
-    setLeads(leads.map(l => l.id === id ? { ...l, status: newSt } : l));
+    setLeads(leads.map((l: any) => l.id === id ? { ...l, status: newSt } : l));
   };
 
   const toggleTeacherAttendance = (id: number) => {
-    setTeachers(teachers.map(t => {
+    setTeachers(teachers.map((t: any) => {
       if (t.id === id) {
         const nextStatus = t.status === 'Present' ? 'Absent' : t.status === 'Absent' ? 'On Leave' : 'Present';
         return { ...t, status: nextStatus };
@@ -146,7 +148,7 @@ export default function DpsUltimateTenantDashboard() {
   };
 
   const markFeePaid = (id: number) => {
-    setFees(fees.map(f => f.id === id ? { ...f, status: 'Paid', date: '2026-08-17' } : f));
+    setFees(fees.map((f: any) => f.id === id ? { ...f, status: 'Paid', date: '2026-08-17' } : f));
   };
 
   const printBill = (studentName: string) => {
@@ -194,7 +196,7 @@ export default function DpsUltimateTenantDashboard() {
       let reply = "I've processed your query for Delhi Public School.";
       const lower = userMsg.toLowerCase();
       if (lower.includes('lead') || lower.includes('crm')) {
-        reply = `There are ${leads.length} active leads in the admissions pipeline. ${leads.filter(l => l.status === 'Enrolled').length} have converted.`;
+        reply = `There are ${leads.length} active leads in the admissions pipeline. ${leads.filter((l: any) => l.status === 'Enrolled').length} have converted.`;
       } else if (lower.includes('attendance')) {
         reply = "Overall student attendance today is 95.4%. Faculty attendance is 75% present.";
       } else if (lower.includes('bus') || lower.includes('transport')) {
@@ -388,7 +390,7 @@ export default function DpsUltimateTenantDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {leads.map((lead) => (
+                {leads.map((lead: any) => (
                   <tr key={lead.id} className="hover:bg-slate-850">
                     <td className="py-3">
                       <div className="font-semibold text-slate-200">{lead.student}</div>
@@ -442,7 +444,7 @@ export default function DpsUltimateTenantDashboard() {
             </div>
 
             <div className="space-y-2.5">
-              {studentAttendance.map((item) => (
+              {studentAttendance.map((item: any) => (
                 <div key={item.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between text-xs font-mono">
                   <div>
                     <div className="font-bold text-slate-200 text-sm">{item.grade}</div>
@@ -467,7 +469,7 @@ export default function DpsUltimateTenantDashboard() {
             </div>
 
             <div className="space-y-2.5 max-h-56 overflow-y-auto">
-              {teachers.map(t => (
+              {teachers.map((t: any) => (
                 <div key={t.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                   <div>
                     <div className="font-semibold text-slate-200 text-sm">{t.name}</div>
@@ -513,7 +515,7 @@ export default function DpsUltimateTenantDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {fees.map((fee) => (
+                {fees.map((fee: any) => (
                   <tr key={fee.id} className="hover:bg-slate-850">
                     <td className="py-3 font-semibold text-slate-200">{fee.student}</td>
                     <td className="py-3 text-slate-400">{fee.roll}</td>
@@ -567,7 +569,7 @@ export default function DpsUltimateTenantDashboard() {
             </div>
 
             <div className="space-y-3">
-              {buses.map((bus) => (
+              {buses.map((bus: any) => (
                 <div key={bus.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1.5 text-xs font-mono">
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-white text-sm">{bus.route}</span>
@@ -624,7 +626,7 @@ export default function DpsUltimateTenantDashboard() {
             </form>
 
             <div className="space-y-2.5 max-h-48 overflow-y-auto">
-              {hrStaff.map(staff => (
+              {hrStaff.map((staff: any) => (
                 <div key={staff.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between text-xs font-mono">
                   <div>
                     <div className="font-bold text-slate-200">{staff.name}</div>

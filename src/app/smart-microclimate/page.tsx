@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -177,7 +179,7 @@ export default function SmartMicroclimatePage() {
                 </tr>
               </thead>
               <tbody>
-                {zones.map((z) => (
+                {zones.map((z: any) => (
                   <tr key={z.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4">
                       <p className="font-semibold text-white">{z.zoneCode}</p>

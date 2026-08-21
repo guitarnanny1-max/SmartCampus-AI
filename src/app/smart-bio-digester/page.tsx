@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -179,7 +181,7 @@ export default function SmartBioDigesterPage() {
                 </tr>
               </thead>
               <tbody>
-                {digesters.map((d) => (
+                {digesters.map((d: any) => (
                   <tr key={d.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4">
                       <p className="font-semibold text-white">{d.digesterCode}</p>

@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -144,7 +146,7 @@ export default function TeamManagementPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
+                {users.map((u: any) => (
                   <tr key={u.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4 font-semibold text-white">{u.name}</td>
                     <td className="p-4 font-mono text-cyan-400">{u.email}</td>

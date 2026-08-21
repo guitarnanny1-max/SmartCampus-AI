@@ -1,46 +1,49 @@
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const schoolId = searchParams.get("schoolId");
 
-  if (!schoolId) {
-    return NextResponse.json({ error: "Missing schoolId" }, { status: 400 });
-  }
 
+export async function GET(req: Request) {
   try {
+    const url = new URL(req.url);
+    const tenantId = url.searchParams.get("tenantId");
+
+    if (!tenantId) {
+      return NextResponse.json({ success: false, error: "Missing tenantId query parameter." }, { status: 400 });
+    }
+
     const alerts = await prisma.alert.findMany({
-      where: { schoolId },
+      where: { tenantId },
       orderBy: { createdAt: "desc" }
     });
-    return NextResponse.json(alerts);
-  } catch (err) {
-    return NextResponse.json({ error: "Failed to fetch tickets" }, { status: 500 });
+
+    return NextResponse.json({ success: true, alerts });
+  } catch (error: any) {
+    console.error("Tickets/Alerts API Error:", error);
+    return NextResponse.json({ success: false, error: error.message || "Internal server error." }, { status: 500 });
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { schoolId, title, description, severity } = await request.json();
+    const { tenantId, title, message } = await req.json();
 
-    if (!schoolId || !title) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!tenantId || !title || !message) {
+      return NextResponse.json({ success: false, error: "tenantId, title, and message are required." }, { status: 400 });
     }
 
-    const newAlert = await prisma.alert.create({
+    const alert = await prisma.alert.create({
       data: {
-        schoolId,
+        tenantId,
         title,
-        message: description || title,
-        severity: severity || "MEDIUM"
+        message
       }
     });
 
-    return NextResponse.json({ success: true, alert: newAlert });
-  } catch (err) {
-    return NextResponse.json({ error: "Failed to create ticket" }, { status: 500 });
+    return NextResponse.json({ success: true, alert });
+  } catch (error: any) {
+    console.error("Create Alert Error:", error);
+    return NextResponse.json({ success: false, error: error.message || "Internal server error." }, { status: 500 });
   }
 }

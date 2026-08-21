@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function FacultyModule() {
     setTimeout(() => setPayrollSuccess(false), 3500);
   };
 
-  const filteredFaculty = facultyList.filter(item => 
+  const filteredFaculty = facultyList.filter((item: any) => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.dept.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.role.toLowerCase().includes(searchQuery.toLowerCase()) ||

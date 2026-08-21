@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 "use client";
 import React, { useState } from "react";
 import { DollarSign, CreditCard, FileText, CheckCircle2, AlertCircle, ArrowUpRight, ShieldCheck, Receipt } from "lucide-react";
@@ -10,7 +12,7 @@ export default function FinancePortal() {
     { id: "INV-2026-03", title: "Bus Transport Fee (Q3)", amount: 4000, date: "2026-08-01", status: "Pending" }
   ]);
   const payInvoice = (id: string, amount: number) => {
-    setPayments(payments.map(p => p.id === id ? { ...p, status: "Paid" } : p));
+    setPayments(payments.map((p: any) => p.id === id ? { ...p, status: "Paid" } : p));
     setBalanceDue(Math.max(0, balanceDue - amount));
   };
   return (
@@ -40,7 +42,7 @@ export default function FinancePortal() {
         </div>
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
           <h2 className="text-lg font-bold text-white flex items-center gap-2"><Receipt className="w-5 h-5 text-indigo-400" /> Invoice Ledger</h2>
-          {payments.map(item => (
+          {payments.map((item: any) => (
             <div key={item.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
               <div><span className="font-mono text-slate-400">{item.id}</span> - <strong className="text-slate-200">{item.title}</strong> (₹{item.amount})</div>
               {item.status === "Pending" ? (

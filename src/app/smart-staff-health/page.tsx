@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -55,7 +57,7 @@ export default function SmartStaffHealthPage() {
         </form>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {records.map((r) => (
+          {records.map((r: any) => (
             <div key={r.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-md">
               <h4 className="text-sm font-bold text-white">{r.staffName}</h4>
               <div className="flex gap-2 mt-1">

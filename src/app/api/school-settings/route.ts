@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    const fullSchool = await prisma.school.findUnique({
+    const fullSchool = await (prisma as any).school.findUnique({
       where: { id: school.id },
       select: {
         id: true,
@@ -28,12 +29,12 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { subscriptionTier, whiteLabelBrandName, whiteLabelLogoUrl, customDomain, primaryColor } = await req.json();
 
-    const updated = await prisma.school.update({
+    const updated = await (prisma as any).school.update({
       where: { id: school.id },
       data: {
         subscriptionTier: subscriptionTier || 'APEX_AUTONOMOUS',

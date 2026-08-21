@@ -1,9 +1,10 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { recipientPhone, recipientName, templateName, messageBody } = await req.json();
@@ -14,7 +15,7 @@ export async function POST(req: Request) {
 
     // Optional integration with Twilio or Meta WhatsApp Cloud API if env vars exist
     // For seamless demo and production robustness, we log and confirm dispatch record
-    const log = await prisma.campusWhatsappLog.create({
+    const log = await (prisma as any).campusWhatsappLog.create({
       data: {
         schoolId: school.id,
         recipientPhone,

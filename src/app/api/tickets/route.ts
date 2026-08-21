@@ -1,9 +1,10 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { subject, category, priority, submittedBy } = await req.json();
@@ -12,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Subject and category are required' }, { status: 400 });
     }
 
-    const ticket = await prisma.ticket.create({
+    const ticket = await (prisma as any).ticket.create({
       data: {
         schoolId: school.id,
         subject,

@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let zones = await prisma.smartMicroclimateHub.findMany({
+    let zones = await (prisma as any).smartMicroclimateHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const z of defaultZones) {
-        await prisma.smartMicroclimateHub.create({
+        await (prisma as any).smartMicroclimateHub.create({
           data: { schoolId: school.id, ...z },
         });
       }
 
-      zones = await prisma.smartMicroclimateHub.findMany({
+      zones = await (prisma as any).smartMicroclimateHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { zoneCode, zoneName, humidityPct, co2LevelsPpm, tempCelsius, aiClimateControlMode } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Zone code and name are required' }, { status: 400 });
     }
 
-    const zone = await prisma.smartMicroclimateHub.create({
+    const zone = await (prisma as any).smartMicroclimateHub.create({
       data: {
         schoolId: school.id,
         zoneCode,

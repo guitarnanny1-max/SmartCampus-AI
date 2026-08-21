@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 
 export async function getCurrentSchool() {
   try {
-    const headersList = headers();
+    const headersList = await headers();
     const headerSubdomain = headersList.get('x-school-subdomain');
     let subdomain = headerSubdomain || 'dps';  
 

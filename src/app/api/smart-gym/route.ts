@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let equipment = await prisma.smartGymEquipment.findMany({
+    let equipment = await (prisma as any).smartGymEquipment.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const e of defaultEquipment) {
-        await prisma.smartGymEquipment.create({
+        await (prisma as any).smartGymEquipment.create({
           data: { schoolId: school.id, ...e },
         });
       }
 
-      equipment = await prisma.smartGymEquipment.findMany({
+      equipment = await (prisma as any).smartGymEquipment.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { equipmentCode, equipmentName, category, zoneName, occupancyStatus, sensorBattery } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Equipment code and name are required' }, { status: 400 });
     }
 
-    const item = await prisma.smartGymEquipment.create({
+    const item = await (prisma as any).smartGymEquipment.create({
       data: {
         schoolId: school.id,
         equipmentCode,

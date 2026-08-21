@@ -1,7 +1,8 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
-export async function GET(req: Request) {
+export async function GET(req: any): Promise<NextResponse> {
   const encoder = new TextEncoder();
 
   const customStream = new ReadableStream({
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
     },
   });
 
-  return new Response(customStream, {
+  return new NextResponse(customStream, {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',

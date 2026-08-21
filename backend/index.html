@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Campus AI Assistant</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .chat-container { width: 100%; max-width: 600px; height: 85vh; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
+        .chat-header { background: #007bff; color: white; padding: 15px 20px; font-size: 1.1em; font-weight: bold; }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #fafafa; }
+        .message { max-width: 75%; padding: 12px 16px; border-radius: 12px; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
+        .message.user { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .message.ai { background: #e4e6eb; color: #333; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .chat-input-area { display: flex; padding: 15px; background: white; border-top: 1px solid #ddd; }
+        .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; outline: none; font-size: 1em; }
+        .chat-input-area button { margin-left: 10px; padding: 12px 20px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .chat-input-area button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">Smart Campus AI Assistant</div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai">Hello! I'm your Smart Campus AI Assistant. How can I help you navigate campus life, classes, or resources today?</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="promptInput" placeholder="Ask about dining, buildings, schedules..." onkeydown="handleKey(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const inputField = document.getElementById('promptInput');
+            const chatMessages = document.getElementById('chatMessages');
+            const promptText = inputField.value.trim();
+
+            if (!promptText) return;
+
+            // Display user message bubble
+            appendMessage(promptText, 'user');
+            inputField.value = '';
+
+            // Add temporary "Thinking..." bubble for AI
+            const thinkingId = 'thinking-' + Date.now();
+            appendMessage("Thinking...", 'ai', thinkingId);
+
+            try {
+                const res = await fetch('http://127.0.0.1:8000/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: promptText })
+                });
+                
+                const data = await res.json();
+                
+                // Remove thinking indicator
+                document.getElementById(thinkingId).remove();
+
+                if (res.ok) {
+                    appendMessage(data.response, 'ai');
+                } else {
+                    appendMessage("Error: " + (data.detail || "Unknown error"), 'ai');
+                }
+            } catch (error) {
+                document.getElementById(thinkingId).remove();
+                appendMessage("Error connecting to backend. Is Uvicorn running?", 'ai');
+            }
+        }
+
+        function appendMessage(text, sender, id = null) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            if (id) messageDiv.id = id;
+            messageDiv.innerText = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function handleKey(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>

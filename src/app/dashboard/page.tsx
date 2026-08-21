@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -33,7 +35,7 @@ export default function MasterDashboard() {
   ]);
 
   const toggleItemStatus = (id: number) => {
-    setKanbanItems(kanbanItems.map(item => {
+    setKanbanItems(kanbanItems.map((item: any) => {
       if (item.id === id) {
         const nextStatus = 
           item.status === 'todo' ? 'in-progress' :
@@ -142,11 +144,11 @@ export default function MasterDashboard() {
               <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h4 className="font-bold text-white text-sm">To Do / Backlog</h4>
                 <span className="px-2 py-0.5 bg-slate-800 text-slate-300 font-mono text-[10px] rounded-full">
-                  {kanbanItems.filter(i => i.status === 'todo').length}
+                  {kanbanItems.filter((i: any) => i.status === 'todo').length}
                 </span>
               </div>
               <div className="space-y-3">
-                {kanbanItems.filter(i => i.status === 'todo').map(item => (
+                {kanbanItems.filter((i: any) => i.status === 'todo').map((item: any) => (
                   <div key={item.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3 shadow-md hover:border-slate-700 transition-all">
                     <div className="flex justify-between items-start">
                       <span className="px-2 py-0.5 bg-slate-800 text-slate-300 text-[10px] font-mono rounded">
@@ -176,11 +178,11 @@ export default function MasterDashboard() {
               <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h4 className="font-bold text-white text-sm">In Progress</h4>
                 <span className="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono text-[10px] rounded-full">
-                  {kanbanItems.filter(i => i.status === 'in-progress' || i.status === 'negotiation').length}
+                  {kanbanItems.filter((i: any) => i.status === 'in-progress' || i.status === 'negotiation').length}
                 </span>
               </div>
               <div className="space-y-3">
-                {kanbanItems.filter(i => i.status === 'in-progress' || i.status === 'negotiation').map(item => (
+                {kanbanItems.filter((i: any) => i.status === 'in-progress' || i.status === 'negotiation').map((item: any) => (
                   <div key={item.id} className="p-4 bg-slate-950 border border-cyan-500/30 rounded-xl space-y-3 shadow-md">
                     <div className="flex justify-between items-start">
                       <span className="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 text-[10px] font-mono rounded border border-cyan-500/20">
@@ -210,11 +212,11 @@ export default function MasterDashboard() {
               <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h4 className="font-bold text-white text-sm">Completed</h4>
                 <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono text-[10px] rounded-full">
-                  {kanbanItems.filter(i => i.status === 'completed' || i.status === 'won').length}
+                  {kanbanItems.filter((i: any) => i.status === 'completed' || i.status === 'won').length}
                 </span>
               </div>
               <div className="space-y-3">
-                {kanbanItems.filter(i => i.status === 'completed' || i.status === 'won').map(item => (
+                {kanbanItems.filter((i: any) => i.status === 'completed' || i.status === 'won').map((item: any) => (
                   <div key={item.id} className="p-4 bg-slate-950 border border-emerald-500/30 rounded-xl space-y-3 shadow-md opacity-90">
                     <div className="flex justify-between items-start">
                       <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono rounded border border-emerald-500/20">

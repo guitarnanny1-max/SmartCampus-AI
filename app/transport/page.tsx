@@ -1,42 +1,66 @@
 import { prisma } from "@/lib/prisma";
 
+
+
+
 export default async function TransportPage() {
-  const buses = await prisma.school.findMany({ include: { students: true } });
-  
+  const tenants = await prisma.tenant.findMany({ 
+    include: { students: true },
+    orderBy: { createdAt: "desc" }
+  });
+
   return (
-    <div className="p-8 bg-slate-950 min-h-screen text-slate-100 font-sans">
-      <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
-        <div>
-          <span className="text-xs uppercase tracking-widest px-3 py-1 bg-teal-500/10 text-teal-400 rounded-full font-semibold border border-teal-500/20">
-            Fleet Intelligence
-          </span>
-          <h1 className="text-3xl font-extrabold mt-2 tracking-tight">Transport & Fleet Management</h1>
-          <p className="text-slate-400 text-sm mt-1">Real-time GPS tracking, route optimization, and student bus transit telemetry.</p>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Fleet Buses</p>
-          <p className="text-3xl font-black mt-2 text-teal-400">4 Units</p>
-        </div>
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">GPS Routing Status</p>
-          <p className="text-3xl font-black mt-2 text-emerald-400">100% Online</p>
-        </div>
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Students Enrolled in Bus</p>
-          <p className="text-3xl font-black mt-2 text-blue-400">142 Riders</p>
-        </div>
-      </div>
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
-        <h3 className="text-lg font-bold mb-4">🚌 Active Route Roster</h3>
-        <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
           <div>
-            <span className="text-xs font-mono text-teal-400">ROUTE #101 - NORTH ZONE</span>
-            <p className="font-semibold text-slate-200 mt-1">Global Tech Academy Express</p>
-            <p className="text-xs text-slate-400 mt-0.5">Driver: Rajesh Kumar • GPS Beacon: Active</p>
+            <span className="text-xs uppercase tracking-widest px-3 py-1 bg-cyan-500/15 text-cyan-400 rounded-full font-semibold border border-cyan-500/20">
+              Fleet & Transport Management
+            </span>
+            <h1 className="text-3xl font-extrabold text-white mt-2">School Bus & Transport Routing</h1>
+            <p className="text-slate-400 text-sm mt-1">Monitor bus routes, fleet telemetry, and student transit assignments.</p>
           </div>
-          <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-xs font-semibold border border-emerald-500/20">On Schedule</span>
+          <div className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs font-mono text-cyan-400">
+            Active Tenants: {tenants.length}
+          </div>
+        </div>
+
+        {/* Transport / Fleet Table */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div className="px-6 py-4 border-b border-slate-800 font-bold text-sm text-slate-200">
+            Tenant Transit Roster
+          </div>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-950 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-800">
+                <th className="px-6 py-3 font-semibold">Tenant Workspace</th>
+                <th className="px-6 py-3 font-semibold">Subdomain</th>
+                <th className="px-6 py-3 font-semibold">Plan</th>
+                <th className="px-6 py-3 font-semibold">Students Enrolled</th>
+                <th className="px-6 py-3 font-semibold">Fleet Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800 text-xs">
+              {tenants.map((t: any) => (
+                <tr key={t.id} className="hover:bg-slate-800/40 transition">
+                  <td className="px-6 py-4 font-bold text-white">{t.name}</td>
+                  <td className="px-6 py-4 font-mono text-indigo-400">{t.subdomain}</td>
+                  <td className="px-6 py-4 text-slate-300 capitalize">{t.plan}</td>
+                  <td className="px-6 py-4 font-mono text-cyan-400">{t.students?.length || 0}</td>
+                  <td className="px-6 py-4">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                      ACTIVE / ROUTING
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {tenants.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">No transport workspaces found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

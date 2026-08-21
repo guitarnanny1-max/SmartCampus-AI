@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let fixtures = await prisma.smartLightingFixture.findMany({
+    let fixtures = await (prisma as any).smartLightingFixture.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const f of defaultFixtures) {
-        await prisma.smartLightingFixture.create({
+        await (prisma as any).smartLightingFixture.create({
           data: { schoolId: school.id, ...f },
         });
       }
 
-      fixtures = await prisma.smartLightingFixture.findMany({
+      fixtures = await (prisma as any).smartLightingFixture.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { unitCode, zoneName, brightnessPct, motionSensing, powerDrawWatts, status } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unit code and zone name are required' }, { status: 400 });
     }
 
-    const fixture = await prisma.smartLightingFixture.create({
+    const fixture = await (prisma as any).smartLightingFixture.create({
       data: {
         schoolId: school.id,
         unitCode,

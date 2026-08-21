@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let records = await prisma.smartThemeHub.findMany({
+    let records = await (prisma as any).smartThemeHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const r of defaultRecords) {
-        await prisma.smartThemeHub.create({
+        await (prisma as any).smartThemeHub.create({
           data: { schoolId: school.id, ...r },
         });
       }
 
-      records = await prisma.smartThemeHub.findMany({
+      records = await (prisma as any).smartThemeHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { themeName, primaryColor, accentColor, fontFamily, layoutStyle, status } = await req.json();
@@ -48,13 +49,13 @@ export async function POST(req: Request) {
 
     // If setting ACTIVE, deactivate other themes
     if (status === 'ACTIVE') {
-      await prisma.smartThemeHub.updateMany({
+      await (prisma as any).smartThemeHub.updateMany({
         where: { schoolId: school.id },
         data: { status: 'DRAFT' },
       });
     }
 
-    const record = await prisma.smartThemeHub.create({
+    const record = await (prisma as any).smartThemeHub.create({
       data: {
         schoolId: school.id,
         themeName,

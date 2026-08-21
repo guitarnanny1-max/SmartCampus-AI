@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -102,7 +104,7 @@ export default function ExamsPortal() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {grades.map((item) => (
+                  {grades.map((item: any) => (
                     <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="py-3 px-4 font-semibold text-sm text-slate-200">{item.subject}</td>
                       <td className="py-3 px-4 font-mono text-xs text-slate-400">{item.code}</td>
@@ -128,7 +130,7 @@ export default function ExamsPortal() {
                 Exam Schedule
               </h2>
               <div className="space-y-3">
-                {upcomingExams.map((exam) => (
+                {upcomingExams.map((exam: any) => (
                   <div key={exam.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
                     <h3 className="font-semibold text-xs text-slate-200">{exam.subject}</h3>
                     <p className="text-[10px] text-cyan-400 font-mono">{exam.date} • {exam.time}</p>

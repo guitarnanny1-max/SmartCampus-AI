@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -153,7 +155,7 @@ export default function PrintJobsPage() {
                 </tr>
               </thead>
               <tbody>
-                {jobs.map((job) => (
+                {jobs.map((job: any) => (
                   <tr key={job.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4 font-semibold text-white">{job.studentName}</td>
                     <td className="p-4 text-slate-300">{job.documentTitle}</td>

@@ -1,66 +1,63 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
 
-export async function GET() {
+
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    let grids = await prisma.smartEnergyGrid.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { searchParams } = new URL(req.url);
+    const tenantId = searchParams.get("tenantId");
 
-    if (grids.length === 0) {
-      const defaultGrids = [
-        { sectorName: 'Engineering & Research Hub', solarOutputKw: 340.5, gridDrawKw: 120.0, batteryLevel: 92, aiMode: 'ECO_PEAK', status: 'OPTIMIZED' },
-        { sectorName: 'Student Residence & Hostels', solarOutputKw: 180.2, gridDrawKw: 210.5, batteryLevel: 78, aiMode: 'LOAD_BALANCED', status: 'OPTIMIZED' },
-        { sectorName: 'Administrative & Library Complex', solarOutputKw: 95.0, gridDrawKw: 65.0, batteryLevel: 98, aiMode: 'MAX_EFFICIENCY', status: 'PEAK_PERFORMANCE' },
-      ];
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
 
-      for (const gr of defaultGrids) {
-        await prisma.smartEnergyGrid.create({
-          data: { schoolId: school.id, ...gr },
-        });
-      }
-
-      grids = await prisma.smartEnergyGrid.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
-      });
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
     }
 
-    return NextResponse.json(grids);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch smart energy grid metrics' }, { status: 500 });
+    const grids = await (prisma as any).smartEnergyGrid.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ grids });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    const { sectorName, solarOutputKw, gridDrawKw, batteryLevel, aiMode } = await req.json();
+    const body = await req.json();
+    const { tenantId, name, status, load } = body;
 
-    if (!sectorName) {
-      return NextResponse.json({ error: 'Sector name is required' }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: "Grid name is required" }, { status: 400 });
     }
 
-    const grid = await prisma.smartEnergyGrid.create({
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
+
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
+    }
+
+    const grid = await (prisma as any).smartEnergyGrid.create({
       data: {
-        schoolId: school.id,
-        sectorName,
-        solarOutputKw: Number(solarOutputKw) || 150.0,
-        gridDrawKw: Number(gridDrawKw) || 100.0,
-        batteryLevel: Number(batteryLevel) || 85,
-        aiMode: aiMode || 'ECO_PEAK',
-        status: 'OPTIMIZED',
+        tenantId: tenant.id,
+        name,
+        status: status || "ACTIVE",
+        load: load !== undefined ? load : 0.0,
       },
     });
 
-    return NextResponse.json(grid);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to create energy grid node' }, { status: 500 });
+    return NextResponse.json({ success: true, grid }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

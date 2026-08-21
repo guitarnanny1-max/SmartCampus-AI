@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 import type { Metadata } from "next";
 
 const siteUrl = "https://smartcampus.ai";

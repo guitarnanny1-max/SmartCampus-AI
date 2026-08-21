@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function SecurityModule() {
     setTimeout(() => setSosSuccess(false), 3500);
   };
 
-  const filteredSecurity = securityLedger.filter(item => 
+  const filteredSecurity = securityLedger.filter((item: any) => 
     item.zone.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.ai.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.patrol.toLowerCase().includes(searchQuery.toLowerCase()) ||

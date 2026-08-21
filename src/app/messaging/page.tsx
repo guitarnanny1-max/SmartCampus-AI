@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function MessagingModule() {
     setTimeout(() => setBroadcastSuccess(false), 3500);
   };
 
-  const filteredLogs = broadcastLogs.filter(item => 
+  const filteredLogs = broadcastLogs.filter((item: any) => 
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.channel.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.audience.toLowerCase().includes(searchQuery.toLowerCase())
@@ -114,7 +116,7 @@ export default function MessagingModule() {
           </div>
 
           <div className="space-y-3 text-xs">
-            {filteredLogs.map((log) => (
+            {filteredLogs.map((log: any) => (
               <div key={log.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="font-bold text-white text-sm">{log.title} • <span className="text-cyan-400 font-mono">{log.id}</span></div>

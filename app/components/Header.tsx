@@ -21,7 +21,7 @@ export default function Header() {
           onChange={(e) => setCurrentRole(e.target.value)}
           className="bg-slate-950 text-slate-100 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-800 focus:outline-none focus:border-blue-500 cursor-pointer"
         >
-          {roles.map((r) => (
+          {roles.map((r: any) => (
             <option key={r.name} value={r.name}>
               {r.name}
             </option>

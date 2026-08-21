@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -31,7 +33,7 @@ export default function SmartFeatureTogglePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to update toggle');
 
-      setFeatures(features.map(f => f.id === id ? { ...f, isEnabled: data.isEnabled } : f));
+      setFeatures(features.map((f: any) => f.id === id ? { ...f, isEnabled: data.isEnabled } : f));
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -66,7 +68,7 @@ export default function SmartFeatureTogglePage() {
           </h3>
 
           <div className="space-y-3">
-            {features.map((f) => (
+            {features.map((f: any) => (
               <div key={f.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-md">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">

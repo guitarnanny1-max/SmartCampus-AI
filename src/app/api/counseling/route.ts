@@ -1,65 +1,64 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
 
-export async function GET() {
+
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    let sessions = await prisma.counselingSession.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { searchParams } = new URL(req.url);
+    const tenantId = searchParams.get("tenantId");
 
-    if (sessions.length === 0) {
-      const defaultSessions = [
-        { studentName: 'Alex Mercer', counselorName: 'Dr. Evelyn Vance, PsyD', issueCategory: 'ACADEMIC_STRESS', status: 'SCHEDULED', sessionDate: '2026-08-20 14:00' },
-        { studentName: 'Elena Rostova', counselorName: 'Mark Sterling, LCSW', issueCategory: 'ANXIETY_MANAGEMENT', status: 'COMPLETED', sessionDate: '2026-08-15 10:30' },
-        { studentName: 'Jordan Lee', counselorName: 'Dr. Evelyn Vance, PsyD', issueCategory: 'CAREER_BURNOUT', status: 'CONFIRMED', sessionDate: '2026-08-22 16:00' },
-      ];
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
 
-      for (const s of defaultSessions) {
-        await prisma.counselingSession.create({
-          data: { schoolId: school.id, ...s },
-        });
-      }
-
-      sessions = await prisma.counselingSession.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
-      });
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
     }
 
-    return NextResponse.json(sessions);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch counseling sessions' }, { status: 500 });
+    const sessions = await (prisma as any).counselingSession.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ sessions });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    const { studentName, counselorName, issueCategory, sessionDate } = await req.json();
+    const body = await req.json();
+    const { tenantId, studentName, counselor, status, notes } = body;
 
-    if (!studentName || !counselorName || !sessionDate) {
-      return NextResponse.json({ error: 'Student name, counselor name, and session date are required' }, { status: 400 });
+    if (!studentName || !counselor) {
+      return NextResponse.json({ error: "Student name and counselor are required" }, { status: 400 });
     }
 
-    const session = await prisma.counselingSession.create({
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
+
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
+    }
+
+    const session = await (prisma as any).counselingSession.create({
       data: {
-        schoolId: school.id,
+        tenantId: tenant.id,
         studentName,
-        counselorName,
-        issueCategory: issueCategory || 'ACADEMIC_STRESS',
-        status: 'SCHEDULED',
-        sessionDate,
+        counselor,
+        status: status || "SCHEDULED",
+        notes,
       },
     });
 
-    return NextResponse.json(session);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to schedule counseling session' }, { status: 500 });
+    return NextResponse.json({ success: true, session }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

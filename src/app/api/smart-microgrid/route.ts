@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let nodes = await prisma.smartMicrogridHub.findMany({
+    let nodes = await (prisma as any).smartMicrogridHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const n of defaultNodes) {
-        await prisma.smartMicrogridHub.create({
+        await (prisma as any).smartMicrogridHub.create({
           data: { schoolId: school.id, ...n },
         });
       }
 
-      nodes = await prisma.smartMicrogridHub.findMany({
+      nodes = await (prisma as any).smartMicrogridHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { gridNodeCode, facilityName, solarWindMixPct, batteryStorageMWh, gridStabilityStatus, aiDispatchOptimization } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Grid node code and facility name are required' }, { status: 400 });
     }
 
-    const node = await prisma.smartMicrogridHub.create({
+    const node = await (prisma as any).smartMicrogridHub.create({
       data: {
         schoolId: school.id,
         gridNodeCode,

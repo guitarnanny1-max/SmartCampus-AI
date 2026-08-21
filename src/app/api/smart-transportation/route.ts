@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let vehicles = await prisma.smartTransportationHub.findMany({
+    let vehicles = await (prisma as any).smartTransportationHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const v of defaultVehicles) {
-        await prisma.smartTransportationHub.create({
+        await (prisma as any).smartTransportationHub.create({
           data: { schoolId: school.id, ...v },
         });
       }
 
-      vehicles = await prisma.smartTransportationHub.findMany({
+      vehicles = await (prisma as any).smartTransportationHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { vehicleId, routeIdentifier, podVelocityKph, magneticSuspensionStabilityPct, passengerOccupancy, aiTrafficRoutingMode } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Vehicle ID and route identifier are required' }, { status: 400 });
     }
 
-    const vehicle = await prisma.smartTransportationHub.create({
+    const vehicle = await (prisma as any).smartTransportationHub.create({
       data: {
         schoolId: school.id,
         vehicleId,

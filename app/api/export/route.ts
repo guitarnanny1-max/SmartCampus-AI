@@ -1,35 +1,86 @@
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const schoolId = searchParams.get("schoolId");
-
-  if (!schoolId) {
-    return NextResponse.json({ error: "Missing schoolId" }, { status: 400 });
+function escapeCsv(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "";
   }
 
+  const stringValue = String(value);
+
+  return `"${stringValue.replace(/"/g, '""')}"`;
+}
+
+export async function GET(req: Request) {
   try {
+    const url = new URL(req.url);
+    const tenantId = url.searchParams.get("tenantId");
+
+    if (!tenantId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Missing tenantId query parameter.",
+        },
+        { status: 400 },
+      );
+    }
+
     const students = await prisma.student.findMany({
-      where: { schoolId }
+      where: {
+        tenantId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
-    // Generate CSV string safely
-    const csvRows = [
-      ["Name", "Roll Number", "CGPA"],
-      ...students.map(s => [s.name, s.rollNo, s.cgpa.toString()])
-    ];
-    const csvContent = csvRows.map(row => row.join(",")).join("\n");
+    const csvHeader =
+      "ID,AdmissionNumber,Name,Grade,GuardianName,Phone,Email,Status,FeeStatus\n";
 
-    return new NextResponse(csvContent, {
+    const csvRows = students
+      .map((student) =>
+        [
+          student.id,
+          student.admissionNumber,
+          student.name,
+          student.grade,
+          student.guardianName,
+          student.phone,
+          student.email,
+          student.status,
+          student.feeStatus,
+        ]
+          .map(escapeCsv)
+          .join(","),
+      )
+      .join("\n");
+
+    const csvString = csvHeader + csvRows;
+
+    return new NextResponse(csvString, {
+      status: 200,
       headers: {
-        "Content-Type": "text/csv",
-        "Content-Disposition": `attachment; filename="student-roster-${schoolId}.csv"`
-      }
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition":
+          'attachment; filename="students-export.csv"',
+        "Cache-Control": "no-store",
+      },
     });
-  } catch (err) {
-    return NextResponse.json({ error: "Failed to generate export" }, { status: 500 });
+  } catch (error) {
+    console.error("Export API Error:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Internal server error.",
+      },
+      { status: 500 },
+    );
   }
 }

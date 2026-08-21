@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -95,7 +97,7 @@ export default function TenantBillingModule() {
           </div>
 
           <div className="space-y-3 text-xs">
-            {invoices.map((inv) => (
+            {invoices.map((inv: any) => (
               <div key={inv.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="font-bold text-white text-sm">{inv.invoiceNo} • <span className="text-cyan-400">{inv.plan}</span></div>

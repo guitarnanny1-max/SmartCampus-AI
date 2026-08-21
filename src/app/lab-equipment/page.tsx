@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 './client';
 'use client';
 
@@ -142,7 +144,7 @@ export default function LabEquipmentPage() {
                 </tr>
               </thead>
               <tbody>
-                {equipment.map((eq) => (
+                {equipment.map((eq: any) => (
                   <tr key={eq.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4 font-semibold text-white">{eq.name}</td>
                     <td className="p-4">

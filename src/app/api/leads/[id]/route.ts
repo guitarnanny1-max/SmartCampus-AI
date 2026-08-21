@@ -1,3 +1,4 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -93,8 +94,8 @@ function nullableDate(value: unknown): string | null | undefined {
 
 export async function GET(
   _request: NextRequest,
-  context: { params: Promise<{ id: string }> },
-) {
+  context: { params: any },
+): Promise<NextResponse> {
   try {
     const { id } = await context.params;
 
@@ -170,8 +171,8 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> },
-) {
+  context: { params: any },
+): Promise<NextResponse> {
   try {
     const { id } = await context.params;
 
@@ -182,7 +183,7 @@ export async function PATCH(
       );
     }
 
-    let body: LeadUpdatePayload;
+    let body: any;
 
     try {
       body = (await request.json()) as LeadUpdatePayload;
@@ -193,7 +194,7 @@ export async function PATCH(
       );
     }
 
-    const updates: Record<string, unknown> = {};
+    const updates: any = {};
 
     if (body.status !== undefined) {
       if (typeof body.status !== "string") {

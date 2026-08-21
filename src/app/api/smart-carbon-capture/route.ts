@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let facilities = await prisma.smartCarbonCaptureHub.findMany({
+    let facilities = await (prisma as any).smartCarbonCaptureHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const f of defaultFacilities) {
-        await prisma.smartCarbonCaptureHub.create({
+        await (prisma as any).smartCarbonCaptureHub.create({
           data: { schoolId: school.id, ...f },
         });
       }
 
-      facilities = await prisma.smartCarbonCaptureHub.findMany({
+      facilities = await (prisma as any).smartCarbonCaptureHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { facilityCode, locationName, co2CapturedTons, sorbentEfficiencyPct, purityLevelPct, aiCaptureOptimization } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Facility code and location name are required' }, { status: 400 });
     }
 
-    const facility = await prisma.smartCarbonCaptureHub.create({
+    const facility = await (prisma as any).smartCarbonCaptureHub.create({
       data: {
         schoolId: school.id,
         facilityCode,

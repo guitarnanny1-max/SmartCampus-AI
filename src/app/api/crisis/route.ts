@@ -1,66 +1,64 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
 
-export async function GET() {
+
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    let incidents = await prisma.crisisIncident.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { searchParams } = new URL(req.url);
+    const tenantId = searchParams.get("tenantId");
 
-    if (incidents.length === 0) {
-      const defaultIncidents = [
-        { title: 'Chemical Fume Leak in Chemistry Lab 4B', incidentType: 'HAZMAT', location: 'Science Wing Level 2', severity: 'CRITICAL', status: 'ACTIVE', assignedTeam: 'Hazmat Response Unit 1' },
-        { title: 'Medical Emergency: Severe Allergic Reaction', incidentType: 'MEDICAL', location: 'University Student Union Cafeteria', severity: 'HIGH', status: 'RESPONDING', assignedTeam: 'Campus EMT Team Alpha' },
-        { title: 'Unauthorized Perimeter Access Attempt', incidentType: 'SECURITY', location: 'North Gate Perimeter Fence', severity: 'MEDIUM', status: 'RESOLVED', assignedTeam: 'Security Patrol Bravo' },
-      ];
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
 
-      for (const inc of defaultIncidents) {
-        await prisma.crisisIncident.create({
-          data: { schoolId: school.id, ...inc },
-        });
-      }
-
-      incidents = await prisma.crisisIncident.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
-      });
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
     }
 
-    return NextResponse.json(incidents);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch crisis incidents' }, { status: 500 });
+    const incidents = await (prisma as any).crisisIncident.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ incidents });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    const { title, incidentType, location, severity, assignedTeam } = await req.json();
+    const body = await req.json();
+    const { tenantId, title, description, severity, status } = body;
 
-    if (!title || !location) {
-      return NextResponse.json({ error: 'Incident title and location are required' }, { status: 400 });
+    if (!title) {
+      return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
-    const incident = await prisma.crisisIncident.create({
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
+
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
+    }
+
+    const incident = await (prisma as any).crisisIncident.create({
       data: {
-        schoolId: school.id,
+        tenantId: tenant.id,
         title,
-        incidentType: incidentType || 'SECURITY',
-        location,
-        severity: severity || 'HIGH',
-        status: 'ACTIVE',
-        assignedTeam: assignedTeam || 'Campus Security Alpha',
+        description,
+        severity: severity || "HIGH",
+        status: status || "ACTIVE",
       },
     });
 
-    return NextResponse.json(incident);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to dispatch crisis incident' }, { status: 500 });
+    return NextResponse.json({ success: true, incident }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

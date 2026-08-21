@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let departments = await prisma.smartMedicalHospitalHub.findMany({
+    let departments = await (prisma as any).smartMedicalHospitalHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const d of defaultDepartments) {
-        await prisma.smartMedicalHospitalHub.create({
+        await (prisma as any).smartMedicalHospitalHub.create({
           data: { schoolId: school.id, ...d },
         });
       }
 
-      departments = await prisma.smartMedicalHospitalHub.findMany({
+      departments = await (prisma as any).smartMedicalHospitalHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { departmentCode, departmentName, hospitalBedsCount, dailyOpdFootfall, residentDoctorsCount, aiDiagnosticMode } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Department code and name are required' }, { status: 400 });
     }
 
-    const department = await prisma.smartMedicalHospitalHub.create({
+    const department = await (prisma as any).smartMedicalHospitalHub.create({
       data: {
         schoolId: school.id,
         departmentCode,

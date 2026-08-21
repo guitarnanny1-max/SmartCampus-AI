@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let orders = await prisma.maintenanceWorkOrder.findMany({
+    let orders = await (prisma as any).maintenanceWorkOrder.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const ord of defaultOrders) {
-        await prisma.maintenanceWorkOrder.create({
+        await (prisma as any).maintenanceWorkOrder.create({
           data: { schoolId: school.id, ...ord },
         });
       }
 
-      orders = await prisma.maintenanceWorkOrder.findMany({
+      orders = await (prisma as any).maintenanceWorkOrder.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { title, category, building, priority, assignedTechnician } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Title and building are required' }, { status: 400 });
     }
 
-    const order = await prisma.maintenanceWorkOrder.create({
+    const order = await (prisma as any).maintenanceWorkOrder.create({
       data: {
         schoolId: school.id,
         title,

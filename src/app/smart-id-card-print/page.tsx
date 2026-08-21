@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -59,7 +61,7 @@ export default function SmartIdCardPrintPage() {
 
         {/* Badge Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 print:grid-cols-2 print:gap-4">
-          {records.map((r) => (
+          {records.map((r: any) => (
             <div 
               key={r.id} 
               className="w-full max-w-[400px] h-[250px] bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border-2 border-cyan-500/40 rounded-2xl p-5 shadow-2xl relative overflow-hidden flex flex-col justify-between print:border-slate-400 print:bg-white print:text-black print:shadow-none mx-auto"

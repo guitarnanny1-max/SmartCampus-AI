@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -82,7 +84,7 @@ export default function AdminDashboard() {
               System Activity Feed
             </h2>
             <div className="space-y-3">
-              {logs.map(log => (
+              {logs.map((log: any) => (
                 <div key={log.id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center">
                   <div className="flex items-center gap-4">
                     <div className={`w-2 h-2 rounded-full ${log.status === 'Success' ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>

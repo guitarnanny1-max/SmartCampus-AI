@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let records = await prisma.smartPaymentExtensionHub.findMany({
+    let records = await (prisma as any).smartPaymentExtensionHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -18,12 +19,12 @@ export async function GET() {
       ];
 
       for (const r of defaultRecords) {
-        await prisma.smartPaymentExtensionHub.create({
+        await (prisma as any).smartPaymentExtensionHub.create({
           data: { schoolId: school.id, ...r },
         });
       }
 
-      records = await prisma.smartPaymentExtensionHub.findMany({
+      records = await (prisma as any).smartPaymentExtensionHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -36,7 +37,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { amountPaid, extensionPeriod, paymentGateway } = await req.json();
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
     const previousRenewal = 'August 16, 2026';
     const newRenewalDate = extensionPeriod === '+1 Month' ? 'September 16, 2026' : 'August 16, 2027';
 
-    const record = await prisma.smartPaymentExtensionHub.create({
+    const record = await (prisma as any).smartPaymentExtensionHub.create({
       data: {
         schoolId: school.id,
         invoiceId,

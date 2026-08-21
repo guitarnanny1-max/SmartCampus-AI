@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'default client';
 'use client';
 
@@ -152,7 +154,7 @@ export default function HostelPage() {
                 </tr>
               </thead>
               <tbody>
-                {rooms.map((r) => (
+                {rooms.map((r: any) => (
                   <tr key={r.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4 font-mono font-bold text-cyan-400">{r.roomNo}</td>
                     <td className="p-4 text-white font-semibold">{r.blockName}</td>

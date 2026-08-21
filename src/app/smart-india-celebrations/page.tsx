@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -49,7 +51,7 @@ export default function SmartIndiaCelebrationsPage() {
 
   const handleSendReminderBroadcast = (id: string, name: string) => {
     alert(`📢 Automated SMS & WhatsApp reminder broadcast sent to all students, parents, and faculty for "${name}"!`);
-    setRecords(records.map(r => r.id === id ? { ...r, status: 'REMINDER_SENT' } : r));
+    setRecords(records.map((r: any) => r.id === id ? { ...r, status: 'REMINDER_SENT' } : r));
   };
 
   return (
@@ -145,7 +147,7 @@ export default function SmartIndiaCelebrationsPage() {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {records.map((r) => (
+            {records.map((r: any) => (
               <div key={r.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-md relative overflow-hidden">
                 <div className="flex justify-between items-start">
                   <div>

@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -96,7 +98,7 @@ export default function TransitModule() {
             </h3>
 
             <div className="space-y-3 text-xs">
-              {buses.map((bus) => (
+              {buses.map((bus: any) => (
                 <div
                   key={bus.id}
                   onClick={() => setSelectedRoute(bus.route)}

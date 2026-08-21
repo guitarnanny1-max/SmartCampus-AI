@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function ExaminationsModule() {
     setTimeout(() => setSuccess(false), 3500);
   };
 
-  const filtered = examLedger.filter(item => 
+  const filtered = examLedger.filter((item: any) => 
     item.exam.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.status.toLowerCase().includes(searchQuery.toLowerCase())
   );

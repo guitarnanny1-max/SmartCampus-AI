@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function FacilitiesModule() {
     setTimeout(() => setSuccess(false), 3500);
   };
 
-  const filtered = gridLedger.filter(item => 
+  const filtered = gridLedger.filter((item: any) => 
     item.zone.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.status.toLowerCase().includes(searchQuery.toLowerCase())
   );

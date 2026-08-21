@@ -35,7 +35,7 @@ export default function Sidebar() {
         </div>
 
         <nav className="space-y-1">
-          {navItems.map((item) => {
+          {navItems.map((item: any) => {
             const isActive = pathname === item.href;
             return (
               <Link

@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let geothermalPlants = await prisma.smartGeothermalEnergyHub.findMany({
+    let geothermalPlants = await (prisma as any).smartGeothermalEnergyHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,12 +20,12 @@ export async function GET() {
       ];
 
       for (const p of defaultPlants) {
-        await prisma.smartGeothermalEnergyHub.create({
+        await (prisma as any).smartGeothermalEnergyHub.create({
           data: { schoolId: school.id, ...p },
         });
       }
 
-      geothermalPlants = await prisma.smartGeothermalEnergyHub.findMany({
+      geothermalPlants = await (prisma as any).smartGeothermalEnergyHub.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -37,7 +38,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { plantCode, plantName, loopTempC, flowRateLpm, efficiencyPct, aiCirculationMode } = await req.json();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Plant code and plant name are required' }, { status: 400 });
     }
 
-    const plant = await prisma.smartGeothermalEnergyHub.create({
+    const plant = await (prisma as any).smartGeothermalEnergyHub.create({
       data: {
         schoolId: school.id,
         plantCode,

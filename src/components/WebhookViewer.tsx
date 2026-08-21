@@ -20,7 +20,7 @@ export default function WebhookViewer({ logs }: { logs: { id: string; event: str
             </tr>
           </thead>
           <tbody>
-            {logs.map((log) => (
+            {logs.map((log: any) => (
               <tr key={log.id} className="border-b border-slate-800/50 hover:bg-slate-900/30 transition-colors">
                 <td className="p-3.5 font-mono text-slate-400 whitespace-nowrap">
                   {new Date(log.createdAt).toLocaleString()}

@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    const records = await prisma.smartExamProctorHub.findMany({
+    const records = await (prisma as any).smartExamProctorHub.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
       take: 20,
@@ -18,7 +19,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { examTitle, studentName, rawAnswerText } = await req.json();
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
       aiFeedback = 'Exceptional comprehensive response with robust analytical insights.';
     }
 
-    const record = await prisma.smartExamProctorHub.create({
+    const record = await (prisma as any).smartExamProctorHub.create({
       data: {
         schoolId: school.id,
         examTitle,

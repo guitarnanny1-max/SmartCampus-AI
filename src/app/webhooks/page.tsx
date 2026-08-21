@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function WebhooksModule() {
     setTimeout(() => setWebhookSuccess(false), 3500);
   };
 
-  const filteredEvents = webhookEvents.filter(ev => 
+  const filteredEvents = webhookEvents.filter((ev: any) => 
     ev.eventType.toLowerCase().includes(searchQuery.toLowerCase()) ||
     ev.targetUrl.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -113,7 +115,7 @@ export default function WebhooksModule() {
           </div>
 
           <div className="space-y-3 text-xs">
-            {filteredEvents.map((ev) => (
+            {filteredEvents.map((ev: any) => (
               <div key={ev.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="font-bold text-white text-sm font-mono">{ev.eventType}</div>

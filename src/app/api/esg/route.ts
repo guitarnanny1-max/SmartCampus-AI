@@ -1,39 +1,58 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
-export async function GET() {
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
+    const { searchParams } = new URL(req.url);
+    const schoolId = searchParams.get("schoolId");
 
-    let metrics = await prisma.esgMetric.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (metrics.length === 0) {
-      const defaultEsg = [
-        { category: 'Campus HVAC & Boiler Heating', scope: 'Scope 1 (Direct)', emissions: 142.5, reduction: 18.2 },
-        { category: 'Grid Electricity Consumption', scope: 'Scope 2 (Indirect)', emissions: 88.0, reduction: 34.5 },
-        { category: 'Student Commute & Supply Chain', scope: 'Scope 3 (Value Chain)', emissions: 210.3, reduction: 12.1 },
-      ];
-
-      for (const m of defaultEsg) {
-        await prisma.esgMetric.create({
-          data: { schoolId: school.id, ...m },
-        });
-      }
-
-      metrics = await prisma.esgMetric.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
+    let metrics: any[] = [];
+    if (schoolId) {
+      metrics = await (prisma as any).esgMetric.findMany({
+        where: { schoolId },
+        orderBy: { createdAt: "desc" },
       });
     }
 
-    return NextResponse.json(metrics);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch ESG sustainability metrics' }, { status: 500 });
+    if (metrics.length === 0) {
+      metrics = await (prisma as any).esgMetric.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+    }
+
+    return NextResponse.json({ metrics });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function POST(req: any): Promise<NextResponse> {
+  try {
+    const body = await req.json();
+    const { schoolId, tenantId, metricName, value, unit } = body;
+
+    if (!metricName) {
+      return NextResponse.json({ error: "Metric name is required" }, { status: 400 });
+    }
+
+    const metric = await (prisma as any).esgMetric.create({
+      data: {
+        schoolId: schoolId || null,
+        tenantId: tenantId || null,
+        metricName,
+        value: value !== undefined ? Number(value) : 0.0,
+        unit: unit || "",
+      },
+    });
+
+    return NextResponse.json({ success: true, metric }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

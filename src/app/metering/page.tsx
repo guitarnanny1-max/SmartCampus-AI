@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,7 +19,7 @@ export default function UsageMeteringPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const totalCost = metrics.reduce((acc, m) => acc + (m.cost || 0), 0);
+  const totalCost = metrics.reduce((acc: any, m: any) => acc + (m.cost || 0), 0);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8 space-y-8">
@@ -70,7 +72,7 @@ export default function UsageMeteringPage() {
                 </tr>
               </thead>
               <tbody>
-                {metrics.map((m) => (
+                {metrics.map((m: any) => (
                   <tr key={m.id} className="border-b border-slate-800/50 hover:bg-slate-950/30 transition-colors">
                     <td className="p-4 font-semibold text-white">{m.metricName}</td>
                     <td className="p-4 font-mono text-cyan-400">{m.quantity.toLocaleString()}</td>

@@ -1,47 +1,49 @@
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const schoolId = searchParams.get("schoolId");
 
-  if (!schoolId) {
-    return NextResponse.json({ error: "Missing schoolId" }, { status: 400 });
-  }
 
+export async function GET(req: Request) {
   try {
+    const url = new URL(req.url);
+    const tenantId = url.searchParams.get("tenantId");
+
+    if (!tenantId) {
+      return NextResponse.json({ success: false, error: "Missing tenantId query parameter." }, { status: 400 });
+    }
+
     const announcements = await prisma.announcement.findMany({
-      where: { schoolId },
+      where: { tenantId },
       orderBy: { createdAt: "desc" }
     });
-    return NextResponse.json(announcements);
-  } catch (err) {
-    return NextResponse.json({ error: "Failed to fetch announcements" }, { status: 500 });
+
+    return NextResponse.json({ success: true, announcements });
+  } catch (error: any) {
+    console.error("Announcements API Error:", error);
+    return NextResponse.json({ success: false, error: error.message || "Internal server error." }, { status: 500 });
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    const { schoolId, title, content, author } = body;
+    const { tenantId, title, content } = await req.json();
 
-    if (!schoolId || !title || !content) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!tenantId || !title || !content) {
+      return NextResponse.json({ success: false, error: "tenantId, title, and content are required." }, { status: 400 });
     }
 
-    const newAnnouncement = await prisma.announcement.create({
+    const announcement = await prisma.announcement.create({
       data: {
-        schoolId,
+        tenantId,
         title,
-        content,
-        author: author || "Administrator"
+        content
       }
     });
 
-    return NextResponse.json(newAnnouncement, { status: 201 });
-  } catch (err) {
-    return NextResponse.json({ error: "Failed to create announcement" }, { status: 500 });
+    return NextResponse.json({ success: true, announcement });
+  } catch (error: any) {
+    console.error("Create Announcement Error:", error);
+    return NextResponse.json({ success: false, error: error.message || "Internal server error." }, { status: 500 });
   }
 }

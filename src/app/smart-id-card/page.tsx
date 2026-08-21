@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -156,7 +158,7 @@ export default function SmartIdCardPage() {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {records.map((r) => (
+            {records.map((r: any) => (
               <div key={r.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none"></div>
                 <div className="flex justify-between items-start">

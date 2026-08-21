@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -114,7 +116,7 @@ export default function DeveloperHubModule() {
             </div>
 
             <div className="space-y-3 text-xs">
-              {webhookLogs.map((log) => (
+              {webhookLogs.map((log: any) => (
                 <div key={log.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-1">
                     <div className="font-bold text-white font-mono">{log.event}</div>

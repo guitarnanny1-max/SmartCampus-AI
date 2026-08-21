@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    const records = await prisma.smartStaffHealthHub.findMany({
+    const records = await (prisma as any).smartStaffHealthHub.findMany({
       where: { schoolId: school.id },
       orderBy: { stepsToday: 'desc' },
     });
@@ -17,7 +18,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { staffName, department, stepsToday, heartRateAvg, wellnessStatus, socialMediaId, insuranceSuggestion } = await req.json();
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
     const steps = stepsToday ? parseInt(stepsToday, 10) : 7500;
     const distance = `${(steps * 0.00075).toFixed(1)} km`;
 
-    const record = await prisma.smartStaffHealthHub.create({
+    const record = await (prisma as any).smartStaffHealthHub.create({
       data: {
         schoolId: school.id,
         staffName,

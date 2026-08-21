@@ -1,53 +1,177 @@
-export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
-import { headers } from 'next/headers';
+import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { getCurrentSchool } from "@/lib/current-school";
+import { prisma } from "@/lib/prisma";
+
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
+
+type TenantDataBody = {
+  type?: unknown;
+  zoneName?: unknown;
+  solar?: unknown;
+  hvac?: unknown;
+  status?: unknown;
+  name?: unknown;
+  rollNo?: unknown;
+};
+
+type SchoolWithOptionalTenant = {
+  id: string;
+  tenantId?: string | null;
+};
 
 export async function POST(req: Request) {
   try {
-    const headerList = headers();
-    const userRole = headerList.get('x-user-role') || 'TENANT_ADMIN';
+    const headerList = await headers();
+    const userRole = headerList.get("x-user-role") || "TENANT_ADMIN";
 
-    // RBAC Check: Viewers cannot create or modify records
-    if (userRole === 'VIEWER') {
-      return NextResponse.json({ error: 'Permission denied: Viewers have read-only access' }, { status: 403 });
+    if (userRole === "VIEWER") {
+      return NextResponse.json(
+        {
+          error: "Permission denied: VIEWER has read-only access",
+        },
+        { status: 403 }
+      );
     }
 
     const school = await getCurrentSchool();
-    const body = await req.json();
-    const { type, zoneName, solar, hvac, status, name, rollNo, cgpa } = body;
 
-    if (type === 'facility') {
-      if (!zoneName) return NextResponse.json({ error: 'Zone name is required' }, { status: 400 });
-      const facility = await prisma.facility.create({
+    const body = (await req.json()) as TenantDataBody;
+
+    const type =
+      typeof body.type === "string"
+        ? body.type
+        : "";
+
+    const zoneName =
+      typeof body.zoneName === "string"
+        ? body.zoneName.trim()
+        : "";
+
+    const solar =
+      typeof body.solar === "string"
+        ? body.solar
+        : "40 kW";
+
+    const hvac =
+      typeof body.hvac === "string"
+        ? body.hvac
+        : "Optimized (22°C)";
+
+    const status =
+      typeof body.status === "string"
+        ? body.status
+        : "Optimal";
+
+    const name =
+      typeof body.name === "string"
+        ? body.name.trim()
+        : "";
+
+    const rollNo =
+      typeof body.rollNo === "string"
+        ? body.rollNo.trim()
+        : "";
+
+    if (type === "facility") {
+      if (!zoneName) {
+        return NextResponse.json(
+          {
+            error: "Zone name is required",
+          },
+          { status: 400 }
+        );
+      }
+
+      const facility = await (
+        prisma as typeof prisma & {
+          facility: {
+            create: (args: {
+              data: {
+                schoolId: string;
+                zoneName: string;
+                solar: string;
+                hvac: string;
+                status: string;
+              };
+            }) => Promise<unknown>;
+          };
+        }
+      ).facility.create({
         data: {
           schoolId: school.id,
           zoneName,
-          solar: solar || '40 kW',
-          hvac: hvac || 'Optimized (22°C)',
-          status: status || 'Optimal',
+          solar,
+          hvac,
+          status,
         },
       });
+
       return NextResponse.json(facility);
     }
 
-    if (type === 'student') {
-      if (!name || !rollNo) return NextResponse.json({ error: 'Name and roll number are required' }, { status: 400 });
+    if (type === "student") {
+      if (!name || !rollNo) {
+        return NextResponse.json(
+          {
+            error:
+              "Name and roll number are required",
+          },
+          { status: 400 }
+        );
+      }
+
+      /*
+       * getCurrentSchool() has a fallback school object
+       * that does not contain tenantId.
+       *
+       * Normalize the result before accessing tenantId.
+       */
+      const schoolContext =
+        school as SchoolWithOptionalTenant;
+
+      const tenantId = schoolContext.tenantId;
+
+      if (!tenantId) {
+        return NextResponse.json(
+          {
+            error:
+              "A valid tenant workspace is required before creating a student.",
+          },
+          { status: 400 }
+        );
+      }
+
       const student = await prisma.student.create({
         data: {
-          schoolId: school.id,
+          tenantId,
+          admissionNumber: rollNo,
           name,
-          rollNo,
-          cgpa: parseFloat(cgpa) || 9.0,
+          grade: "Grade 10",
+          guardianName: "Guardian",
+          status: "Active",
+          feeStatus: "PENDING",
         },
       });
+
       return NextResponse.json(student);
     }
 
-    return NextResponse.json({ error: 'Invalid record type' }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: "Invalid record type",
+      },
+      { status: 400 }
+    );
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to add record' }, { status: 500 });
+    console.error("Tenant data POST error:", error);
+
+    return NextResponse.json(
+      {
+        error: "Failed to add record",
+      },
+      { status: 500 }
+    );
   }
 }

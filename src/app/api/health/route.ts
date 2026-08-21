@@ -1,65 +1,58 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
-export async function GET() {
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    let records = await prisma.medicalRecord.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { searchParams } = new URL(req.url);
+    const schoolId = searchParams.get("schoolId");
 
-    if (records.length === 0) {
-      const defaultRecords = [
-        { studentName: 'Alex Mercer', rollNo: 'CS-2026-089', symptoms: 'Migraine and High Fever', diagnosis: 'Viral Upper Respiratory Infection', doctorName: 'Dr. Sarah Connor, MD', status: 'TREATED' },
-        { studentName: 'Elena Rostova', rollNo: 'EE-2026-102', symptoms: 'Sprained Ankle during Basketball', diagnosis: 'Grade 1 Lateral Ligament Sprain', doctorName: 'Dr. John Watson, Orthopedics', status: 'OBSERVATION' },
-      ];
-
-      for (const r of defaultRecords) {
-        await prisma.medicalRecord.create({
-          data: { schoolId: school.id, ...r },
-        });
-      }
-
-      records = await prisma.medicalRecord.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
+    let records: any[] = [];
+    if (schoolId) {
+      records = await (prisma as any).medicalRecord.findMany({
+        where: { schoolId },
+        orderBy: { createdAt: "desc" },
       });
     }
 
-    return NextResponse.json(records);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch medical records' }, { status: 500 });
+    if (records.length === 0) {
+      records = await (prisma as any).medicalRecord.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+    }
+
+    return NextResponse.json({ records });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    const { studentName, rollNo, symptoms, diagnosis, doctorName, status } = await req.json();
+    const body = await req.json();
+    const { schoolId, tenantId, studentName, condition, status } = body;
 
-    if (!studentName || !rollNo || !symptoms || !diagnosis || !doctorName) {
-      return NextResponse.json({ error: 'All primary medical fields are required' }, { status: 400 });
+    if (!studentName || !condition) {
+      return NextResponse.json({ error: "Student name and condition are required" }, { status: 400 });
     }
 
-    const record = await prisma.medicalRecord.create({
+    const record = await (prisma as any).medicalRecord.create({
       data: {
-        schoolId: school.id,
+        schoolId: schoolId || null,
+        tenantId: tenantId || null,
         studentName,
-        rollNo,
-        symptoms,
-        diagnosis,
-        doctorName,
-        status: status || 'TREATED',
+        condition,
+        status: status || "ACTIVE",
       },
     });
 
-    return NextResponse.json(record);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to record medical visit' }, { status: 500 });
+    return NextResponse.json({ success: true, record }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

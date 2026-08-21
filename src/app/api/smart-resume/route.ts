@@ -1,12 +1,13 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
-    let resumes = await prisma.smartStudentResume.findMany({
+    let resumes = await (prisma as any).smartStudentResume.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -18,12 +19,12 @@ export async function GET() {
       ];
 
       for (const r of defaultResumes) {
-        await prisma.smartStudentResume.create({
+        await (prisma as any).smartStudentResume.create({
           data: { schoolId: school.id, ...r },
         });
       }
 
-      resumes = await prisma.smartStudentResume.findMany({
+      resumes = await (prisma as any).smartStudentResume.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });
@@ -36,7 +37,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
     const { studentName, rollNumber, targetRole, gpa, skills, projects } = await req.json();
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
     // Simulate AI ATS score calculation based on skills and GPA length
     const calculatedAtsScore = Math.min(99.5, 85.0 + (parseFloat(gpa) || 8.0) * 1.2);
 
-    const resume = await prisma.smartStudentResume.create({
+    const resume = await (prisma as any).smartStudentResume.create({
       data: {
         schoolId: school.id,
         studentName,

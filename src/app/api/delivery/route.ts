@@ -1,66 +1,63 @@
+import { prisma } from "@/lib/prisma";
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { getCurrentSchool } from '@/lib/current-school';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
 
-export async function GET() {
+
+
+
+export async function GET(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    let fleet = await prisma.deliveryFleet.findMany({
-      where: { schoolId: school.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { searchParams } = new URL(req.url);
+    const tenantId = searchParams.get("tenantId");
 
-    if (fleet.length === 0) {
-      const defaultFleet = [
-        { vehicleName: 'Rover Alpha-01', vehicleType: 'ROBOT', currentBattery: 88, currentLocation: 'Science Quad to Library', status: 'IN_TRANSIT', payloadDescription: 'Lab Equipment & Reagents' },
-        { vehicleName: 'SkyDrone Eagle-X', vehicleType: 'DRONE', currentBattery: 95, currentLocation: 'Administration Rooftop', status: 'DOCKING', payloadDescription: 'Urgent Medical Document Packet' },
-        { vehicleName: 'Transit Buggy Beta-04', vehicleType: 'BUGGY', currentBattery: 64, currentLocation: 'Hostel Block C Courtyard', status: 'IN_TRANSIT', payloadDescription: 'Bookstore Parcel Delivery' },
-      ];
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
 
-      for (const item of defaultFleet) {
-        await prisma.deliveryFleet.create({
-          data: { schoolId: school.id, ...item },
-        });
-      }
-
-      fleet = await prisma.deliveryFleet.findMany({
-        where: { schoolId: school.id },
-        orderBy: { createdAt: 'desc' },
-      });
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
     }
 
-    return NextResponse.json(fleet);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch delivery fleet' }, { status: 500 });
+    const fleet = await (prisma as any).deliveryFleet.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ fleet });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
-    const school = await getCurrentSchool();
-    const { vehicleName, vehicleType, currentBattery, currentLocation, payloadDescription } = await req.json();
+    const body = await req.json();
+    const { tenantId, vehicle, driver, status } = body;
 
-    if (!vehicleName || !payloadDescription) {
-      return NextResponse.json({ error: 'Vehicle name and payload description are required' }, { status: 400 });
+    if (!vehicle || !driver) {
+      return NextResponse.json({ error: "Vehicle and driver are required" }, { status: 400 });
     }
 
-    const vehicle = await prisma.deliveryFleet.create({
+    const tenant = tenantId 
+      ? await (prisma as any).tenant.findUnique({ where: { id: tenantId } })
+      : await (prisma as any).tenant.findFirst();
+
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant workspace not found" }, { status: 404 });
+    }
+
+    const item = await (prisma as any).deliveryFleet.create({
       data: {
-        schoolId: school.id,
-        vehicleName,
-        vehicleType: vehicleType || 'ROBOT',
-        currentBattery: Number(currentBattery) || 90,
-        currentLocation: currentLocation || 'Central Hub',
-        status: 'IN_TRANSIT',
-        payloadDescription,
+        tenantId: tenant.id,
+        vehicle,
+        driver,
+        status: status || "IDLE",
       },
     });
 
-    return NextResponse.json(vehicle);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to dispatch delivery unit' }, { status: 500 });
+    return NextResponse.json({ success: true, item }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

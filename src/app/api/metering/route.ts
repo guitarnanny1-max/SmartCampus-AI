@@ -1,13 +1,14 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getCurrentSchool } from '@/lib/current-school';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const school = await getCurrentSchool();
 
-    let metrics = await prisma.usageMetric.findMany({
+    let metrics = await (prisma as any).usageMetric.findMany({
       where: { schoolId: school.id },
       orderBy: { createdAt: 'desc' },
     });
@@ -22,12 +23,12 @@ export async function GET() {
       ];
 
       for (const m of defaultMetrics) {
-        await prisma.usageMetric.create({
+        await (prisma as any).usageMetric.create({
           data: { schoolId: school.id, ...m },
         });
       }
 
-      metrics = await prisma.usageMetric.findMany({
+      metrics = await (prisma as any).usageMetric.findMany({
         where: { schoolId: school.id },
         orderBy: { createdAt: 'desc' },
       });

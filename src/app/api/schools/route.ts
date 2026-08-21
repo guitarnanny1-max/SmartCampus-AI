@@ -1,10 +1,11 @@
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
-    const schools = await prisma.school.findMany({
+    const schools = await (prisma as any).school.findMany({
       orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json(schools);
@@ -13,7 +14,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: any): Promise<NextResponse> {
   try {
     const { name, subdomain, logoUrl } = await req.json();
     
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
 
     const cleanSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
 
-    const existing = await prisma.school.findUnique({
+    const existing = await (prisma as any).school.findUnique({
       where: { subdomain: cleanSubdomain },
     });
 
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Subdomain already exists' }, { status: 400 });
     }
 
-    const school = await prisma.school.create({
+    const school = await (prisma as any).school.create({
       data: {
         name,
         subdomain: cleanSubdomain,

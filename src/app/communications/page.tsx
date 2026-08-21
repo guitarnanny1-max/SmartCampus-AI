@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +22,7 @@ export default function CommunicationsModule() {
     setTimeout(() => setSuccess(false), 3500);
   };
 
-  const filtered = commsLedger.filter(item => 
+  const filtered = commsLedger.filter((item: any) => 
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.recipient.toLowerCase().includes(searchQuery.toLowerCase())
   );

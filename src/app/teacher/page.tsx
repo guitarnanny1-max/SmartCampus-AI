@@ -1,3 +1,5 @@
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 'use client';
 
 import React, { useState } from 'react';
@@ -65,7 +67,7 @@ export default function TeacherDashboard() {
   ];
 
   const toggleAttendance = (id: number) => {
-    setRoster(roster.map(r => r.id === id ? { ...r, status: r.status === 'Present' ? 'Absent' : 'Present' } : r));
+    setRoster(roster.map((r: any) => r.id === id ? { ...r, status: r.status === 'Present' ? 'Absent' : 'Present' } : r));
   };
 
   const handleCreateAssignment = (e: React.FormEvent) => {
@@ -199,7 +201,7 @@ export default function TeacherDashboard() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            {roster.map((student) => (
+            {roster.map((student: any) => (
               <div key={student.id} className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl flex flex-col justify-between space-y-3">
                 <div className="space-y-1">
                   <span className="text-[10px] font-mono text-cyan-400">{student.roll}</span>
@@ -259,7 +261,7 @@ export default function TeacherDashboard() {
             </form>
 
             <div className="space-y-2.5 max-h-40 overflow-y-auto">
-              {assignments.map(item => (
+              {assignments.map((item: any) => (
                 <div key={item.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between text-xs font-mono">
                   <div>
                     <div className="font-bold text-slate-200">{item.title}</div>
