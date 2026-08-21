@@ -60,3 +60,24 @@ async def generate_text(request: PromptRequest):
         return StreamingResponse(stream_generator(), media_type="text/plain")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- Sales CRM & Leads Module ---
+from pydantic import BaseModel
+
+class Lead(BaseModel):
+    name: str
+    email: str
+    course: str
+    status: str = "New Inquiry"
+
+leads_db = []
+
+@app.post("/api/leads")
+def create_lead(lead: Lead):
+    leads_db.append(lead.dict())
+    return {"status": "success", "message": f"Lead {lead.name} captured successfully!"}
+
+@app.get("/api/leads")
+def get_leads():
+    return {"leads": leads_db}
