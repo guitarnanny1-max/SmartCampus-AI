@@ -11,7 +11,11 @@ model Tenant {
   id           String        @id @default(cuid())
   subdomain    String        @unique
   name         String
+  plan         String        @default("standard")
   createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  students     Student[]
+  invoices     Invoice[]
   payments     Payment[]
   messages     Message[]
   busLocations BusLocation[]
@@ -30,10 +34,33 @@ model User {
   createdAt DateTime @default(now())
 }
 
+model Student {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  rollNumber  String   @default("")
+  grade       String   @default("")
+  parentEmail String   @default("")
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+}
+
+model Invoice {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  amount      Float
+  studentName String
+  status      String   @default("PENDING")
+  dueDate     String   @default("")
+  createdAt   DateTime @default(now())
+}
+
 model Payment {
   id          String   @id @default(cuid())
   tenantId    String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   amount      Float
   studentName String
   status      String   @default("SUCCESS")
@@ -43,7 +70,7 @@ model Payment {
 model Message {
   id         String   @id @default(cuid())
   tenantId   String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   senderName String
   senderRole String
   content    String
@@ -58,17 +85,85 @@ model BusLocation {
   latitude  Float    @default(28.6139)
   longitude Float    @default(77.2090)
   speed     String   @default("42 km/h")
-  status    String   @default("On Time - 8 mins to Campus")
+  status    String   @default("On Time")
   updatedAt DateTime @updatedAt
 }
 
 model Attendance {
   id          String   @id @default(cuid())
   tenantId    String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   studentName String   @default("Rahul Gupta")
   date        String   @default("2026-08-24")
   status      String   @default("PRESENT")
   punchTime   String   @default("08:15 AM")
   createdAt   DateTime @default(now())
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  contactName String   @default("")
+  schoolName  String   @default("")
+  email       String   @default("")
+  status      String   @default("NEW")
+  createdAt   DateTime @default(now())
+}
+
+model Staff {
+  id        String   @id @default(cuid())
+  name      String   @default("")
+  role      String   @default("Teacher")
+  email     String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model Exam {
+  id        String   @id @default(cuid())
+  title     String   @default("")
+  subject   String   @default("")
+  date      String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model LibraryAsset {
+  id        String   @id @default(cuid())
+  title     String   @default("")
+  author    String   @default("")
+  status    String   @default("AVAILABLE")
+  createdAt DateTime @default(now())
+}
+
+model EnergyLog {
+  id        String   @id @default(cuid())
+  reading   Float    @default(0)
+  cost      Float    @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String   @default("")
+  content   String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model BackupSnapshot {
+  id        String   @id @default(cuid())
+  status    String   @default("SUCCESS")
+  createdAt DateTime @default(now())
+}
+
+model School {
+  id        String   @id @default(cuid())
+  name      String   @default("")
+  subdomain String   @unique @default("")
+  plan      String   @default("standard")
+  createdAt DateTime @default(now())
+}
+
+model SmartAccreditationHub {
+  id        String   @id @default(cuid())
+  standard  String   @default("")
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
 }
