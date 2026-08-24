@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 import { verifyTenantAccess } from "../lib/auth-guard";
 
