@@ -1,6 +1,5 @@
-import { db } from "@/lib/db";
-
 export const dynamic = "force-dynamic";
+import { db } from "@/lib/db";
 
 export default async function AdminLeadsPage() {
   let leads: any[] = [];
