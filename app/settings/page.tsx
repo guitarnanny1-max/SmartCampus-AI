@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 export default function SettingsPage() {
   return (
     <div className="p-8 bg-slate-950 min-h-screen text-slate-100 font-sans">

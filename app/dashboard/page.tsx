@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 selection:bg-blue-600 selection:text-white">
