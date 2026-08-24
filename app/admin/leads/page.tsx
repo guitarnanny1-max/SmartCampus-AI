@@ -1,87 +1,97 @@
-'use client';
+import { db } from "@/lib/db";
 
-import { useState } from "react";
+export const dynamic = "force-dynamic";
 
-export default function SalesCRMPage() {
-  const [leads, setLeads] = useState([
-    { id: "L-101", school: "Delhi Public Academy", contact: "Rajesh Sharma", stage: "Qualified", source: "AI Chatbot", demo: "2026-08-25", value: "₹2.5L" },
-    { id: "L-102", school: "Apex University", contact: "Sunita Rao", stage: "Demo Scheduled", source: "Referral", demo: "2026-08-27", value: "₹8.0L" },
-    { id: "L-103", school: "Global Tech School", contact: "Amit Verma", stage: "New", source: "Direct Web", demo: "-", value: "₹3.0L" },
-    { id: "L-104", school: "St. Xavier Junior College", contact: "Priya Mehta", stage: "Proposal", source: "Ads", demo: "2026-08-22", value: "₹4.5L" },
-  ]);
+export default async function AdminLeadsPage() {
+  let leads: any[] = [];
+  try {
+    leads = await db.tenant.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err) {
+    console.error("Failed to fetch leads:", err);
+  }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-8">
-      
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
-        <div>
-          <span className="text-xs uppercase tracking-widest px-3 py-1 bg-indigo-500/10 text-indigo-400 rounded-full font-semibold border border-indigo-500/20">
-            SaaS Growth Engine
-          </span>
-          <h1 className="text-3xl font-extrabold text-white mt-2">Sales CRM</h1>
-          <p className="text-slate-400 text-sm mt-1">Manage school onboarding pipeline, demos, and acquisition.</p>
-        </div>
-        <button className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition shadow">
-          + Add Manual Lead
-        </button>
-      </div>
-
-      {/* CRM Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-8">
-        {[
-          { label: "New Leads", val: "12", color: "text-white" },
-          { label: "Demos Scheduled", val: "8", color: "text-indigo-400" },
-          { label: "Proposals Sent", val: "5", color: "text-amber-400" },
-          { label: "Win Probability", val: "68%", color: "text-emerald-400" },
-        ].map((item, idx) => (
-          <div key={idx} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow">
-            <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider">{item.label}</div>
-            <div className={`text-3xl font-extrabold ${item.color} mt-2`}>{item.val}</div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-6 md:p-12">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+          <div>
+            <div className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-1">thomasG technologies • Command Center</div>
+            <h1 className="text-3xl font-black tracking-tight">Onboarding Pipeline & School Leads</h1>
           </div>
-        ))}
-      </div>
-
-      {/* Leads Pipeline */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-800 font-bold text-sm text-slate-200">
-          Inbound Sales Pipeline
+          <div className="flex items-center space-x-3">
+            <span className="px-3 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full text-xs font-mono">
+              Total Leads: {leads.length}
+            </span>
+            <a href="/" className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold transition">
+              ← Back to Landing Page
+            </a>
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-950 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-800">
-                <th className="px-6 py-3 font-semibold">Lead ID</th>
-                <th className="px-6 py-3 font-semibold">School Name</th>
-                <th className="px-6 py-3 font-semibold">Contact Person</th>
-                <th className="px-6 py-3 font-semibold">Stage</th>
-                <th className="px-6 py-3 font-semibold">Source</th>
-                <th className="px-6 py-3 font-semibold">Demo Date</th>
-                <th className="px-6 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800 text-xs">
-              {leads.map((lead: any) => (
-                <tr key={lead.id} className="hover:bg-slate-800/40 transition">
-                  <td className="px-6 py-4 font-mono text-indigo-400">{lead.id}</td>
-                  <td className="px-6 py-4 font-bold text-white">{lead.school}</td>
-                  <td className="px-6 py-4 text-slate-300">{lead.contact}</td>
-                  <td className="px-6 py-4">
-                     <span className="px-2 py-1 bg-slate-800 rounded-lg text-slate-300">{lead.stage}</span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-400">{lead.source}</td>
-                  <td className="px-6 py-4 text-slate-400">{lead.demo}</td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    <button className="text-slate-400 hover:text-white font-medium">Email</button>
-                    <button className="text-indigo-400 hover:text-indigo-300 font-medium">Update Stage</button>
-                  </td>
+
+        {/* Leads Table */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-300">
+              <thead className="bg-slate-950 text-slate-400 text-xs uppercase font-mono border-b border-slate-800">
+                <tr>
+                  <th className="px-6 py-4">Institution</th>
+                  <th className="px-6 py-4">Contact Person</th>
+                  <th className="px-6 py-4">Board / Volume</th>
+                  <th className="px-6 py-4">Subdomain</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Submitted At</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {leads.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                      No onboarding leads found yet. Test your landing page form at <span className="text-blue-400 font-mono">http://localhost:3000/#demo</span>!
+                    </td>
+                  </tr>
+                ) : (
+                  leads.map((lead) => (
+                    <tr key={lead.id} className="hover:bg-slate-850/50 transition">
+                      <td className="px-6 py-4 font-semibold text-white">
+                        {lead.name}
+                        <div className="text-xs text-slate-500 font-normal">{lead.contactEmail}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {lead.contactName}
+                        <div className="text-xs text-slate-500 font-mono">{lead.phone}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-xs font-medium text-slate-300">{lead.board}</span>
+                        <div className="text-[11px] text-slate-500">{lead.studentVolume}</div>
+                      </td>
+                      <td className="px-6 py-4 font-mono text-xs text-blue-400">
+                        {lead.subdomain}.smartcampusai.in
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          lead.status === "ACTIVE" || lead.status === "LIVE" 
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
+                            : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                        }`}>
+                          {lead.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-400 font-mono">
+                        {new Date(lead.createdAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
+      </div>
     </div>
   );
 }

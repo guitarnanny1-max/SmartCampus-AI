@@ -1,44 +1,39 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  // Check for session authentication cookie
-  const authToken = request.cookies.get('campus_auth_token')?.value;
-  const { pathname } = request.nextUrl;
+  const url = request.nextUrl;
+  const hostname = request.headers.get("host") || "";
 
-  // Define protected enterprise routes
-  const protectedPaths = [
-    '/admissions',
-    '/students',
-    '/staff',
-    '/exams',
-    '/library',
-    '/energy',
-    '/transport',
-    '/finance'
-  ];
+  // Set your production root domain and local development baseline
+  const rootDomain = process.env.NODE_ENV === "production" 
+    ? "smartcampusai.in" 
+    : "localhost:3000";
 
-  const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
+  // Skip middleware for API routes, Next.js internal assets, and static files
+  if (
+    url.pathname.startsWith("/api") ||
+    url.pathname.startsWith("/_next") ||
+    url.pathname.includes(".")
+  ) {
+    return NextResponse.next();
+  }
 
-  // If route requires authentication and token is missing, redirect to login
-  if (isProtected && !authToken) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('from', pathname);
-    return NextResponse.redirect(loginUrl);
+  let subdomain = "";
+
+  // Extract subdomain if the hostname matches [subdomain].[rootDomain]
+  if (hostname.endsWith(`.${rootDomain}`)) {
+    subdomain = hostname.replace(`.${rootDomain}`, "");
+  }
+
+  // If a valid tenant subdomain is found, rewrite the request to the dynamic route folder
+  if (subdomain && subdomain !== "www") {
+    return NextResponse.rewrite(new URL(`/${subdomain}${url.pathname}`, request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    '/admissions/:path*',
-    '/students/:path*',
-    '/staff/:path*',
-    '/exams/:path*',
-    '/library/:path*',
-    '/energy/:path*',
-    '/transport/:path*',
-    '/finance/:path*',
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
