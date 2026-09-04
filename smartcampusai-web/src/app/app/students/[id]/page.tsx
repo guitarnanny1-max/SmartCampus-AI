@@ -81,6 +81,39 @@ type StudentEnrollment = {
   updated_at: string;
 };
 
+type StudentProfile = {
+  id: string;
+  tenantId: string;
+  student_id: string;
+  first_name: string | null;
+  middle_name: string | null;
+  last_name: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  postal_code: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type Guardian = {
+  id: string;
+  tenantId: string;
+  student_id: string;
+  name: string;
+  relationship: string | null;
+  email: string | null;
+  phone: string | null;
+  is_primary: boolean;
+  is_emergency_contact: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export default function StudentDetailPage({ params }: Props) {
   const [studentId, setStudentId] = useState("");
   const [student, setStudent] = useState<Student | null>(null);
@@ -113,6 +146,66 @@ export default function StudentDetailPage({ params }: Props) {
   const [enrollmentRollNumber, setEnrollmentRollNumber] = useState("");
   const [enrollmentDate, setEnrollmentDate] = useState("");
   const [enrollmentStatus, setEnrollmentStatus] = useState("ACTIVE");
+
+
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState("");
+
+  const [guardians, setGuardians] = useState<Guardian[]>([]);
+  const [guardiansLoading, setGuardiansLoading] = useState(false);
+  const [guardiansError, setGuardiansError] = useState("");
+
+  async function loadStudent360Data(id: string) {
+    setProfileLoading(true);
+    setGuardiansLoading(true);
+    setProfileError("");
+    setGuardiansError("");
+
+    try {
+      const [profileResponse, guardiansResponse] = await Promise.all([
+        fetch(`/api/students/${encodeURIComponent(id)}/profile`, {
+          credentials: "include",
+          cache: "no-store",
+        }),
+        fetch(`/api/students/${encodeURIComponent(id)}/guardians`, {
+          credentials: "include",
+          cache: "no-store",
+        }),
+      ]);
+
+      const profileData = await profileResponse.json();
+      const guardiansData = await guardiansResponse.json();
+
+      if (!profileResponse.ok) {
+        throw new Error(
+          profileData?.error || "Unable to load student profile.",
+        );
+      }
+
+      if (!guardiansResponse.ok) {
+        throw new Error(
+          guardiansData?.error || "Unable to load student guardians.",
+        );
+      }
+
+      setProfile(profileData.profile ?? null);
+      setGuardians(guardiansData.guardians ?? []);
+    } catch (err) {
+      console.error("Student 360 loading error:", err);
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Unable to load Student 360 data.";
+
+      setProfileError(message);
+      setGuardiansError(message);
+    } finally {
+      setProfileLoading(false);
+      setGuardiansLoading(false);
+    }
+  }
 
   async function loadEnrollmentData(id: string) {
     try {
@@ -335,12 +428,28 @@ export default function StudentDetailPage({ params }: Props) {
       const response = await fetch(
         "/api/student-enrollments",
         {
-          method: "POST",
+          method: enrollments.some(
+            (enrollment) =>
+              enrollment.academic_year_id === selectedAcademicYearId,
+          )
+            ? "PATCH"
+            : "POST",
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            ...(enrollments.some(
+              (enrollment) =>
+                enrollment.academic_year_id === selectedAcademicYearId,
+            )
+              ? {
+                  id: enrollments.find(
+                    (enrollment) =>
+                      enrollment.academic_year_id === selectedAcademicYearId,
+                  )!.id,
+                }
+              : {}),
             student_id: studentId,
             academic_year_id:
               selectedAcademicYearId,
@@ -436,7 +545,10 @@ export default function StudentDetailPage({ params }: Props) {
           setStudent(data.student);
         }
 
-        await loadEnrollmentData(id);
+        await Promise.all([
+          loadEnrollmentData(id),
+          loadStudent360Data(id),
+        ]);
 
         if (!cancelled) {
           setAttendanceLoading(true);
@@ -1118,6 +1230,221 @@ export default function StudentDetailPage({ params }: Props) {
               </div>
             )}
           </div>
+
+          {/* Student 360 — Personal Information */}
+          <section className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-[#0F172A]">
+                  Personal Information
+                </h2>
+                <p className="mt-1 text-sm text-[#64748B]">
+                  Student identity, date of birth, gender and address details.
+                </p>
+              </div>
+
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                Student 360
+              </span>
+            </div>
+
+            {profileLoading ? (
+              <div className="rounded-xl border border-[#E2E8F0] bg-slate-50 p-4 text-sm text-slate-600">
+                Loading personal information...
+              </div>
+            ) : profileError ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {profileError}
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    First Name
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {profile?.first_name || "—"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Middle Name
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {profile?.middle_name || "—"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Last Name
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {profile?.last_name || "—"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Date of Birth
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {profile?.date_of_birth || "—"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Gender
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {profile?.gender || "—"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Country
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {profile?.country || "—"}
+                  </p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Address
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {[profile?.address_line1, profile?.address_line2]
+                      .filter(Boolean)
+                      .join(", ") || "—"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    City
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {profile?.city || "—"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    State
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {profile?.state || "—"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Postal Code
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {profile?.postal_code || "—"}
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Student 360 — Guardians */}
+          <section className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-[#0F172A]">
+                  Guardians
+                </h2>
+                <p className="mt-1 text-sm text-[#64748B]">
+                  Parents, guardians and emergency contacts associated with this student.
+                </p>
+              </div>
+
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                {guardians.length}{" "}
+                {guardians.length === 1 ? "Guardian" : "Guardians"}
+              </span>
+            </div>
+
+            {guardiansLoading ? (
+              <div className="rounded-xl border border-[#E2E8F0] bg-slate-50 p-4 text-sm text-slate-600">
+                Loading guardians...
+              </div>
+            ) : guardiansError ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {guardiansError}
+              </div>
+            ) : guardians.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                <p className="text-sm font-semibold text-slate-700">
+                  No guardians added yet.
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Guardian information can be added from this Student 360 record.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {guardians.map((guardian) => (
+                  <div
+                    key={guardian.id}
+                    className="rounded-xl border border-[#E2E8F0] bg-white p-5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold text-slate-900">
+                          {guardian.name}
+                        </h3>
+
+                        <p className="mt-1 text-sm text-slate-500">
+                          {guardian.relationship || "Guardian"}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {guardian.is_primary && (
+                          <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white">
+                            Primary
+                          </span>
+                        )}
+
+                        {guardian.is_emergency_contact && (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                            Emergency
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          Email
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-slate-900">
+                          {guardian.email || "—"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          Phone
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-slate-900">
+                          {guardian.phone || "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
 
           <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-[#0F172A]">

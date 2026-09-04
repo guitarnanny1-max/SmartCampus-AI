@@ -554,3 +554,369 @@ export async function POST(request: Request) {
     );
   }
 }
+
+/*
+ * ============================================================
+ * PATCH — UPDATE STUDENT ENROLLMENT
+ * ============================================================
+ */
+
+export async function PATCH(request: Request) {
+  try {
+    const context = await getAuthContext();
+
+    if ("error" in context) {
+      return context.error;
+    }
+
+    const { supabaseAdmin, tenantId } = context;
+
+    let body: Record<string, unknown>;
+
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON request body." },
+        { status: 400 },
+      );
+    }
+
+    const enrollmentId =
+      typeof body.id === "string"
+        ? body.id.trim()
+        : "";
+
+    const studentId =
+      typeof body.student_id === "string"
+        ? body.student_id.trim()
+        : "";
+
+    const academicYearId =
+      typeof body.academic_year_id === "string"
+        ? body.academic_year_id.trim()
+        : "";
+
+    const classId =
+      typeof body.class_id === "string"
+        ? body.class_id.trim()
+        : "";
+
+    const sectionId =
+      typeof body.section_id === "string"
+        ? body.section_id.trim()
+        : "";
+
+    const rollNumber =
+      typeof body.roll_number === "string"
+        ? body.roll_number.trim() || null
+        : null;
+
+    const status =
+      typeof body.status === "string"
+        ? body.status.trim().toUpperCase()
+        : "ACTIVE";
+
+    const enrolledAt =
+      typeof body.enrolled_at === "string"
+        ? body.enrolled_at.trim() || null
+        : null;
+
+    if (
+      !enrollmentId ||
+      !studentId ||
+      !academicYearId ||
+      !classId ||
+      !sectionId
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "id, student_id, academic_year_id, class_id and section_id are required.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!["ACTIVE", "INACTIVE", "COMPLETED"].includes(status)) {
+      return NextResponse.json(
+        {
+          error: "Invalid enrollment status.",
+        },
+        { status: 400 },
+      );
+    }
+
+    /*
+     * Verify the existing enrollment belongs to this tenant
+     * and student.
+     */
+    const { data: existingEnrollment, error: existingError } =
+      await supabaseAdmin
+        .from("student_enrollments")
+        .select(
+          `
+            id,
+            "tenantId",
+            student_id,
+            academic_year_id,
+            class_id,
+            section_id,
+            roll_number,
+            status,
+            enrolled_at
+          `,
+        )
+        .eq("id", enrollmentId)
+        .eq("tenantId", tenantId)
+        .eq("student_id", studentId)
+        .maybeSingle();
+
+    if (existingError) {
+      console.error(
+        "Student enrollment PATCH lookup error:",
+        existingError,
+      );
+
+      return NextResponse.json(
+        { error: "Unable to load existing enrollment." },
+        { status: 500 },
+      );
+    }
+
+    if (!existingEnrollment) {
+      return NextResponse.json(
+        { error: "Student enrollment not found." },
+        { status: 404 },
+      );
+    }
+
+    /*
+     * Verify the selected academic year belongs to this tenant.
+     */
+    const { data: academicYear, error: yearError } =
+      await supabaseAdmin
+        .from("academic_years")
+        .select('id, "tenantId", name, status')
+        .eq("id", academicYearId)
+        .eq("tenantId", tenantId)
+        .maybeSingle();
+
+    if (yearError) {
+      console.error(
+        "Student enrollment PATCH academic year lookup error:",
+        yearError,
+      );
+
+      return NextResponse.json(
+        { error: "Unable to validate academic year." },
+        { status: 500 },
+      );
+    }
+
+    if (!academicYear) {
+      return NextResponse.json(
+        {
+          error:
+            "Academic year not found for the current tenant.",
+        },
+        { status: 404 },
+      );
+    }
+
+    /*
+     * Verify the selected class belongs to the selected year.
+     */
+    const { data: classRow, error: classError } =
+      await supabaseAdmin
+        .from("classes")
+        .select(
+          'id, "tenantId", academic_year_id, name, status',
+        )
+        .eq("id", classId)
+        .eq("tenantId", tenantId)
+        .eq("academic_year_id", academicYearId)
+        .maybeSingle();
+
+    if (classError) {
+      console.error(
+        "Student enrollment PATCH class lookup error:",
+        classError,
+      );
+
+      return NextResponse.json(
+        { error: "Unable to validate class." },
+        { status: 500 },
+      );
+    }
+
+    if (!classRow) {
+      return NextResponse.json(
+        {
+          error:
+            "Class not found for the selected academic year.",
+        },
+        { status: 404 },
+      );
+    }
+
+    /*
+     * Verify the selected section belongs to the selected class.
+     */
+    const { data: section, error: sectionError } =
+      await supabaseAdmin
+        .from("sections")
+        .select(
+          'id, "tenantId", class_id, name, status',
+        )
+        .eq("id", sectionId)
+        .eq("tenantId", tenantId)
+        .eq("class_id", classId)
+        .maybeSingle();
+
+    if (sectionError) {
+      console.error(
+        "Student enrollment PATCH section lookup error:",
+        sectionError,
+      );
+
+      return NextResponse.json(
+        { error: "Unable to validate section." },
+        { status: 500 },
+      );
+    }
+
+    if (!section) {
+      return NextResponse.json(
+        {
+          error:
+            "Section not found for the selected class.",
+        },
+        { status: 404 },
+      );
+    }
+
+    /*
+     * Prevent changing this enrollment to an academic year
+     * that already has another enrollment for this student.
+     */
+    const { data: conflictingEnrollment, error: conflictError } =
+      await supabaseAdmin
+        .from("student_enrollments")
+        .select("id")
+        .eq("tenantId", tenantId)
+        .eq("student_id", studentId)
+        .eq("academic_year_id", academicYearId)
+        .neq("id", enrollmentId)
+        .maybeSingle();
+
+    if (conflictError) {
+      console.error(
+        "Student enrollment PATCH conflict lookup error:",
+        conflictError,
+      );
+
+      return NextResponse.json(
+        { error: "Unable to validate enrollment uniqueness." },
+        { status: 500 },
+      );
+    }
+
+    if (conflictingEnrollment) {
+      return NextResponse.json(
+        {
+          error:
+            "This student is already enrolled for the selected academic year.",
+        },
+        { status: 409 },
+      );
+    }
+
+    /*
+     * Update enrollment.
+     */
+    const { data, error } = await supabaseAdmin
+      .from("student_enrollments")
+      .update({
+        academic_year_id: academicYearId,
+        class_id: classId,
+        section_id: sectionId,
+        roll_number: rollNumber,
+        status,
+        enrolled_at: enrolledAt,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", enrollmentId)
+      .eq("tenantId", tenantId)
+      .eq("student_id", studentId)
+      .select(
+        `
+          id,
+          "tenantId",
+          student_id,
+          academic_year_id,
+          class_id,
+          section_id,
+          roll_number,
+          status,
+          enrolled_at,
+          created_at,
+          updated_at
+        `,
+      )
+      .single();
+
+    if (error) {
+      console.error(
+        "Student enrollment PATCH update error:",
+        error,
+      );
+
+      if (error.code === "23505") {
+        return NextResponse.json(
+          {
+            error:
+              "This student is already enrolled for the selected academic year.",
+          },
+          { status: 409 },
+        );
+      }
+
+      return NextResponse.json(
+        {
+          error: "Unable to update student enrollment.",
+          details:
+            process.env.NODE_ENV === "development"
+              ? {
+                  message: error.message,
+                  code: error.code,
+                  details: error.details,
+                  hint: error.hint,
+                }
+              : undefined,
+        },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      enrollment: data,
+    });
+  } catch (error) {
+    console.error(
+      "PATCH /api/student-enrollments error:",
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to update student enrollment.",
+      },
+      { status: 500 },
+    );
+  }
+}
