@@ -4,32 +4,55 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
 async function getAuthContext() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publishableKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
+    return {
+      error: "Supabase environment is not configured.",
+      status: 500,
+    };
+  }
+
   const cookieStore = await cookies();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  const supabaseAuth = createServerClient(
+    supabaseUrl,
+    publishableKey,
     {
       cookies: {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll() {},
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {}
+        },
       },
     },
   );
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+    error: authError,
+  } = await supabaseAuth.auth.getUser();
 
-  if (!user) {
-    return { error: "Unauthorized", status: 401 };
+  if (authError || !user?.email) {
+    return {
+      error: "Authentication required.",
+      status: 401,
+    };
   }
 
   const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    supabaseUrl,
+    serviceRoleKey,
     {
       auth: {
         autoRefreshToken: false,
@@ -38,23 +61,26 @@ async function getAuthContext() {
     },
   );
 
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from("profiles")
-    .select("tenantId")
-    .eq("id", user.id)
+  const { data: appUser, error: userError } = await supabaseAdmin
+    .from("User")
+    .select('id, "tenantId", email, name, role')
+    .eq("email", user.email)
     .maybeSingle();
 
-  if (profileError) {
-    throw profileError;
+  if (userError) {
+    throw userError;
   }
 
-  if (!profile?.tenantId) {
-    return { error: "Tenant context not found.", status: 400 };
+  if (!appUser?.tenantId) {
+    return {
+      error: "Application user has no tenant.",
+      status: 403,
+    };
   }
 
   return {
     supabaseAdmin,
-    tenantId: profile.tenantId as string,
+    tenantId: appUser.tenantId as string,
   };
 }
 
@@ -88,6 +114,7 @@ export async function POST(request: Request) {
     const academicYearId = String(body.academic_year_id ?? "");
     const classId = String(body.class_id ?? "");
     const sectionId = String(body.section_id ?? "");
+
     const generated = Array.isArray(body.generated)
       ? (body.generated as PreviewRow[])
       : [];
@@ -103,48 +130,54 @@ export async function POST(request: Request) {
     }
 
     if (!generated.length) {
-      return NextResponse.json(
-        {
-          valid: false,
-          errors: [
-            {
-              code: "EMPTY_PREVIEW",
-              message: "There are no generated periods to validate.",
-            },
-          ],
-          warnings: [],
-          summary: {
-            total: 0,
-            valid: 0,
-            errors: 1,
-            warnings: 0,
+      return NextResponse.json({
+        valid: false,
+        errors: [
+          {
+            code: "EMPTY_PREVIEW",
+            message: "There are no generated periods to validate.",
           },
+        ],
+        warnings: [],
+        summary: {
+          total: 0,
+          valid: 0,
+          errors: 1,
+          warnings: 0,
         },
-        { status: 200 },
-      );
+      });
     }
 
-    const errors: Array<{
-      code: string;
-      message: string;
-      row?: number;
-      subject_name?: string;
-      day_of_week?: number;
-      period_number?: number;
-    }> = [];
-
-    const warnings: Array<{
-      code: string;
-      message: string;
-      subject_name?: string;
-    }> = [];
-
     const [
+      academicYearResult,
+      classResult,
+      sectionResult,
       periodTimingsResult,
       sectionSubjectsResult,
       assignmentsResult,
       timetableResult,
     ] = await Promise.all([
+      supabaseAdmin
+        .from("academic_years")
+        .select("id,name")
+        .eq("id", academicYearId)
+        .eq("tenantId", tenantId)
+        .maybeSingle(),
+
+      supabaseAdmin
+        .from("classes")
+        .select("id,name")
+        .eq("id", classId)
+        .eq("tenantId", tenantId)
+        .maybeSingle(),
+
+      supabaseAdmin
+        .from("sections")
+        .select("id,name,class_id")
+        .eq("id", sectionId)
+        .eq("tenantId", tenantId)
+        .maybeSingle(),
+
       supabaseAdmin
         .from("period_timings")
         .select(
@@ -167,24 +200,59 @@ export async function POST(request: Request) {
         .select(
           "id,teacher_id,subject_name,class_name,section_name,academic_year,periods_per_week,assignment_type,status",
         )
-        .eq("academic_year", "2026-27")
         .eq("status", "ACTIVE"),
 
       supabaseAdmin
         .from("timetables")
         .select(
-          "id,subject_id,teacher_id,day_of_week,period_number",
+          "id,section_id,subject_id,teacher_id,day_of_week,period_number",
         )
         .eq("tenantId", tenantId)
         .eq("academic_year_id", academicYearId)
-        .eq("section_id", sectionId)
         .eq("status", "ACTIVE"),
     ]);
 
+    if (academicYearResult.error) throw academicYearResult.error;
+    if (classResult.error) throw classResult.error;
+    if (sectionResult.error) throw sectionResult.error;
     if (periodTimingsResult.error) throw periodTimingsResult.error;
     if (sectionSubjectsResult.error) throw sectionSubjectsResult.error;
     if (assignmentsResult.error) throw assignmentsResult.error;
     if (timetableResult.error) throw timetableResult.error;
+
+    if (!academicYearResult.data) {
+      return NextResponse.json(
+        { error: "Invalid academic year." },
+        { status: 400 },
+      );
+    }
+
+    if (!classResult.data) {
+      return NextResponse.json(
+        { error: "Invalid class." },
+        { status: 400 },
+      );
+    }
+
+    if (!sectionResult.data) {
+      return NextResponse.json(
+        { error: "Invalid section." },
+        { status: 400 },
+      );
+    }
+
+    if (sectionResult.data.class_id !== classId) {
+      return NextResponse.json(
+        {
+          error: "Section does not belong to the selected class.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const academicYearName = academicYearResult.data.name;
+    const className = classResult.data.name;
+    const sectionName = sectionResult.data.name;
 
     const periodTimings = periodTimingsResult.data ?? [];
     const sectionSubjects = sectionSubjectsResult.data ?? [];
@@ -203,9 +271,12 @@ export async function POST(request: Request) {
     );
 
     const existingSectionSlots = new Set(
-      existingTimetable.map(
-        (item) => `${item.day_of_week}-${item.period_number}`,
-      ),
+      existingTimetable
+        .filter((item) => item.section_id === sectionId)
+        .map(
+          (item) =>
+            `${item.day_of_week}-${item.period_number}`,
+        ),
     );
 
     const existingTeacherSlots = new Set(
@@ -217,17 +288,44 @@ export async function POST(request: Request) {
         ),
     );
 
-    const proposedSectionSlots = new Set<string>();
-    const proposedTeacherSlots = new Set<string>();
-
-    const subjectCounts = new Map<string, number>();
-
     const selectedAssignments = assignments.filter(
       (assignment) =>
-        assignment.section_name &&
-        assignment.class_name &&
-        assignment.academic_year,
+        assignment.class_name === className &&
+        assignment.section_name === sectionName &&
+        assignment.academic_year === academicYearName &&
+        assignment.status === "ACTIVE",
     );
+
+    const assignmentByTeacherSubject = new Map<
+      string,
+      any
+    >();
+
+    for (const assignment of selectedAssignments) {
+      assignmentByTeacherSubject.set(
+        `${assignment.teacher_id}-${assignment.subject_name}`,
+        assignment,
+      );
+    }
+
+    const errors: Array<{
+      code: string;
+      message: string;
+      row?: number;
+      subject_name?: string;
+      day_of_week?: number;
+      period_number?: number;
+    }> = [];
+
+    const warnings: Array<{
+      code: string;
+      message: string;
+      subject_name?: string;
+    }> = [];
+
+    const proposedSectionSlots = new Set<string>();
+    const proposedTeacherSlots = new Set<string>();
+    const subjectCounts = new Map<string, number>();
 
     for (let index = 0; index < generated.length; index += 1) {
       const row = generated[index];
@@ -262,19 +360,21 @@ export async function POST(request: Request) {
         });
       } else if (timing.is_break) {
         errors.push({
-          code: "BREAK_CONFLICT",
-          message: `Period ${row.period_number} is configured as a break.`,
+          code: "BREAK_PERIOD",
+          message: `Period ${row.period_number} is a break and cannot contain a class.`,
           row: rowNumber,
           period_number: row.period_number,
         });
       }
 
-      const sectionSlot = `${row.day_of_week}-${row.period_number}`;
+      const sectionSlot =
+        `${row.day_of_week}-${row.period_number}`;
 
       if (existingSectionSlots.has(sectionSlot)) {
         errors.push({
           code: "SECTION_CONFLICT",
-          message: `The section already has a timetable entry on day ${row.day_of_week}, period ${row.period_number}.`,
+          message:
+            `Section already has a class on day ${row.day_of_week}, period ${row.period_number}.`,
           row: rowNumber,
           day_of_week: row.day_of_week,
           period_number: row.period_number,
@@ -283,8 +383,9 @@ export async function POST(request: Request) {
 
       if (proposedSectionSlots.has(sectionSlot)) {
         errors.push({
-          code: "PREVIEW_DUPLICATE_SECTION",
-          message: `The preview contains two classes in the same section slot.`,
+          code: "PREVIEW_SECTION_DUPLICATE",
+          message:
+            "Duplicate section slot in the generated preview.",
           row: rowNumber,
           day_of_week: row.day_of_week,
           period_number: row.period_number,
@@ -293,12 +394,14 @@ export async function POST(request: Request) {
 
       proposedSectionSlots.add(sectionSlot);
 
-      const teacherSlot = `${row.teacher_id}-${row.day_of_week}-${row.period_number}`;
+      const teacherSlot =
+        `${row.teacher_id}-${row.day_of_week}-${row.period_number}`;
 
       if (existingTeacherSlots.has(teacherSlot)) {
         errors.push({
           code: "TEACHER_CONFLICT",
-          message: `The teacher is already teaching another section during this period.`,
+          message:
+            "Teacher already has another class during this period.",
           row: rowNumber,
           day_of_week: row.day_of_week,
           period_number: row.period_number,
@@ -307,8 +410,9 @@ export async function POST(request: Request) {
 
       if (proposedTeacherSlots.has(teacherSlot)) {
         errors.push({
-          code: "PREVIEW_DUPLICATE_TEACHER",
-          message: `The preview assigns the same teacher twice in the same period.`,
+          code: "PREVIEW_TEACHER_DUPLICATE",
+          message:
+            "Teacher is assigned twice in the generated preview.",
           row: rowNumber,
           day_of_week: row.day_of_week,
           period_number: row.period_number,
@@ -317,61 +421,91 @@ export async function POST(request: Request) {
 
       proposedTeacherSlots.add(teacherSlot);
 
-      subjectCounts.set(
-        row.subject_id,
-        (subjectCounts.get(row.subject_id) ?? 0) + 1,
+      const assignment = assignmentByTeacherSubject.get(
+        `${row.teacher_id}-${row.subject_name}`,
       );
 
-      const matchingAssignment = selectedAssignments.find(
-        (assignment) =>
-          assignment.teacher_id === row.teacher_id &&
-          assignment.subject_name?.trim().toLowerCase() ===
-            row.subject_name?.trim().toLowerCase(),
-      );
-
-      if (!matchingAssignment) {
+      if (!assignment) {
         errors.push({
           code: "TEACHER_ASSIGNMENT_MISSING",
-          message: `${row.subject_name} does not have a matching active teacher assignment.`,
+          message:
+            `${row.subject_name} is not assigned to the selected teacher for ${className} ${sectionName} in ${academicYearName}.`,
           row: rowNumber,
+          subject_name: row.subject_name,
+        });
+      } else {
+        const currentCount =
+          subjectCounts.get(row.subject_id) ?? 0;
+
+        subjectCounts.set(
+          row.subject_id,
+          currentCount + 1,
+        );
+      }
+    }
+
+    for (const assignment of selectedAssignments) {
+      const countForSubject = generated.filter(
+        (row) =>
+          row.subject_name === assignment.subject_name &&
+          row.teacher_id === assignment.teacher_id,
+      ).length;
+
+      const subjectIds = new Set(
+        generated
+          .filter(
+            (row) =>
+              row.subject_name === assignment.subject_name &&
+              row.teacher_id === assignment.teacher_id,
+          )
+          .map((row) => row.subject_id),
+      );
+
+      const existingCountForSubject = existingTimetable.filter(
+        (row) =>
+          row.section_id === sectionId &&
+          row.subject_id &&
+          subjectIds.has(row.subject_id),
+      ).length;
+
+      const required = Number(
+        assignment.periods_per_week ?? 0,
+      );
+
+      const totalAfterPublish =
+        existingCountForSubject + countForSubject;
+
+      if (required > 0 && totalAfterPublish !== required) {
+        errors.push({
+          code: "PERIODS_PER_WEEK_MISMATCH",
+          message:
+            `${assignment.subject_name}: required ${required} periods/week, existing ${existingCountForSubject}, preview contains ${countForSubject}, total after publish ${totalAfterPublish}.`,
+          subject_name: assignment.subject_name,
+        });
+      }
+    }
+
+    const assignedSubjectNames = new Set(
+      selectedAssignments.map(
+        (assignment) => assignment.subject_name,
+      ),
+    );
+
+    for (const row of generated) {
+      if (
+        row.subject_name &&
+        !assignedSubjectNames.has(row.subject_name)
+      ) {
+        warnings.push({
+          code: "UNMATCHED_ASSIGNMENT",
+          message:
+            `No matching active teacher assignment was found for ${row.subject_name}.`,
           subject_name: row.subject_name,
         });
       }
     }
 
-    for (const [subjectId, count] of subjectCounts.entries()) {
-      const previewSubject = generated.find(
-        (row) => row.subject_id === subjectId,
-      );
-
-      const matchingAssignments = selectedAssignments.filter(
-        (assignment) =>
-          assignment.subject_name?.trim().toLowerCase() ===
-          previewSubject?.subject_name?.trim().toLowerCase(),
-      );
-
-      const allowed = matchingAssignments.reduce(
-        (sum, assignment) =>
-          sum + Number(assignment.periods_per_week ?? 0),
-        0,
-      );
-
-      if (allowed > 0 && count > allowed) {
-        errors.push({
-          code: "PERIODS_PER_WEEK_EXCEEDED",
-          message: `${previewSubject?.subject_name ?? "Subject"} proposes ${count} periods, exceeding the ${allowed} periods/week assignment limit.`,
-          subject_name: previewSubject?.subject_name,
-        });
-      }
-    }
-
-    if (errors.length === 0 && generated.length > 0) {
-      warnings.push({
-        code: "READY_FOR_APPROVAL",
-        message:
-          "The generated timetable passed validation and is ready for approval.",
-      });
-    }
+    const validCount = generated.length - errors.length;
 
     return NextResponse.json({
       valid: errors.length === 0,
@@ -379,20 +513,20 @@ export async function POST(request: Request) {
       warnings,
       summary: {
         total: generated.length,
-        valid: generated.length - new Set(
-          errors
-            .filter((error) => error.row)
-            .map((error) => error.row),
-        ).size,
+        valid: Math.max(validCount, 0),
         errors: errors.length,
         warnings: warnings.length,
       },
     });
   } catch (error) {
-    console.error("POST /api/timetable/auto-generate/validate", error);
+    console.error(
+      "Timetable preview validation error:",
+      error,
+    );
 
     return NextResponse.json(
       {
+        valid: false,
         error:
           error instanceof Error
             ? error.message

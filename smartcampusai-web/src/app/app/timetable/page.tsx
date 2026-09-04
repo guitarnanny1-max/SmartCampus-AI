@@ -187,6 +187,8 @@ export default function TimetablePage() {
   const [autoGenerateError, setAutoGenerateError] = useState("");
 
   const [validationLoading, setValidationLoading] = useState(false);
+  const [publishingLoading, setPublishingLoading] = useState(false);
+
   const [validationResult, setValidationResult] = useState<{
     valid: boolean;
     errors: Array<{
@@ -571,6 +573,72 @@ export default function TimetablePage() {
       );
     } finally {
       setValidationLoading(false);
+    }
+  }
+
+  async function publishAutoTimetablePreview() {
+    if (!academicYearId || !classId || !sectionId) {
+      setValidationError(
+        "Select academic year, class and section first.",
+      );
+      return;
+    }
+
+    if (!validationResult?.valid) {
+      setValidationError(
+        "Validate the timetable preview successfully before publishing.",
+      );
+      return;
+    }
+
+    if (autoGeneratePreview.length === 0) {
+      setValidationError(
+        "There are no generated timetable periods to publish.",
+      );
+      return;
+    }
+
+    setValidationError("");
+    setPublishingLoading(true);
+
+    try {
+      const response = await fetch(
+        "/api/timetable/auto-generate/publish",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            academic_year_id: academicYearId,
+            class_id: classId,
+            section_id: sectionId,
+            generated: autoGeneratePreview,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ?? "Failed to publish timetable.",
+        );
+      }
+
+      setValidationResult(null);
+      setAutoGeneratePreview([]);
+      setAutoGenerateUnresolved([]);
+
+      await loadTimetable();
+    } catch (err) {
+      setValidationError(
+        err instanceof Error
+          ? err.message
+          : "Failed to publish timetable.",
+      );
+    } finally {
+      setPublishingLoading(false);
     }
   }
 
@@ -1276,6 +1344,30 @@ export default function TimetablePage() {
               </div>
             )}
 
+            {autoGeneratePreview.length === 0 &&
+              !autoGenerateError &&
+              !autoGenerateLoading &&
+              completenessRows.some(
+                (item) =>
+                  item.requiredPeriods > 0 &&
+                  item.scheduledPeriods >= item.requiredPeriods,
+              ) && (
+                <div className="border-b border-emerald-100 bg-emerald-50 px-5 py-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 text-emerald-600">✓</div>
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-900">
+                        Timetable Already Complete
+                      </p>
+                      <p className="mt-1 text-xs text-emerald-700">
+                        All required subject periods are already scheduled.
+                        No additional AI-generated periods are required.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             {autoGeneratePreview.length > 0 && (
               <div className="p-5">
                 <div className="mb-4 flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
@@ -1454,7 +1546,18 @@ export default function TimetablePage() {
                         <div className="mt-1 text-xs text-emerald-700">
                           No database records have been changed. The next step
                           will be to approve and publish this timetable.
-                        </div>
+                        
+
+                        <button
+                          type="button"
+                          onClick={() => void publishAutoTimetablePreview()}
+                          disabled={publishingLoading}
+                          className="mt-4 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {publishingLoading
+                            ? "Publishing..."
+                            : "Publish Timetable"}
+                        </button></div>
                       </div>
                     )}
                   </div>

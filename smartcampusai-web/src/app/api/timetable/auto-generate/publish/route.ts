@@ -4,32 +4,55 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
 async function getAuthContext() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publishableKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
+    return {
+      error: "Supabase environment is not configured.",
+      status: 500,
+    };
+  }
+
   const cookieStore = await cookies();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  const supabaseAuth = createServerClient(
+    supabaseUrl,
+    publishableKey,
     {
       cookies: {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll() {},
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {}
+        },
       },
     },
   );
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+    error: authError,
+  } = await supabaseAuth.auth.getUser();
 
-  if (!user) {
-    return { error: "Unauthorized", status: 401 };
+  if (authError || !user?.email) {
+    return {
+      error: "Authentication required.",
+      status: 401,
+    };
   }
 
   const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    supabaseUrl,
+    serviceRoleKey,
     {
       auth: {
         autoRefreshToken: false,
@@ -38,21 +61,26 @@ async function getAuthContext() {
     },
   );
 
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from("profiles")
-    .select("tenantId")
-    .eq("id", user.id)
+  const { data: appUser, error: userError } = await supabaseAdmin
+    .from("User")
+    .select('id, "tenantId", email, name, role')
+    .eq("email", user.email)
     .maybeSingle();
 
-  if (profileError) throw profileError;
+  if (userError) {
+    throw userError;
+  }
 
-  if (!profile?.tenantId) {
-    return { error: "Tenant context not found.", status: 400 };
+  if (!appUser?.tenantId) {
+    return {
+      error: "Application user has no tenant.",
+      status: 403,
+    };
   }
 
   return {
     supabaseAdmin,
-    tenantId: profile.tenantId as string,
+    tenantId: appUser.tenantId as string,
   };
 }
 
@@ -78,11 +106,13 @@ export async function POST(request: Request) {
     }
 
     const { supabaseAdmin, tenantId } = context;
+
     const body = await request.json();
 
     const academicYearId = String(body.academic_year_id ?? "");
     const classId = String(body.class_id ?? "");
     const sectionId = String(body.section_id ?? "");
+
     const generated = Array.isArray(body.generated)
       ? (body.generated as PreviewRow[])
       : [];
@@ -99,21 +129,44 @@ export async function POST(request: Request) {
 
     if (!generated.length) {
       return NextResponse.json(
-        { error: "There are no preview periods to publish." },
+        {
+          published: false,
+          error: "There are no preview periods to publish.",
+        },
         { status: 400 },
       );
     }
 
-    /*
-     * Re-check everything against the current database state.
-     * The browser preview may be stale by the time Publish is clicked.
-     */
-
     const [
+      academicYearResult,
+      classResult,
+      sectionResult,
       sectionSubjectsResult,
       periodTimingsResult,
+      assignmentsResult,
       existingTimetableResult,
     ] = await Promise.all([
+      supabaseAdmin
+        .from("academic_years")
+        .select("id,name")
+        .eq("id", academicYearId)
+        .eq("tenantId", tenantId)
+        .maybeSingle(),
+
+      supabaseAdmin
+        .from("classes")
+        .select("id,name")
+        .eq("id", classId)
+        .eq("tenantId", tenantId)
+        .maybeSingle(),
+
+      supabaseAdmin
+        .from("sections")
+        .select("id,name,class_id")
+        .eq("id", sectionId)
+        .eq("tenantId", tenantId)
+        .maybeSingle(),
+
       supabaseAdmin
         .from("section_subjects")
         .select("subject_id,status")
@@ -132,6 +185,13 @@ export async function POST(request: Request) {
         .eq("status", "ACTIVE"),
 
       supabaseAdmin
+        .from("teacher_assignments")
+        .select(
+          "id,teacher_id,subject_name,class_name,section_name,academic_year,periods_per_week,assignment_type,status",
+        )
+        .eq("status", "ACTIVE"),
+
+      supabaseAdmin
         .from("timetables")
         .select(
           "id,section_id,subject_id,teacher_id,day_of_week,period_number",
@@ -141,14 +201,49 @@ export async function POST(request: Request) {
         .eq("status", "ACTIVE"),
     ]);
 
-    if (sectionSubjectsResult.error)
-      throw sectionSubjectsResult.error;
-
-    if (periodTimingsResult.error)
-      throw periodTimingsResult.error;
-
+    if (academicYearResult.error) throw academicYearResult.error;
+    if (classResult.error) throw classResult.error;
+    if (sectionResult.error) throw sectionResult.error;
+    if (sectionSubjectsResult.error) throw sectionSubjectsResult.error;
+    if (periodTimingsResult.error) throw periodTimingsResult.error;
+    if (assignmentsResult.error) throw assignmentsResult.error;
     if (existingTimetableResult.error)
       throw existingTimetableResult.error;
+
+    if (!academicYearResult.data) {
+      return NextResponse.json(
+        { published: false, error: "Invalid academic year." },
+        { status: 400 },
+      );
+    }
+
+    if (!classResult.data) {
+      return NextResponse.json(
+        { published: false, error: "Invalid class." },
+        { status: 400 },
+      );
+    }
+
+    if (!sectionResult.data) {
+      return NextResponse.json(
+        { published: false, error: "Invalid section." },
+        { status: 400 },
+      );
+    }
+
+    if (sectionResult.data.class_id !== classId) {
+      return NextResponse.json(
+        {
+          published: false,
+          error: "Section does not belong to the selected class.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const academicYearName = academicYearResult.data.name;
+    const className = classResult.data.name;
+    const sectionName = sectionResult.data.name;
 
     const validSubjectIds = new Set(
       (sectionSubjectsResult.data ?? []).map(
@@ -163,8 +258,28 @@ export async function POST(request: Request) {
       ]),
     );
 
+    const selectedAssignments = (
+      assignmentsResult.data ?? []
+    ).filter(
+      (assignment) =>
+        assignment.class_name === className &&
+        assignment.section_name === sectionName &&
+        assignment.academic_year === academicYearName &&
+        assignment.status === "ACTIVE",
+    );
+
+    const assignmentKeys = new Set(
+      selectedAssignments.map(
+        (assignment) =>
+          `${assignment.teacher_id}-${assignment.subject_name}`,
+      ),
+    );
+
+    const existingTimetable =
+      existingTimetableResult.data ?? [];
+
     const existingSectionSlots = new Set(
-      (existingTimetableResult.data ?? [])
+      existingTimetable
         .filter((item) => item.section_id === sectionId)
         .map(
           (item) =>
@@ -173,7 +288,7 @@ export async function POST(request: Request) {
     );
 
     const existingTeacherSlots = new Set(
-      (existingTimetableResult.data ?? [])
+      existingTimetable
         .filter((item) => item.teacher_id)
         .map(
           (item) =>
@@ -247,6 +362,54 @@ export async function POST(request: Request) {
       }
 
       previewTeacherSlots.add(teacherSlot);
+
+      const assignmentKey =
+        `${row.teacher_id}-${row.subject_name}`;
+
+      if (!assignmentKeys.has(assignmentKey)) {
+        validationErrors.push(
+          `Row ${rowNumber}: ${row.subject_name} is not assigned to the selected teacher for ${className} ${sectionName} in ${academicYearName}.`,
+        );
+      }
+    }
+
+    for (const assignment of selectedAssignments) {
+      const required = Number(
+        assignment.periods_per_week ?? 0,
+      );
+
+      if (required <= 0) continue;
+
+      const previewCount = generated.filter(
+        (row) =>
+          row.subject_name === assignment.subject_name &&
+          row.teacher_id === assignment.teacher_id,
+      ).length;
+
+      const subjectIds = new Set(
+        generated
+          .filter(
+            (row) =>
+              row.subject_name === assignment.subject_name &&
+              row.teacher_id === assignment.teacher_id,
+          )
+          .map((row) => row.subject_id),
+      );
+
+      const existingCount = existingTimetableResult.data.filter(
+        (row) =>
+          row.section_id === sectionId &&
+          row.subject_id &&
+          subjectIds.has(row.subject_id),
+      ).length;
+
+      const totalAfterPublish = existingCount + previewCount;
+
+      if (totalAfterPublish !== required) {
+        validationErrors.push(
+          `${assignment.subject_name}: required ${required} periods/week, existing ${existingCount}, preview contains ${previewCount}, total after publish ${totalAfterPublish}.`,
+        );
+      }
     }
 
     if (validationErrors.length > 0) {
@@ -260,10 +423,6 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
-
-    /*
-     * Insert only after the complete server-side validation succeeds.
-     */
 
     const rowsToInsert = generated.map((row) => {
       const timing = timingByPeriod.get(row.period_number);
@@ -314,17 +473,19 @@ export async function POST(request: Request) {
       published: true,
       message:
         "Timetable preview approved and published successfully.",
-      inserted_count: inserted?.length ?? rowsToInsert.length,
+      inserted_count:
+        inserted?.length ?? rowsToInsert.length,
       inserted: inserted ?? [],
     });
   } catch (error) {
     console.error(
-      "POST /api/timetable/auto-generate/publish",
+      "Timetable publish error:",
       error,
     );
 
     return NextResponse.json(
       {
+        published: false,
         error:
           error instanceof Error
             ? error.message
