@@ -94,32 +94,3 @@ create index if not exists idx_grading_scales_tenant
 
 create index if not exists idx_grading_scales_percentage
   on grading_scales ("tenantId", min_percentage, max_percentage);
-
--- Reuse the existing updated_at trigger function when available.
-drop trigger if exists trg_exams_updated_at on exams;
-
-create trigger trg_exams_updated_at
-before update on exams
-for each row
-execute function update_updated_at_column();
-
-drop trigger if exists trg_exam_subjects_updated_at on exam_subjects;
-
-create trigger trg_exam_subjects_updated_at
-before update on exam_subjects
-for each row
-execute function update_updated_at_column();
-
-drop trigger if exists trg_student_marks_updated_at on student_marks;
-
-create trigger trg_student_marks_updated_at
-before update on student_marks
-for each row
-execute function update_updated_at_column();
-
-drop trigger if exists trg_grading_scales_updated_at on grading_scales;
-
-create trigger trg_grading_scales_updated_at
-before update on grading_scales
-for each row
-execute function update_updated_at_column();
