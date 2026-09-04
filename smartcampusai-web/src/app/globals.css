@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #111827;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: #111827;
+  color: white;
+}
+
+
+/* ============================================================
+   SMARTCAMPUSAI PREMIUM COLOR SYSTEM
+   ============================================================ */
+
+:root {
+  /* Brand */
+  --sc-blue: #2563EB;
+  --sc-blue-dark: #1E40AF;
+  --sc-blue-soft: #EFF6FF;
+
+  /* Intelligence */
+  --sc-cyan: #0891B2;
+  --sc-cyan-soft: #ECFEFF;
+
+  /* AI */
+  --sc-violet: #7C3AED;
+  --sc-violet-soft: #F5F3FF;
+
+  /* Academics */
+  --sc-indigo: #4F46E5;
+  --sc-indigo-soft: #EEF2FF;
+
+  /* Success */
+  --sc-emerald: #059669;
+  --sc-emerald-soft: #ECFDF5;
+
+  /* Finance */
+  --sc-amber: #D97706;
+  --sc-amber-soft: #FFFBEB;
+
+  /* Alerts */
+  --sc-rose: #E11D48;
+  --sc-rose-soft: #FFF1F2;
+
+  /* Core */
+  --sc-ink: #0F172A;
+  --sc-text: #1E293B;
+  --sc-muted: #64748B;
+  --sc-surface: #F8FAFC;
+  --sc-surface-2: #F1F5F9;
+  --sc-border: #E2E8F0;
+  --sc-white: #FFFFFF;
+}
+
+/* Brand utilities */
+
+.sc-blue { color: var(--sc-blue); }
+.sc-cyan { color: var(--sc-cyan); }
+.sc-violet { color: var(--sc-violet); }
+.sc-indigo { color: var(--sc-indigo); }
+.sc-emerald { color: var(--sc-emerald); }
+.sc-amber { color: var(--sc-amber); }
+.sc-rose { color: var(--sc-rose); }
+
+.sc-blue-bg { background: var(--sc-blue-soft); }
+.sc-cyan-bg { background: var(--sc-cyan-soft); }
+.sc-violet-bg { background: var(--sc-violet-soft); }
+.sc-indigo-bg { background: var(--sc-indigo-soft); }
+.sc-emerald-bg { background: var(--sc-emerald-soft); }
+.sc-amber-bg { background: var(--sc-amber-soft); }
+.sc-rose-bg { background: var(--sc-rose-soft); }
+
+/* Premium gradient */
+
+.sc-gradient {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(37,99,235,.16), transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(124,58,237,.14), transparent 30%),
+    radial-gradient(circle at 50% 90%, rgba(8,145,178,.12), transparent 30%),
+    #ffffff;
+}
+
+.sc-gradient-text {
+  background: linear-gradient(
+    90deg,
+    #2563EB 0%,
+    #0891B2 35%,
+    #7C3AED 70%,
+    #4F46E5 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Product colors */
+
+.sc-product-crm {
+  --product-color: #E11D48;
+  --product-soft: #FFF1F2;
+}
+
+.sc-product-erp {
+  --product-color: #2563EB;
+  --product-soft: #EFF6FF;
+}
+
+.sc-product-lms {
+  --product-color: #7C3AED;
+  --product-soft: #F5F3FF;
+}
+
+.sc-product-bms {
+  --product-color: #D97706;
+  --product-soft: #FFFBEB;
+}
+
+.sc-product-ai {
+  --product-color: #0891B2;
+  --product-soft: #ECFEFF;
+}
+
+.sc-product-icon {
+  color: var(--product-color);
+  background: var(--product-soft);
+}
+
+/* Premium card hover */
+
+.sc-color-card {
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease,
+    border-color .25s ease;
+}
+
+.sc-color-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, .10);
+}

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendLeadFollowUpNotification } from 
-"@/lib/whatsapp/sendLeadFollowUpNotification";
+import { sendLeadFollowUpNotification } from "@/lib/whatsapp/sendLeadFollowUpNotification";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -27,8 +26,16 @@ type RouteContext = {
   }>;
 };
 
+function cleanString(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+
+  const cleaned = value.trim();
+
+  return cleaned || null;
+}
+
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   context: RouteContext,
 ) {
   try {
@@ -36,7 +43,45 @@ export async function POST(
 
     if (!id) {
       return NextResponse.json(
-        { error: "Lead ID is required." },
+        {
+          error: "Lead ID is required.",
+        },
+        { status: 400 },
+      );
+    }
+
+    let body: Record<string, unknown>;
+
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json(
+        {
+          error: "Invalid JSON request body.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const followUpAt = cleanString(body.followUpAt);
+    const notes = cleanString(body.notes);
+
+    if (!followUpAt) {
+      return NextResponse.json(
+        {
+          error: "followUpAt is required.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const parsedFollowUpAt = new Date(followUpAt);
+
+    if (Number.isNaN(parsedFollowUpAt.getTime())) {
+      return NextResponse.json(
+        {
+          error: "Invalid followUpAt date.",
+        },
         { status: 400 },
       );
     }
@@ -57,14 +102,18 @@ export async function POST(
           lead_source,
           city,
           state,
-          next_follow_up_at
+          next_follow_up_at,
+          notes
         `,
       )
       .eq("id", id)
       .single();
 
     if (leadError || !lead) {
-      console.error("CRM follow-up lead fetch error:", leadError);
+      console.error(
+        "CRM follow-up lead fetch error:",
+        leadError,
+      );
 
       return NextResponse.json(
         {
@@ -78,60 +127,168 @@ export async function POST(
       );
     }
 
-    if (!lead.next_follow_up_at) {
+    const updatedNotes = notes
+      ? [
+          lead.notes || null,
+          `Follow-up: ${notes}`,
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : lead.notes || null;
+
+    const { data: updatedLead, error: updateError } =
+      await supabase
+        .from("crm_leads")
+        .update({
+          next_follow_up_at: parsedFollowUpAt.toISOString(),
+          notes: updatedNotes,
+        })
+        .eq("id", id)
+        .select(
+          `
+            id,
+            school_name,
+            contact_name,
+            contact_email,
+            contact_phone,
+            student_count,
+            source,
+            lead_source,
+            city,
+            state,
+            next_follow_up_at,
+            notes,
+            created_at,
+            updated_at
+          `,
+        )
+        .single();
+
+    if (updateError || !updatedLead) {
+      console.error(
+        "CRM follow-up scheduling error:",
+        updateError,
+      );
+
       return NextResponse.json(
         {
-          error: "No follow-up is scheduled for this lead.",
+          error: "Unable to schedule follow-up.",
+          details:
+            process.env.NODE_ENV === "development"
+              ? updateError?.message
+              : undefined,
+          code: updateError?.code ?? null,
         },
-        { status: 400 },
+        { status: 500 },
+      );
+    }
+
+    const { data: scheduledActivity, error: scheduledActivityError } =
+      await supabase
+        .from("crm_lead_activities")
+        .insert({
+          lead_id: id,
+          activity_type: "FOLLOW_UP",
+          title: "Follow-up scheduled",
+          description: [
+            `Follow-up scheduled for ${new Date(
+              parsedFollowUpAt.toISOString(),
+            ).toLocaleString("en-IN", {
+              dateStyle: "medium",
+              timeStyle: "short",
+              timeZone: "Asia/Kolkata",
+            })}.`,
+            notes ? `Notes: ${notes}` : null,
+          ]
+            .filter(Boolean)
+            .join(" "),
+        })
+        .select(
+          `
+            id,
+            lead_id,
+            activity_type,
+            title,
+            description,
+            created_at,
+            created_by
+          `,
+        )
+        .single();
+
+    if (scheduledActivityError) {
+      console.warn(
+        "Follow-up scheduled, but activity creation failed:",
+        scheduledActivityError,
       );
     }
 
     const whatsappResult =
       await sendLeadFollowUpNotification({
-        schoolName: lead.school_name,
-        contactName: lead.contact_name,
-        contactPhone: lead.contact_phone,
-        contactEmail: lead.contact_email,
-        studentCount: lead.student_count,
-        source: lead.source || lead.lead_source,
-        city: lead.city,
-        state: lead.state,
-        followUpAt: lead.next_follow_up_at,
+        schoolName: updatedLead.school_name,
+        contactName: updatedLead.contact_name,
+        contactPhone: updatedLead.contact_phone,
+        contactEmail: updatedLead.contact_email,
+        studentCount: updatedLead.student_count,
+        source:
+          updatedLead.source ||
+          updatedLead.lead_source,
+        city: updatedLead.city,
+        state: updatedLead.state,
+        followUpAt: updatedLead.next_follow_up_at,
       });
 
     if (!whatsappResult.success) {
       if (whatsappResult.skipped) {
         return NextResponse.json({
-          success: false,
+          success: true,
+          scheduled: true,
+          notificationSent: false,
           skipped: true,
           message:
-            "Follow-up notification was skipped.",
-          error: whatsappResult.error ?? null,
+            "Follow-up scheduled successfully, but the WhatsApp notification was skipped.",
+          lead: updatedLead,
+          activity: scheduledActivity ?? null,
+          whatsapp: {
+            sent: false,
+            skipped: true,
+            messageId:
+              whatsappResult.messageId ?? null,
+            error:
+              whatsappResult.error ?? null,
+          },
         });
       }
 
-      return NextResponse.json(
-        {
-          success: false,
+      return NextResponse.json({
+        success: true,
+        scheduled: true,
+        notificationSent: false,
+        message:
+          "Follow-up scheduled successfully, but the WhatsApp notification could not be sent.",
+        lead: updatedLead,
+        activity: scheduledActivity ?? null,
+        whatsapp: {
+          sent: false,
+          skipped: false,
+          messageId:
+            whatsappResult.messageId ?? null,
           error:
             whatsappResult.error ||
             "Unable to send follow-up notification.",
         },
-        { status: 502 },
-      );
+      });
     }
 
-    const { data: activity, error: activityError } =
+    const { data: notificationActivity, error: notificationActivityError } =
       await supabase
         .from("crm_lead_activities")
         .insert({
           lead_id: id,
           activity_type: "WHATSAPP",
-          title: "Follow-up reminder sent via WhatsApp",
-          description: `WhatsApp follow-up reminder sent successfully for 
-${new Date(
-            lead.next_follow_up_at,
+          title: "Follow-up notification sent via WhatsApp",
+          description: `WhatsApp follow-up notification sent successfully for ${new Date(
+            parsedFollowUpAt.toISOString(),
           ).toLocaleString("en-IN", {
             dateStyle: "medium",
             timeStyle: "short",
@@ -153,30 +310,41 @@ ${new Date(
         )
         .single();
 
-    if (activityError) {
+    if (notificationActivityError) {
       console.warn(
-        "WhatsApp sent, but activity creation failed:",
-        activityError,
+        "WhatsApp sent, but notification activity creation failed:",
+        notificationActivityError,
       );
     }
 
     return NextResponse.json({
       success: true,
+      scheduled: true,
+      notificationSent: true,
       message:
-        "Follow-up notification sent successfully.",
-      messageId: whatsappResult.messageId ?? null,
-      activity: activity ?? null,
+        "Follow-up scheduled and notification sent successfully.",
+      lead: updatedLead,
+      activity: scheduledActivity ?? null,
+      notificationActivity:
+        notificationActivity ?? null,
+      whatsapp: {
+        sent: true,
+        skipped: false,
+        messageId:
+          whatsappResult.messageId ?? null,
+        error: null,
+      },
     });
   } catch (error) {
     console.error(
-      "CRM follow-up notification API error:",
+      "CRM follow-up API error:",
       error,
     );
 
     return NextResponse.json(
       {
         error:
-          "Unable to process follow-up notification.",
+          "Unable to process CRM follow-up.",
         details:
           process.env.NODE_ENV === "development" &&
           error instanceof Error

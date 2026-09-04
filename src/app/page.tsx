@@ -1,778 +1,387 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
+import React, { useState } from 'react';
 import {
-  ArrowRight,
-  BarChart3,
   Bot,
-  ShieldCheck,
-  Users,
+  Sparkles,
+  BarChart3,
   GraduationCap,
-  BrainCircuit,
-} from "lucide-react";
-import AIChatbox from "@/components/website/AIChatbox";
-import DemoLeadForm from "@/components/website/DemoLeadForm";
-import HeroSection from "@/components/website/HeroSection";
+  Users,
+  ShieldCheck,
+  CheckCircle2,
+  ArrowRight,
+  Building2,
+  Clock,
+  ChevronDown,
+  Mail,
+  Phone,
+  MapPin
+} from 'lucide-react';
 
-export default function Home() {
-  const [demoOpen, setDemoOpen] = useState(false);
+export default function SmartCampusLandingPage() {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    schoolName: '',
+    phone: '',
+    role: 'Principal / Headmaster',
+    studentSize: 'Under 500 Students',
+  });
+
+  const [submitted, setSubmitted] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+  };
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-
-      {/* Navbar */}
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-xl font-bold"
-          >
-            <div className="rounded-lg bg-indigo-600 p-1.5 text-white">
-              <Bot className="h-5 w-5" />
-            </div>
-
-            <span>
-              SmartCampus
-              <span className="text-indigo-600">AI</span>
-            </span>
-          </Link>
-
-          <nav className="hidden items-center gap-7 text-sm font-medium text-slate-600 md:flex">
-            <Link href="#features" className="hover:text-indigo-600">
-              Features
-            </Link>
-
-            <Link href="#ai" className="hover:text-indigo-600">
-              AI System
-            </Link>
-
-            <Link href="#schools" className="hover:text-indigo-600">
-              For Schools
-            </Link>
-
-            <Link href="#pricing" className="hover:text-indigo-600">
-              Pricing
-            </Link>
-          </nav>
-
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-blue-600 selection:text-white">
+      {/* HEADER / NAVIGATION */}
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link
-              href="#demo"
-              className="hidden text-sm font-medium text-slate-700 hover:text-indigo-600 sm:block"
-            >
-              School Login
-            </Link>
-
-            <Link
-              href="#demo"
-              onClick={(event) => {
-                event.preventDefault();
-                setDemoOpen(true);
-              }}
-              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
-            >
-              Request Demo
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <GraduationCap className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xl font-bold tracking-tight text-white">
+              SmartCampus <span className="text-blue-500">AI</span>
+            </span>
           </div>
 
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+            <a href="#features" className="hover:text-blue-400 transition-colors">Features</a>
+            <a href="#solutions" className="hover:text-blue-400 transition-colors">Solutions</a>
+            <a href="#impact" className="hover:text-blue-400 transition-colors">Impact</a>
+            <a href="#faq" className="hover:text-blue-400 transition-colors">FAQ</a>
+          </nav>
+
+          <a
+            href="#demo"
+            className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 font-medium text-sm text-white transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-500/50"
+          >
+            Book Demo
+          </a>
         </div>
       </header>
 
-      {/* Hero */}
-      <HeroSection onRequestDemo={() => setDemoOpen(true)} />
+      {/* HERO SECTION & DEMO FORM */}
+      <section className="relative pt-12 pb-24 lg:pt-20 lg:pb-32 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-12 gap-12 items-center relative z-10">
 
-      {/* Trust Metrics */}
-      <section className="border-y border-slate-200 bg-white">
-        <div className="mx-auto grid max-w-6xl divide-y divide-slate-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-
-          <div className="p-8 text-center">
-            <div className="text-3xl font-bold text-slate-900">
-              2,500+
+          {/* Hero Left Content */}
+          <div className="lg:col-span-7 space-y-8 text-left">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-wider">
+              <Sparkles className="w-4 h-4" /> Next-Gen Educational OS
             </div>
-            <div className="mt-1 text-sm text-slate-500">
-              Students Managed
-            </div>
-          </div>
 
-          <div className="p-8 text-center">
-            <div className="text-3xl font-bold text-slate-900">
-              95%+
-            </div>
-            <div className="mt-1 text-sm text-slate-500">
-              Attendance Visibility
-            </div>
-          </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-[1.15]">
+              Transform Your Educational Institution with <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400">SmartCampus AI</span>
+            </h1>
 
-          <div className="p-8 text-center">
-            <div className="text-3xl font-bold text-slate-900">
-              24/7
-            </div>
-            <div className="mt-1 text-sm text-slate-500">
-              Intelligent Insights
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* Features */}
-      <section
-        id="features"
-        className="mx-auto max-w-7xl px-4 py-20 sm:px-6"
-      >
-
-        <div className="mx-auto max-w-2xl text-center">
-
-          <span className="text-sm font-semibold text-indigo-600">
-            ONE UNIFIED PLATFORM
-          </span>
-
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-            Everything your school needs
-          </h2>
-
-          <p className="mt-4 text-slate-600">
-            Replace disconnected systems with one modern
-            school management platform.
-          </p>
-
-        </div>
-
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-
-          <FeatureCard
-            icon={<Users className="h-6 w-6" />}
-            title="Admissions CRM"
-            description="Capture school enquiries, website demo requests, prospective families, follow-ups, and admission opportunities in one organized pipeline."
-          />
-
-          <FeatureCard
-            icon={<GraduationCap className="h-6 w-6" />}
-            title="Student Management"
-            description="Manage student records, classes, sections, guardians, documents, and complete academic history."
-          />
-
-          <FeatureCard
-            icon={<Users className="h-6 w-6" />}
-            title="School Operations"
-            description="Connect teachers, attendance, fees, admissions, communication, and daily school operations."
-          />
-
-          <FeatureCard
-            icon={<BrainCircuit className="h-6 w-6" />}
-            title="AI Intelligence"
-            description="Turn school data into actionable insights with intelligent alerts, reports, and recommendations."
-          />
-
-          <FeatureCard
-            icon={<BarChart3 className="h-6 w-6" />}
-            title="Analytics & Reports"
-            description="Give administrators clear visibility into attendance, fees, admissions, academics, and performance."
-          />
-
-          <FeatureCard
-            icon={<ShieldCheck className="h-6 w-6" />}
-            title="Enterprise Security"
-            description="Designed around role-based access and secure multi-school architecture."
-          />
-
-          <FeatureCard
-            icon={<Bot className="h-6 w-6" />}
-            title="AI Copilot"
-            description="Assist school teams with operational questions, summaries, alerts, and intelligent workflows."
-          />
-
-        </div>
-      </section>
-
-      {/* Dashboard Preview */}
-      <section
-        id="schools"
-        className="border-y border-slate-200 bg-slate-50 px-4 py-20 sm:px-6"
-      >
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-sm font-semibold text-indigo-600">
-              BUILT FOR SCHOOL LEADERS
-            </span>
-
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              Your entire school at a glance.
-            </h2>
-
-            <p className="mt-4 text-slate-600">
-              Give administrators one clear command center for
-              understanding what is happening across the school.
+            <p className="text-lg sm:text-xl text-slate-400 max-w-2xl leading-relaxed">
+              AI-driven automation, smart administrative workflows, and real-time campus insights designed for forward-thinking schools.
             </p>
-          </div>
 
-          <div className="mt-12 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-indigo-600 p-2 text-white">
-                  <Bot className="h-5 w-5" />
-                </div>
-
-                <div>
-                  <div className="text-sm font-bold text-slate-900">
-                    School Command Center
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    Academic Year 2026–2027
-                  </div>
-                </div>
+            <div className="pt-4 grid grid-cols-2 sm:grid-cols-3 gap-6 border-t border-slate-800/80">
+              <div>
+                <p className="text-3xl font-bold text-white">85%</p>
+                <p className="text-xs text-slate-400 mt-1">Reduction in Admin Bottlenecks</p>
               </div>
-
-              <div className="hidden rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 sm:block">
-                ● System Operational
+              <div>
+                <p className="text-3xl font-bold text-white">24/7</p>
+                <p className="text-xs text-slate-400 mt-1">Automated Student Support</p>
               </div>
-            </div>
-
-            <div className="grid gap-4 bg-slate-50 p-5 sm:grid-cols-2 lg:grid-cols-4">
-              <DashboardMetric
-                title="Total Students"
-                value="2,486"
-                change="+4.2% from last term"
-              />
-
-              <DashboardMetric
-                title="Today's Attendance"
-                value="94.8%"
-                change="2,358 Present"
-              />
-
-              <DashboardMetric
-                title="Fee Realization"
-                value="₹18.6L"
-                change="82.4% collected"
-              />
-
-              <DashboardMetric
-                title="CRM Leads"
-                value="124"
-                change="+18 new this week"
-              />
-            </div>
-
-            <div className="grid gap-5 p-5 lg:grid-cols-[1.4fr_0.8fr]">
-              <div className="rounded-xl border border-slate-200 bg-white p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-slate-900">
-                      Attendance Overview
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Weekly attendance performance
-                    </p>
-                  </div>
-
-                  <BarChart3 className="h-5 w-5 text-indigo-600" />
-                </div>
-
-                <div className="mt-7 flex h-36 items-end justify-between gap-3">
-                  {[
-                    ["Mon", "82%"],
-                    ["Tue", "91%"],
-                    ["Wed", "87%"],
-                    ["Thu", "95%"],
-                    ["Fri", "94%"],
-                    ["Sat", "89%"],
-                  ].map(([day, height]) => (
-                    <div
-                      key={day}
-                      className="flex h-full flex-1 flex-col items-center justify-end gap-2"
-                    >
-                      <div
-                        className="w-full max-w-10 rounded-t-md bg-indigo-500"
-                        style={{ height }}
-                      />
-                      <span className="text-[11px] text-slate-500">
-                        {day}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-5">
-                <div className="flex items-center gap-2">
-                  <BrainCircuit className="h-5 w-5 text-indigo-600" />
-                  <h3 className="font-bold text-slate-900">
-                    AI Insights
-                  </h3>
-                </div>
-
-                <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
-                  <p className="text-xs font-semibold text-amber-800">
-                    Attendance Alert
-                  </p>
-
-                  <p className="mt-2 text-xs leading-5 text-amber-700">
-                    Grade 8 attendance is below the school baseline.
-                    Review recurring absences.
-                  </p>
-                </div>
-
-                <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
-                  <p className="text-xs font-semibold text-indigo-800">
-                    Fee Collection Opportunity
-                  </p>
-
-                  <p className="mt-2 text-xs leading-5 text-indigo-700">
-                    24 pending accounts may benefit from automated
-                    follow-up.
-                  </p>
-                </div>
+              <div>
+                <p className="text-3xl font-bold text-white">100%</p>
+                <p className="text-xs text-slate-400 mt-1">FERPA & GDPR Compliant</p>
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Pricing */}
-      <section
-        id="pricing"
-        className="bg-white px-4 py-20 sm:px-6"
-      >
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-sm font-semibold text-indigo-600">
-              SIMPLE, TRANSPARENT PRICING
-            </span>
-
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              Choose the right plan for your school.
-            </h2>
-
-            <p className="mt-4 text-slate-600">
-              Start with the essentials and scale SmartCampusAI as
-              your school grows.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-6 lg:grid-cols-3">
-
-            {/* Starter */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-              <div className="text-sm font-semibold text-slate-500">
-                STARTER
-              </div>
-
-              <h3 className="mt-3 text-2xl font-bold text-slate-950">
-                Essential
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Core tools for schools beginning their digital
-                transformation.
-              </p>
-
-              <div className="mt-6">
-                <span className="text-3xl font-bold text-slate-950">
-                  Custom
-                </span>
-              </div>
-
-              <Link
-                href="#demo"
-                className="mt-7 flex w-full items-center justify-center rounded-lg border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Talk to Our Team
-              </Link>
-
-              <ul className="mt-7 space-y-3 text-sm text-slate-600">
-                <PricingFeature text="Student Management" />
-                <PricingFeature text="Teacher Management" />
-                <PricingFeature text="Attendance" />
-                <PricingFeature text="Basic Reports" />
-                <PricingFeature text="School Dashboard" />
-              </ul>
-            </div>
-
-            {/* Professional */}
-            <div className="relative rounded-2xl border-2 border-indigo-600 bg-white p-7 shadow-xl">
-
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-4 py-1 text-xs font-bold text-white">
-                MOST POPULAR
-              </div>
-
-              <div className="text-sm font-semibold text-indigo-600">
-                PROFESSIONAL
-              </div>
-
-              <h3 className="mt-3 text-2xl font-bold text-slate-950">
-                Growth
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Advanced school operations and intelligent insights
-                for growing institutions.
-              </p>
-
-              <div className="mt-6">
-                <span className="text-3xl font-bold text-slate-950">
-                  Custom
-                </span>
-              </div>
-
-              <Link
-                href="#demo"
-                className="mt-7 flex w-full items-center justify-center rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
-              >
-                Request a Demo
-              </Link>
-
-              <ul className="mt-7 space-y-3 text-sm text-slate-600">
-                <PricingFeature text="Everything in Essential" />
-                <PricingFeature text="Admissions CRM" />
-                <PricingFeature text="Fee Management" />
-                <PricingFeature text="Advanced Analytics" />
-                <PricingFeature text="AI Insights" />
-                <PricingFeature text="Automated Alerts" />
-              </ul>
-            </div>
-
-            {/* Enterprise */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-900 p-7 text-white shadow-sm">
-
-              <div className="text-sm font-semibold text-indigo-300">
-                ENTERPRISE
-              </div>
-
-              <h3 className="mt-3 text-2xl font-bold">
-                Network
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                Built for school groups, multi-campus organizations,
-                and large education networks.
-              </p>
-
-              <div className="mt-6">
-                <span className="text-3xl font-bold">
-                  Custom
-                </span>
-              </div>
-
-              <Link
-                href="#demo"
-                className="mt-7 flex w-full items-center justify-center rounded-lg bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
-              >
-                Contact Sales
-              </Link>
-
-              <ul className="mt-7 space-y-3 text-sm text-slate-300">
-                <PricingFeature text="Everything in Growth" />
-                <PricingFeature text="Multi-School Management" />
-                <PricingFeature text="Advanced Roles & Permissions" />
-                <PricingFeature text="Enterprise Analytics" />
-                <PricingFeature text="Priority Support" />
-                <PricingFeature text="Custom Integrations" />
-              </ul>
-            </div>
-
-          </div>
-
-          <p className="mt-8 text-center text-xs text-slate-500">
-            Pricing is customized based on school size, modules,
-            campuses, and operational requirements.
-          </p>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section
-        id="faq"
-        className="border-y border-slate-200 bg-slate-50 px-4 py-20 sm:px-6"
-      >
-        <div className="mx-auto max-w-4xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-sm font-semibold text-indigo-600">
-              FREQUENTLY ASKED QUESTIONS
-            </span>
-
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              Everything you need to know.
-            </h2>
-
-            <p className="mt-4 text-slate-600">
-              Answers to common questions about SmartCampusAI,
-              implementation, security, and support.
-            </p>
-          </div>
-
-          <div className="mt-12 space-y-4">
-
-            <FaqItem
-              question="What is SmartCampusAI?"
-              answer="SmartCampusAI is an AI-powered school management platform that connects student records, teachers, attendance, admissions, fees, academics, communication, analytics, and school operations in one unified system."
-            />
-
-            <FaqItem
-              question="Is SmartCampusAI suitable for small and large schools?"
-              answer="Yes. The platform is designed to scale from individual schools to multi-campus school groups and larger education networks. Modules and access can be configured according to each institution's requirements."
-            />
-
-            <FaqItem
-              question="Can SmartCampusAI manage multiple schools?"
-              answer="Yes. The enterprise architecture is designed to support multi-school and multi-campus organizations with role-based access and separated school data."
-            />
-
-            <FaqItem
-              question="How does the AI system help school administrators?"
-              answer="AI can help identify operational trends, highlight attendance anomalies, summarize information, surface follow-up opportunities, and turn school data into actionable insights."
-            />
-
-            <FaqItem
-              question="Is school data secure?"
-              answer="SmartCampusAI is designed with role-based access, tenant-aware architecture, secure authentication, and database-level security controls. Production deployments should be configured according to the school's security and compliance requirements."
-            />
-
-            <FaqItem
-              question="Can SmartCampusAI integrate with existing systems?"
-              answer="Yes. The platform can be designed to integrate with existing school systems and external services through APIs and controlled data-import workflows."
-            />
-
-            <FaqItem
-              question="How is pricing calculated?"
-              answer="Pricing can be customized based on the number of students, campuses, selected modules, integrations, and operational requirements of the school."
-            />
-
-            <FaqItem
-              question="How do we get started?"
-              answer="Request a demo and our team can understand your school's requirements, demonstrate the platform, and recommend an appropriate implementation plan."
-            />
-
-          </div>
-        </div>
-      </section>
-
-      {/* AI Section */}
-      <section
-        id="ai"
-        className="border-y border-slate-200 bg-slate-900 px-4 py-20 text-white sm:px-6"
-      >
-
-        <div className="mx-auto max-w-6xl">
-
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-
-            <div>
-
-              <div className="mb-4 inline-flex rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-300">
-                SMARTCAMPUS AI
-              </div>
-
-              <h2 className="text-3xl font-bold sm:text-4xl">
-                From school data to
-                <span className="text-indigo-400">
-                  {" "}intelligent decisions.
-                </span>
-              </h2>
-
-              <p className="mt-5 leading-7 text-slate-300">
-                SmartCampusAI helps school leaders identify trends,
-                understand operational issues, and act faster using
-                intelligent insights.
-              </p>
-
-              <Link
-                href="#demo"
-                className="mt-7 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-700"
-              >
-                Open Command Center
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-
-            </div>
-
-            <div className="rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-xl">
-
-              <div className="flex items-center gap-3 border-b border-slate-700 pb-4">
-
-                <div className="rounded-lg bg-indigo-600 p-2">
-                  <Bot className="h-5 w-5" />
-                </div>
-
-                <div>
-                  <div className="text-sm font-semibold">
-                    AI Operational Insight
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    School Command Center
-                  </div>
-                </div>
-
-              </div>
-
-              <div className="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-
-                <div className="text-sm font-semibold text-amber-300">
-                  Attendance Anomaly Detected
-                </div>
-
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Grade 8 attendance is trending below the
-                  school baseline. Review recurring absences
-                  and contact identified families.
+          {/* Hero Right: Booking Form */}
+          <div id="demo" className="lg:col-span-5">
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-white">Book a SmartCampus AI Demo</h2>
+                <p className="text-sm text-slate-400 mt-1">
+                  See how SmartCampus AI automates operations and enhances student engagement.
                 </p>
-
               </div>
 
+              {submitted ? (
+                <div className="py-12 text-center space-y-4">
+                  <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/20">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Demo Request Received!</h3>
+                  <p className="text-sm text-slate-400">
+                    Thank you, <span className="text-white font-medium">{formData.fullName}</span>. One of our campus AI specialists will reach out shortly to schedule your personalized session.
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Dr. Sarah Jenkins"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                      className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Work Email *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="s.jenkins@academy.edu"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                        School Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Oakridge Academy"
+                        value={formData.schoolName}
+                        onChange={(e) => setFormData({...formData, schoolName: e.target.value})}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="+1 (555) 000-0000"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Your Role
+                    </label>
+                    <select
+                      value={formData.role}
+                      onChange={(e) => setFormData({...formData, role: e.target.value})}
+                      className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                    >
+                      <option value="Principal / Headmaster">Principal / Headmaster</option>
+                      <option value="IT Director / Technology Lead">IT Director / Technology Lead</option>
+                      <option value="Administrator / Manager">Administrator / Manager</option>
+                      <option value="Superintendent">Superintendent</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Student Size
+                    </label>
+                    <select
+                      value={formData.studentSize}
+                      onChange={(e) => setFormData({...formData, studentSize: e.target.value})}
+                      className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                    >
+                      <option value="Under 500 Students">Under 500 Students</option>
+                      <option value="500 – 1,500 Students">500 – 1,500 Students</option>
+                      <option value="1,500 – 3,000 Students">1,500 – 3,000 Students</option>
+                      <option value="3,000+ Students">3,000+ Students</option>
+                    </select>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 mt-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-semibold text-white text-sm transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 group"
+                  >
+                    Request SmartCampus Demo
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </form>
+              )}
             </div>
-
           </div>
 
         </div>
-
       </section>
 
-      {/* CTA */}
-      <section
-        id="demo"
-        className="px-4 py-20 text-center sm:px-6"
-      >
+      {/* FEATURES GRID */}
+      <section id="features" className="py-20 bg-slate-900/50 border-y border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white">
+              Purpose-Built AI for Campus Operations
+            </h2>
+            <p className="text-slate-400">
+              Eliminate manual tasks, unify campus communications, and unlock predictive insights with our comprehensive educational suite.
+            </p>
+          </div>
 
-        <div className="mx-auto max-w-3xl">
-
-          <h2 className="text-3xl font-bold text-slate-950 sm:text-4xl">
-            Build a smarter school.
-          </h2>
-
-          <p className="mx-auto mt-4 max-w-xl text-slate-600">
-            Bring your school operations together with
-            SmartCampusAI.
-          </p>
-
-          <Link
-            href="#demo"
-            className="mt-7 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3.5 font-semibold text-white shadow-md hover:bg-indigo-700"
-          >
-            Explore the Platform
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <FeatureCard
+              icon={<Bot className="w-6 h-6 text-blue-400" />}
+              title="24/7 AI Campus Concierge"
+              description="Automate response handling for student inquiries, parent FAQs, and administrative support around the clock."
+            />
+            <FeatureCard
+              icon={<Clock className="w-6 h-6 text-indigo-400" />}
+              title="Smart Administrative Workflows"
+              description="Automatically generate transcripts, process enrollment forms, and manage staff schedules seamlessly."
+            />
+            <FeatureCard
+              icon={<BarChart3 className="w-6 h-6 text-emerald-400" />}
+              title="Real-Time Campus Analytics"
+              description="Track attendance trends, academic performance, and resource usage with executive-level dashboards."
+            />
+            <FeatureCard
+              icon={<Users className="w-6 h-6 text-purple-400" />}
+              title="Parent & Student Hub"
+              description="Centralize grade reports, event notifications, and direct messaging into a unified mobile interface."
+            />
+            <FeatureCard
+              icon={<ShieldCheck className="w-6 h-6 text-cyan-400" />}
+              title="Enterprise Grade Security"
+              description="Bank-grade encryption ensured with total FERPA, COPPA, and GDPR regulatory compliance built-in."
+            />
+            <FeatureCard
+              icon={<Building2 className="w-6 h-6 text-amber-400" />}
+              title="Facility & Resource Optimization"
+              description="Intelligent scheduling for classrooms, labs, sports facilities, and campus maintenance needs."
+            />
+          </div>
         </div>
-
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white">
-
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-slate-500 sm:px-6 md:flex-row md:items-center md:justify-between">
-
-          <div>
-            © 2026 SmartCampusAI. All rights reserved.
-          </div>
-
-          <div>
-            Powered by ThomasG Technologies
-          </div>
-
+      {/* FAQ SECTION */}
+      <section id="faq" className="py-20 max-w-4xl mx-auto px-6">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-white">Frequently Asked Questions</h2>
+          <p className="text-slate-400 mt-2">Got questions about integrating SmartCampus AI into your school?</p>
         </div>
 
+        <div className="space-y-4">
+          <FaqItem
+            index={1}
+            openFaq={openFaq}
+            setOpenFaq={setOpenFaq}
+            question="How quickly can SmartCampus AI be deployed in our school?"
+            answer="Most institutions deploy SmartCampus AI within 2 to 3 weeks. Our onboarding team handles integration with your existing Student Information System (SIS)."
+          />
+          <FaqItem
+            index={2}
+            openFaq={openFaq}
+            setOpenFaq={setOpenFaq}
+            question="Is student data safe and compliant?"
+            answer="Absolutely. SmartCampus AI uses enterprise-grade encryption and strictly complies with FERPA, COPPA, and GDPR standards. Student data is never sold or used for training public AI models."
+          />
+          <FaqItem
+            index={3}
+            openFaq={openFaq}
+            setOpenFaq={setOpenFaq}
+            question="Can SmartCampus AI integrate with our existing SIS or LMS?"
+            answer="Yes! We provide out-of-the-box integrations for Canvas, PowerSchool, Google Classroom, Blackboard, and custom REST API endpoints."
+          />
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="bg-slate-950 border-t border-slate-800/80 py-12 text-slate-400 text-sm">
+        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-8 mb-8">
+          <div className="space-y-4 md:col-span-1">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="w-6 h-6 text-blue-500" />
+              <span className="text-lg font-bold text-white">SmartCampus AI</span>
+            </div>
+            <p className="text-xs leading-relaxed text-slate-500">
+              Empowering K-12 and Higher-Ed institutions with intelligent, secure campus automation.
+            </p>
+          </div>
+
+          <div>
+            <h4 className="text-white font-semibold mb-3">Product</h4>
+            <ul className="space-y-2 text-xs">
+              <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Security & FERPA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Integrations</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-white font-semibold mb-3">Institution Types</h4>
+            <ul className="space-y-2 text-xs">
+              <li><a href="#" className="hover:text-white transition-colors">K-12 Schools</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Higher Education</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">School Districts</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-white font-semibold mb-3">Contact</h4>
+            <ul className="space-y-2 text-xs">
+              <li className="flex items-center gap-2"><Mail className="w-4 h-4 text-slate-500" /> contact@smartcampus.ai</li>
+              <li className="flex items-center gap-2"><Phone className="w-4 h-4 text-slate-500" /> +1 (800) 555-AI-EDU</li>
+              <li className="flex items-center gap-2"><MapPin className="w-4 h-4 text-slate-500" /> San Francisco, CA</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 pt-6 border-t border-slate-900 text-center text-xs text-slate-600">
+          © {new Date().getFullYear()} SmartCampus AI Inc. All rights reserved.
+        </div>
       </footer>
-
-      <AIChatbox
-        onRequestDemo={() => setDemoOpen(true)}
-      />
-
-      <DemoLeadForm
-        open={demoOpen}
-        onClose={() => setDemoOpen(false)}
-      />
-    </main>
-  );
-}
-
-function FaqItem({
-  question,
-  answer,
-}: {
-  question: string;
-  answer: string;
-}) {
-  return (
-    <details className="group rounded-xl border border-slate-200 bg-white shadow-sm">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-6 px-5 py-5 text-sm font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
-        <span>{question}</span>
-
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 text-lg font-normal text-slate-500 transition-transform group-open:rotate-45">
-          +
-        </span>
-      </summary>
-
-      <div className="border-t border-slate-100 px-5 py-5 text-sm leading-7 text-slate-600">
-        {answer}
-      </div>
-    </details>
-  );
-}
-
-function PricingFeature({ text }: { text: string }) {
-  return (
-    <li className="flex items-center gap-3">
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600">
-        ✓
-      </span>
-      <span>{text}</span>
-    </li>
-  );
-}
-
-function DashboardMetric({
-  title,
-  value,
-  change,
-}: {
-  title: string;
-  value: string;
-  change: string;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="text-xs font-medium text-slate-500">
-        {title}
-      </div>
-
-      <div className="mt-2 text-2xl font-bold text-slate-900">
-        {value}
-      </div>
-
-      <div className="mt-1 text-xs font-medium text-green-600">
-        {change}
-      </div>
     </div>
   );
 }
 
-function FeatureCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-
-      <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+    <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition-all hover:-translate-y-1">
+      <div className="w-12 h-12 rounded-lg bg-slate-800/80 flex items-center justify-center mb-4">
         {icon}
       </div>
+      <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+      <p className="text-sm text-slate-400 leading-relaxed">{description}</p>
+    </div>
+  );
+}
 
-      <h3 className="text-lg font-bold text-slate-900">
-        {title}
-      </h3>
-
-      <p className="mt-2 text-sm leading-6 text-slate-600">
-        {description}
-      </p>
-
-</div>
+function FaqItem({ index, openFaq, setOpenFaq, question, answer }: { index: number; openFaq: number | null; setOpenFaq: (i: number | null) => void; question: string; answer: string }) {
+  const isOpen = openFaq === index;
+  return (
+    <div className="border border-slate-800 rounded-xl bg-slate-900/40 overflow-hidden">
+      <button
+        onClick={() => setOpenFaq(isOpen ? null : index)}
+        className="w-full px-6 py-4 text-left flex items-center justify-between text-white font-medium text-sm sm:text-base"
+      >
+        <span>{question}</span>
+        <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="px-6 pb-4 text-sm text-slate-400 leading-relaxed border-t border-slate-800/50 pt-3">
+          {answer}
+        </div>
+      )}
+    </div>
   );
 }

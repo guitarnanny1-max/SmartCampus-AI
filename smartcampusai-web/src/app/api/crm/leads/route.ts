@@ -42,6 +42,102 @@ function parseStudentCount(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = getSupabaseAdmin();
+
+    const { searchParams } = new URL(request.url);
+
+    const status = cleanString(searchParams.get("status"));
+    const search = cleanString(searchParams.get("search"));
+    const limitParam = Number(searchParams.get("limit") || "100");
+
+    const limit = Number.isFinite(limitParam)
+      ? Math.min(Math.max(Math.trunc(limitParam), 1), 500)
+      : 100;
+
+    let query = supabase
+      .from("crm_leads")
+      .select(`
+        id,
+        school_name,
+        contact_name,
+        contact_email,
+        contact_phone,
+        source,
+        lead_source,
+        lead_status,
+        status,
+        priority,
+        notes,
+        student_count,
+        created_at,
+        updated_at
+      `)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (status) {
+      query = query.or(
+        `lead_status.eq.${status},status.eq.${status}`,
+      );
+    }
+
+    if (search) {
+      const escapedSearch = search.replace(/[%_,]/g, "");
+      query = query.or(
+        `school_name.ilike.%${escapedSearch}%,contact_name.ilike.%${escapedSearch}%,contact_email.ilike.%${escapedSearch}%,contact_phone.ilike.%${escapedSearch}%`,
+      );
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("========== CRM SUPABASE ERROR ==========");
+      console.error("code:", error.code);
+      console.error("message:", error.message);
+      console.error("details:", error.details);
+      console.error("hint:", error.hint);
+      console.error("========================================");
+
+      return NextResponse.json(
+        {
+          error: "Unable to load leads.",
+          details: error.message,
+          code: error.code,
+          hint: error.hint,
+          supabaseDetails: error.details,
+        },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        leads: data ?? [],
+        count: data?.length ?? 0,
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.error("========== CRM GET API ERROR ==========");
+    console.error(error);
+    console.error("=======================================");
+
+    return NextResponse.json(
+      {
+        error: "Unable to load leads.",
+        details:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      },
+      { status: 500 },
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     let body: Record<string, unknown>;
