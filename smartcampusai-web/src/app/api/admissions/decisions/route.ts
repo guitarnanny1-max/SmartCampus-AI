@@ -531,6 +531,141 @@ export async function POST(request: NextRequest) {
       }
 
       /*
+       * 6B. ADMISSIONS → STUDENT 360 FOUNDATION
+       *
+       * Populate the new Student 360 profile and primary guardian
+       * from the accepted Applicant without overwriting existing
+       * Student 360 data that may have been entered manually.
+       */
+
+      const profileId = createId("profile");
+
+      const { data: existingProfile, error: profileLookupError } =
+        await supabase
+          .from("student_profiles")
+          .select("id")
+          .eq("tenantId", tenantId)
+          .eq("student_id", student.id)
+          .maybeSingle();
+
+      if (profileLookupError) {
+        console.error(
+          "Student 360 profile lookup error:",
+          profileLookupError,
+        );
+      }
+
+      if (!existingProfile) {
+        const profileNameParts = {
+          first_name: applicant.firstName || student.name || null,
+          middle_name: applicant.middleName || null,
+          last_name: applicant.lastName || null,
+        };
+
+        const { error: profileInsertError } = await supabase
+          .from("student_profiles")
+          .insert({
+            id: profileId,
+            tenantId,
+            student_id: student.id,
+            ...profileNameParts,
+            date_of_birth: applicant.dateOfBirth || null,
+            gender: applicant.gender || null,
+            address_line1: applicant.addressLine1 || null,
+            address_line2: applicant.addressLine2 || null,
+            city: applicant.city || null,
+            state: applicant.state || null,
+            country: applicant.country || "India",
+            postal_code: applicant.postalCode || null,
+          });
+
+        if (profileInsertError) {
+          console.error(
+            "Student 360 profile creation error:",
+            profileInsertError,
+          );
+
+          return NextResponse.json(
+            {
+              error:
+                "Student was created, but Student 360 profile could not be created.",
+              decision: admissionDecision,
+              application: updatedApplication,
+              details:
+                process.env.NODE_ENV === "development"
+                  ? profileInsertError.message
+                  : undefined,
+            },
+            { status: 500 },
+          );
+        }
+      }
+
+      /*
+       * Create the primary guardian only when the accepted Applicant
+       * has guardian/parent information and no primary guardian exists.
+       */
+      const { data: existingPrimaryGuardian, error: guardianLookupError } =
+        await supabase
+          .from("student_guardians")
+          .select("id")
+          .eq("tenantId", tenantId)
+          .eq("student_id", student.id)
+          .eq("is_primary", true)
+          .maybeSingle();
+
+      if (guardianLookupError) {
+        console.error(
+          "Student 360 guardian lookup error:",
+          guardianLookupError,
+        );
+      }
+
+      const guardianName = applicant.parentName?.trim() || null;
+      const guardianEmail = applicant.parentEmail?.trim() || null;
+      const guardianPhone = applicant.parentPhone?.trim() || null;
+
+      if (
+        !existingPrimaryGuardian &&
+        (guardianName || guardianEmail || guardianPhone)
+      ) {
+        const { error: guardianInsertError } = await supabase
+          .from("student_guardians")
+          .insert({
+            id: createId("guardian"),
+            tenantId,
+            student_id: student.id,
+            name: guardianName || "Parent / Guardian",
+            relationship: "Parent",
+            email: guardianEmail,
+            phone: guardianPhone,
+            is_primary: true,
+            is_emergency_contact: false,
+          });
+
+        if (guardianInsertError) {
+          console.error(
+            "Student 360 guardian creation error:",
+            guardianInsertError,
+          );
+
+          return NextResponse.json(
+            {
+              error:
+                "Student was created, but primary guardian could not be created.",
+              decision: admissionDecision,
+              application: updatedApplication,
+              details:
+                process.env.NODE_ENV === "development"
+                  ? guardianInsertError.message
+                  : undefined,
+            },
+            { status: 500 },
+          );
+        }
+      }
+
+      /*
        * Mark application as ENROLLED after student creation.
        */
       const { data: enrolledApplication, error: enrolledError } =
