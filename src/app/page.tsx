@@ -1,130 +1,387 @@
-import { prisma } from "@/lib/prisma";
-import Link from "next/link";
+'use client';
 
-export const dynamic = "force-dynamic";
+import React, { useState } from 'react';
+import {
+  Bot,
+  Sparkles,
+  BarChart3,
+  GraduationCap,
+  Users,
+  ShieldCheck,
+  CheckCircle2,
+  ArrowRight,
+  Building2,
+  Clock,
+  ChevronDown,
+  Mail,
+  Phone,
+  MapPin
+} from 'lucide-react';
 
-export default async function DashboardPage() {
-  const studentCount = await prisma.student.count().catch(() => 0);
-  const staffCount = await prisma.staff.count().catch(() => 0);
-  const leadCount = await prisma.lead.count().catch(() => 0);
-  const libraryCount = await prisma.libraryAsset.count().catch(() => 0);
-  const energyLogs = await prisma.energyLog.findMany({ take: 5, orderBy: { createdAt: "desc" } }).catch(() => []);
-  const recentStudents = await prisma.student.findMany({ take: 5, orderBy: { createdAt: "desc" } }).catch(() => []);
+export default function SmartCampusLandingPage() {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    schoolName: '',
+    phone: '',
+    role: 'Principal / Headmaster',
+    studentSize: 'Under 500 Students',
+  });
+
+  const [submitted, setSubmitted] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6 lg:p-10">
-      <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            Smart Campus AI Command Center
-          </h1>
-          <p className="text-gray-400 mt-1">Unified administration, biometric security, telemetry, and AI assistant overview.</p>
-        </div>
-        <div className="flex gap-3">
-          <Link href="/login" className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm font-medium border border-gray-700 transition">Sign In</Link>
-          <Link href="/signup" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition">Register</Link>
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-blue-600 selection:text-white">
+      {/* HEADER / NAVIGATION */}
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <GraduationCap className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xl font-bold tracking-tight text-white">
+              SmartCampus <span className="text-blue-500">AI</span>
+            </span>
+          </div>
+
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+            <a href="#features" className="hover:text-blue-400 transition-colors">Features</a>
+            <a href="#solutions" className="hover:text-blue-400 transition-colors">Solutions</a>
+            <a href="#impact" className="hover:text-blue-400 transition-colors">Impact</a>
+            <a href="#faq" className="hover:text-blue-400 transition-colors">FAQ</a>
+          </nav>
+
+          <a
+            href="#demo"
+            className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 font-medium text-sm text-white transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-500/50"
+          >
+            Book Demo
+          </a>
         </div>
       </header>
 
-      {/* Metric Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl">
-          <div className="text-gray-400 text-sm font-medium">Total Students</div>
-          <div className="text-3xl font-bold mt-2 text-indigo-400">{studentCount}</div>
-          <Link href="/students" className="text-xs text-indigo-400 hover:underline mt-3 inline-block">Manage students &rarr;</Link>
-        </div>
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl">
-          <div className="text-gray-400 text-sm font-medium">Active Staff</div>
-          <div className="text-3xl font-bold mt-2 text-purple-400">{staffCount}</div>
-          <Link href="/staff" className="text-xs text-purple-400 hover:underline mt-3 inline-block">Manage staff &rarr;</Link>
-        </div>
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl">
-          <div className="text-gray-400 text-sm font-medium">Admissions Leads</div>
-          <div className="text-3xl font-bold mt-2 text-emerald-400">{leadCount}</div>
-          <Link href="/admissions" className="text-xs text-emerald-400 hover:underline mt-3 inline-block">View pipeline &rarr;</Link>
-        </div>
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl">
-          <div className="text-gray-400 text-sm font-medium">Library Catalog</div>
-          <div className="text-3xl font-bold mt-2 text-amber-400">{libraryCount}</div>
-          <Link href="/library" className="text-xs text-amber-400 hover:underline mt-3 inline-block">Explore catalog &rarr;</Link>
-        </div>
-      </div>
+      {/* HERO SECTION & DEMO FORM */}
+      <section className="relative pt-12 pb-24 lg:pt-20 lg:pb-32 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-12 gap-12 items-center relative z-10">
 
-      {/* Quick Navigation / Features Grid */}
-      <div className="mb-10">
-        <h2 className="text-xl font-bold mb-4">Campus Modules & Features</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-          {[
-            { name: "Students", href: "/students", icon: "🎓", color: "hover:border-indigo-500" },
-            { name: "Staff", href: "/staff", icon: "👥", color: "hover:border-purple-500" },
-            { name: "Admissions", href: "/admissions", icon: "📈", color: "hover:border-emerald-500" },
-            { name: "Exams", href: "/exams", icon: "📝", color: "hover:border-blue-500" },
-            { name: "Library", href: "/library", icon: "📚", color: "hover:border-amber-500" },
-            { name: "Energy", href: "/energy", icon: "⚡", color: "hover:border-yellow-500" },
-            { name: "Transport", href: "/transport", icon: "🚌", color: "hover:border-cyan-500" },
-            { name: "Finance", href: "/finance", icon: "💳", color: "hover:border-green-500" },
-            { name: "Reports", href: "/reports", icon: "📊", color: "hover:border-pink-500" },
-            { name: "Settings", href: "/settings", icon: "⚙️", color: "hover:border-gray-500" },
-            { name: "Pricing", href: "/pricing", icon: "💎", color: "hover:border-purple-400" },
-            { name: "AI Assistant", href: "#", icon: "🤖", color: "hover:border-indigo-400" }
-          ].map((mod, idx) => (
-            <Link key={idx} href={mod.href} className={`bg-gray-900 border border-gray-800 ${mod.color} p-4 rounded-xl text-center transition group flex flex-col items-center justify-center`}>
-              <span className="text-2xl mb-2">{mod.icon}</span>
-              <span className="font-semibold text-sm group-hover:text-white">{mod.name}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
+          {/* Hero Left Content */}
+          <div className="lg:col-span-7 space-y-8 text-left">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-wider">
+              <Sparkles className="w-4 h-4" /> Next-Gen Educational OS
+            </div>
 
-      {/* Recent Registrations & Energy Telemetry */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl">
-          <h3 className="text-lg font-bold mb-4 flex items-center justify-between">
-            <span>Recent Student Registrations</span>
-            <Link href="/students" className="text-xs text-indigo-400 hover:underline">View all</Link>
-          </h3>
-          <div className="space-y-3">
-            {recentStudents.length > 0 ? (
-              recentStudents.map((s: any) => (
-                <div key={s.id} className="flex justify-between items-center p-3 bg-gray-800/50 rounded-xl border border-gray-800">
-                  <div>
-                    <div className="font-semibold text-sm">{s.name}</div>
-                    <div className="text-xs text-gray-400">{s.email || "No email"} • {s.grade}</div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-[1.15]">
+              Transform Your Educational Institution with <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400">SmartCampus AI</span>
+            </h1>
+
+            <p className="text-lg sm:text-xl text-slate-400 max-w-2xl leading-relaxed">
+              AI-driven automation, smart administrative workflows, and real-time campus insights designed for forward-thinking schools.
+            </p>
+
+            <div className="pt-4 grid grid-cols-2 sm:grid-cols-3 gap-6 border-t border-slate-800/80">
+              <div>
+                <p className="text-3xl font-bold text-white">85%</p>
+                <p className="text-xs text-slate-400 mt-1">Reduction in Admin Bottlenecks</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-white">24/7</p>
+                <p className="text-xs text-slate-400 mt-1">Automated Student Support</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-white">100%</p>
+                <p className="text-xs text-slate-400 mt-1">FERPA & GDPR Compliant</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Hero Right: Booking Form */}
+          <div id="demo" className="lg:col-span-5">
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-white">Book a SmartCampus AI Demo</h2>
+                <p className="text-sm text-slate-400 mt-1">
+                  See how SmartCampus AI automates operations and enhances student engagement.
+                </p>
+              </div>
+
+              {submitted ? (
+                <div className="py-12 text-center space-y-4">
+                  <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/20">
+                    <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <span className="text-xs px-2.5 py-1 bg-indigo-900/50 text-indigo-300 rounded-full border border-indigo-800">{s.status || "Active"}</span>
+                  <h3 className="text-xl font-bold text-white">Demo Request Received!</h3>
+                  <p className="text-sm text-slate-400">
+                    Thank you, <span className="text-white font-medium">{formData.fullName}</span>. One of our campus AI specialists will reach out shortly to schedule your personalized session.
+                  </p>
                 </div>
-              ))
-            ) : (
-              <div className="text-gray-500 text-sm py-4 text-center">No student records found.</div>
-            )}
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Dr. Sarah Jenkins"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                      className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Work Email *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="s.jenkins@academy.edu"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                        School Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Oakridge Academy"
+                        value={formData.schoolName}
+                        onChange={(e) => setFormData({...formData, schoolName: e.target.value})}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="+1 (555) 000-0000"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Your Role
+                    </label>
+                    <select
+                      value={formData.role}
+                      onChange={(e) => setFormData({...formData, role: e.target.value})}
+                      className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                    >
+                      <option value="Principal / Headmaster">Principal / Headmaster</option>
+                      <option value="IT Director / Technology Lead">IT Director / Technology Lead</option>
+                      <option value="Administrator / Manager">Administrator / Manager</option>
+                      <option value="Superintendent">Superintendent</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Student Size
+                    </label>
+                    <select
+                      value={formData.studentSize}
+                      onChange={(e) => setFormData({...formData, studentSize: e.target.value})}
+                      className="w-full px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                    >
+                      <option value="Under 500 Students">Under 500 Students</option>
+                      <option value="500 – 1,500 Students">500 – 1,500 Students</option>
+                      <option value="1,500 – 3,000 Students">1,500 – 3,000 Students</option>
+                      <option value="3,000+ Students">3,000+ Students</option>
+                    </select>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 mt-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-semibold text-white text-sm transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 group"
+                  >
+                    Request SmartCampus Demo
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* FEATURES GRID */}
+      <section id="features" className="py-20 bg-slate-900/50 border-y border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white">
+              Purpose-Built AI for Campus Operations
+            </h2>
+            <p className="text-slate-400">
+              Eliminate manual tasks, unify campus communications, and unlock predictive insights with our comprehensive educational suite.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <FeatureCard
+              icon={<Bot className="w-6 h-6 text-blue-400" />}
+              title="24/7 AI Campus Concierge"
+              description="Automate response handling for student inquiries, parent FAQs, and administrative support around the clock."
+            />
+            <FeatureCard
+              icon={<Clock className="w-6 h-6 text-indigo-400" />}
+              title="Smart Administrative Workflows"
+              description="Automatically generate transcripts, process enrollment forms, and manage staff schedules seamlessly."
+            />
+            <FeatureCard
+              icon={<BarChart3 className="w-6 h-6 text-emerald-400" />}
+              title="Real-Time Campus Analytics"
+              description="Track attendance trends, academic performance, and resource usage with executive-level dashboards."
+            />
+            <FeatureCard
+              icon={<Users className="w-6 h-6 text-purple-400" />}
+              title="Parent & Student Hub"
+              description="Centralize grade reports, event notifications, and direct messaging into a unified mobile interface."
+            />
+            <FeatureCard
+              icon={<ShieldCheck className="w-6 h-6 text-cyan-400" />}
+              title="Enterprise Grade Security"
+              description="Bank-grade encryption ensured with total FERPA, COPPA, and GDPR regulatory compliance built-in."
+            />
+            <FeatureCard
+              icon={<Building2 className="w-6 h-6 text-amber-400" />}
+              title="Facility & Resource Optimization"
+              description="Intelligent scheduling for classrooms, labs, sports facilities, and campus maintenance needs."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ SECTION */}
+      <section id="faq" className="py-20 max-w-4xl mx-auto px-6">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-white">Frequently Asked Questions</h2>
+          <p className="text-slate-400 mt-2">Got questions about integrating SmartCampus AI into your school?</p>
+        </div>
+
+        <div className="space-y-4">
+          <FaqItem
+            index={1}
+            openFaq={openFaq}
+            setOpenFaq={setOpenFaq}
+            question="How quickly can SmartCampus AI be deployed in our school?"
+            answer="Most institutions deploy SmartCampus AI within 2 to 3 weeks. Our onboarding team handles integration with your existing Student Information System (SIS)."
+          />
+          <FaqItem
+            index={2}
+            openFaq={openFaq}
+            setOpenFaq={setOpenFaq}
+            question="Is student data safe and compliant?"
+            answer="Absolutely. SmartCampus AI uses enterprise-grade encryption and strictly complies with FERPA, COPPA, and GDPR standards. Student data is never sold or used for training public AI models."
+          />
+          <FaqItem
+            index={3}
+            openFaq={openFaq}
+            setOpenFaq={setOpenFaq}
+            question="Can SmartCampus AI integrate with our existing SIS or LMS?"
+            answer="Yes! We provide out-of-the-box integrations for Canvas, PowerSchool, Google Classroom, Blackboard, and custom REST API endpoints."
+          />
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="bg-slate-950 border-t border-slate-800/80 py-12 text-slate-400 text-sm">
+        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-8 mb-8">
+          <div className="space-y-4 md:col-span-1">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="w-6 h-6 text-blue-500" />
+              <span className="text-lg font-bold text-white">SmartCampus AI</span>
+            </div>
+            <p className="text-xs leading-relaxed text-slate-500">
+              Empowering K-12 and Higher-Ed institutions with intelligent, secure campus automation.
+            </p>
+          </div>
+
+          <div>
+            <h4 className="text-white font-semibold mb-3">Product</h4>
+            <ul className="space-y-2 text-xs">
+              <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Security & FERPA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Integrations</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-white font-semibold mb-3">Institution Types</h4>
+            <ul className="space-y-2 text-xs">
+              <li><a href="#" className="hover:text-white transition-colors">K-12 Schools</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Higher Education</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">School Districts</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-white font-semibold mb-3">Contact</h4>
+            <ul className="space-y-2 text-xs">
+              <li className="flex items-center gap-2"><Mail className="w-4 h-4 text-slate-500" /> contact@smartcampus.ai</li>
+              <li className="flex items-center gap-2"><Phone className="w-4 h-4 text-slate-500" /> +1 (800) 555-AI-EDU</li>
+              <li className="flex items-center gap-2"><MapPin className="w-4 h-4 text-slate-500" /> San Francisco, CA</li>
+            </ul>
           </div>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl">
-          <h3 className="text-lg font-bold mb-4 flex items-center justify-between">
-            <span>Energy & Telemetry Logs</span>
-            <Link href="/energy" className="text-xs text-yellow-400 hover:underline">View logs</Link>
-          </h3>
-          <div className="space-y-3">
-            {energyLogs.length > 0 ? (
-              energyLogs.map((l: any) => (
-                <div key={l.id} className="flex justify-between items-center p-3 bg-gray-800/50 rounded-xl border border-gray-800">
-                  <div>
-                    <div className="font-semibold text-sm">{l.source || "Campus Grid"}</div>
-                    <div className="text-xs text-gray-400">Consumption: {l.consumption} kWh</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-bold text-emerald-400">${(l.cost || 0).toFixed(2)}</div>
-                    <div className="text-[10px] text-gray-500">{new Date(l.createdAt).toLocaleDateString()}</div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-gray-500 text-sm py-4 text-center">No energy logs recorded yet.</div>
-            )}
-          </div>
+        <div className="max-w-7xl mx-auto px-6 pt-6 border-t border-slate-900 text-center text-xs text-slate-600">
+          © {new Date().getFullYear()} SmartCampus AI Inc. All rights reserved.
         </div>
+      </footer>
+    </div>
+  );
+}
+
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+  return (
+    <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition-all hover:-translate-y-1">
+      <div className="w-12 h-12 rounded-lg bg-slate-800/80 flex items-center justify-center mb-4">
+        {icon}
       </div>
+      <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+      <p className="text-sm text-slate-400 leading-relaxed">{description}</p>
+    </div>
+  );
+}
+
+function FaqItem({ index, openFaq, setOpenFaq, question, answer }: { index: number; openFaq: number | null; setOpenFaq: (i: number | null) => void; question: string; answer: string }) {
+  const isOpen = openFaq === index;
+  return (
+    <div className="border border-slate-800 rounded-xl bg-slate-900/40 overflow-hidden">
+      <button
+        onClick={() => setOpenFaq(isOpen ? null : index)}
+        className="w-full px-6 py-4 text-left flex items-center justify-between text-white font-medium text-sm sm:text-base"
+      >
+        <span>{question}</span>
+        <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="px-6 pb-4 text-sm text-slate-400 leading-relaxed border-t border-slate-800/50 pt-3">
+          {answer}
+        </div>
+      )}
     </div>
   );
 }

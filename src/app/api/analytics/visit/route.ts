@@ -1,5 +1,3 @@
-export const revalidate = 0;
-export const dynamic = 'force-dynamic';
 import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -9,7 +7,7 @@ function hashValue(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
 

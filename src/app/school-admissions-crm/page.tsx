@@ -1,5 +1,3 @@
-export const revalidate = 0;
-export const dynamic = 'force-dynamic';
 import Link from "next/link";
 import AdmissionsEnquiryForm from "@/components/website/AdmissionsEnquiryForm";
 import {
@@ -190,7 +188,7 @@ export default function SchoolAdmissionsCRMPage() {
           </div>
 
           <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature: any) => {
+            {features.map((feature) => {
               const Icon = feature.icon;
 
               return (
@@ -284,7 +282,7 @@ export default function SchoolAdmissionsCRMPage() {
                 answer:
                   "Schools can request a demonstration through the SmartCampusAI website. The enquiry can then enter the admissions CRM for follow-up by the school or SmartCampusAI team.",
               },
-            ].map((item: any) => (
+            ].map((item) => (
               <details
                 key={item.question}
                 className="group rounded-2xl border border-slate-200 bg-slate-50 p-5"

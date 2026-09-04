@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 type Message = {
-  id: number;
+  id: string;
   role: "assistant" | "user";
   text: string;
 };
@@ -126,7 +126,7 @@ export default function AIChatbox({
 
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: 1,
+      id: "1",
       role: "assistant",
       text:
         "Hi! I'm the SmartCampusAI assistant. I can answer questions about the platform or help you request a demo.",
@@ -154,17 +154,17 @@ export default function AIChatbox({
 
     if (!trimmed) return;
 
-    const timestamp = Date.now();
+    const _timestamp = crypto.randomUUID();
     const response = getResponse(trimmed);
 
     const userMessage: Message = {
-      id: timestamp,
+          id: crypto.randomUUID(),
       role: "user",
       text: trimmed,
     };
 
     const assistantMessage: Message = {
-      id: timestamp + 1,
+          id: crypto.randomUUID(),
       role: "assistant",
       text: response,
     };
@@ -324,7 +324,7 @@ export default function AIChatbox({
           </div>
 
           <div className="h-80 space-y-4 overflow-y-auto bg-slate-50 p-4">
-            {messages.map((item: any) => (
+            {messages.map((item) => (
               <div
                 key={item.id}
                 className={`flex gap-2 ${

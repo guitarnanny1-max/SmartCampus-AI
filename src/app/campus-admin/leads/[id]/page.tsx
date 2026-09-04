@@ -1,5 +1,3 @@
-export const revalidate = 0;
-export const dynamic = 'force-dynamic';
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -75,7 +73,7 @@ function statusLabel(status: string | null | undefined) {
   return normalizeStatus(status)
     .toLowerCase()
     .split("_")
-    .map((word: any) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
