@@ -184,7 +184,9 @@ export async function GET(
     if (error) {
       console.error("Student 360 profile load error:", error);
       return NextResponse.json(
-        { error: "Unable to load student profile." },
+        {
+          error: "Unable to load student profile.",
+        },
         { status: 500 },
       );
     }
