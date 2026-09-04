@@ -114,6 +114,53 @@ type Guardian = {
   updated_at: string;
 };
 
+
+type StudentAcademicTeacher = {
+  id: string;
+  name: string;
+  status?: string;
+};
+
+type StudentAcademicAssignment = {
+  teacher_id: string;
+  subject_name?: string | null;
+  periods_per_week?: number | null;
+  class_name?: string | null;
+  section_name?: string | null;
+  academic_year?: string | null;
+  status?: string | null;
+};
+
+type StudentAcademicTimetableEntry = {
+  id: string;
+  academic_year_id: string;
+  class_id: string;
+  section_id: string;
+  subject_id: string;
+  teacher_id?: string | null;
+  day_of_week: number;
+  period_number: number;
+  start_time?: string | null;
+  end_time?: string | null;
+  status: string;
+  subjects?: {
+    id: string;
+    name: string;
+    code?: string | null;
+  } | {
+    id: string;
+    name: string;
+    code?: string | null;
+  }[] | null;
+};
+
+type StudentAcademicSubjectRow = {
+  subjectName: string;
+  requiredPeriods: number;
+  scheduledPeriods: number;
+  status: "Complete" | "Missing" | "Over";
+};
+
 export default function StudentDetailPage({ params }: Props) {
   const [studentId, setStudentId] = useState("");
   const [student, setStudent] = useState<Student | null>(null);
@@ -152,9 +199,54 @@ export default function StudentDetailPage({ params }: Props) {
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState("");
 
+  const [profileEditing, setProfileEditing] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState("");
+
+  const [profileForm, setProfileForm] = useState({
+    first_name: "",
+    middle_name: "",
+    last_name: "",
+    date_of_birth: "",
+    gender: "",
+    address_line1: "",
+    address_line2: "",
+    city: "",
+    state: "",
+    country: "India",
+    postal_code: "",
+  });
+
   const [guardians, setGuardians] = useState<Guardian[]>([]);
   const [guardiansLoading, setGuardiansLoading] = useState(false);
   const [guardiansError, setGuardiansError] = useState("");
+
+  
+  const [academicTeachers, setAcademicTeachers] = useState<
+    StudentAcademicTeacher[]
+  >([]);
+  const [academicAssignments, setAcademicAssignments] = useState<
+    StudentAcademicAssignment[]
+  >([]);
+  const [academicTimetable, setAcademicTimetable] = useState<
+    StudentAcademicTimetableEntry[]
+  >([]);
+  const [academicLoading, setAcademicLoading] = useState(false);
+  const [academicError, setAcademicError] = useState("");
+
+const [guardianEditing, setGuardianEditing] = useState(false);
+  const [guardianSaving, setGuardianSaving] = useState(false);
+  const [guardianSaveError, setGuardianSaveError] = useState("");
+  const [editingGuardianId, setEditingGuardianId] = useState<string | null>(null);
+
+  const [guardianForm, setGuardianForm] = useState({
+    name: "",
+    relationship: "",
+    email: "",
+    phone: "",
+    is_primary: false,
+    is_emergency_contact: false,
+  });
 
   async function loadStudent360Data(id: string) {
     setProfileLoading(true);
@@ -408,6 +500,343 @@ export default function StudentDetailPage({ params }: Props) {
     }
   }
 
+  function startProfileEdit() {
+    setProfileSaveError("");
+    setProfileForm({
+      first_name: profile?.first_name ?? "",
+      middle_name: profile?.middle_name ?? "",
+      last_name: profile?.last_name ?? "",
+      date_of_birth: profile?.date_of_birth ?? "",
+      gender: profile?.gender ?? "",
+      address_line1: profile?.address_line1 ?? "",
+      address_line2: profile?.address_line2 ?? "",
+      city: profile?.city ?? "",
+      state: profile?.state ?? "",
+      country: profile?.country ?? "India",
+      postal_code: profile?.postal_code ?? "",
+    });
+    setProfileEditing(true);
+  }
+
+  function cancelProfileEdit() {
+    setProfileEditing(false);
+    setProfileSaveError("");
+  }
+
+  async function saveProfile() {
+    if (!studentId) {
+      setProfileSaveError("Student ID is missing.");
+      return;
+    }
+
+    try {
+      setProfileSaving(true);
+      setProfileSaveError("");
+
+      const response = await fetch(
+        `/api/students/${encodeURIComponent(studentId)}/profile`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(profileForm),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "Unable to save student profile.",
+        );
+      }
+
+      setProfile(data.profile ?? null);
+      setProfileEditing(false);
+    } catch (err) {
+      console.error("Student profile save error:", err);
+      setProfileSaveError(
+        err instanceof Error
+          ? err.message
+          : "Unable to save student profile.",
+      );
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
+
+  async function loadStudentAcademics(currentEnrollments: StudentEnrollment[]) {
+    const activeEnrollment =
+      currentEnrollments.find(
+        (enrollment) =>
+          String(enrollment.status ?? "").toUpperCase() === "ACTIVE",
+      ) ?? currentEnrollments[0];
+
+    if (!activeEnrollment) {
+      setAcademicTeachers([]);
+      setAcademicAssignments([]);
+      setAcademicTimetable([]);
+      setAcademicError("");
+      return;
+    }
+
+    const academicYearId = activeEnrollment.academic_year_id;
+    const classId = activeEnrollment.class_id;
+    const sectionId = activeEnrollment.section_id;
+
+    if (!academicYearId || !classId || !sectionId) {
+      setAcademicTeachers([]);
+      setAcademicAssignments([]);
+      setAcademicTimetable([]);
+      setAcademicError(
+        "The student's current enrollment is missing academic year, class or section information.",
+      );
+      return;
+    }
+
+    setAcademicLoading(true);
+    setAcademicError("");
+
+    try {
+      const academicYear = academicYears.find(
+        (year) => year.id === academicYearId,
+      );
+      const selectedClass = classes.find((item) => item.id === classId);
+      const selectedSection = sections.find((item) => item.id === sectionId);
+
+      const [
+        teachersResponse,
+        assignmentsResponse,
+        timetableResponse,
+      ] = await Promise.all([
+        fetch("/api/teachers"),
+        fetch("/api/teachers/assignments"),
+        fetch(
+          `/api/timetable?academic_year_id=${encodeURIComponent(
+            academicYearId,
+          )}&class_id=${encodeURIComponent(
+            classId,
+          )}&section_id=${encodeURIComponent(sectionId)}`,
+        ),
+      ]);
+
+      const teachersData = await teachersResponse.json();
+      const assignmentsData = await assignmentsResponse.json();
+      const timetableData = await timetableResponse.json();
+
+      if (!teachersResponse.ok) {
+        throw new Error(
+          teachersData.error ?? "Failed to load teachers.",
+        );
+      }
+
+      if (!assignmentsResponse.ok) {
+        throw new Error(
+          assignmentsData.error ?? "Failed to load teacher assignments.",
+        );
+      }
+
+      if (!timetableResponse.ok) {
+        throw new Error(
+          timetableData.error ?? "Failed to load timetable.",
+        );
+      }
+
+      const teachers = (teachersData.teachers ?? []).filter(
+        (teacher: StudentAcademicTeacher) =>
+          teacher.status?.toUpperCase() === "ACTIVE",
+      );
+
+      const allAssignments =
+        assignmentsData.assignments ?? [];
+
+      const yearName =
+        academicYear?.name?.trim().toLowerCase() ?? "";
+      const className =
+        selectedClass?.name?.trim().toLowerCase() ?? "";
+      const sectionName =
+        selectedSection?.name?.trim().toLowerCase() ?? "";
+
+      const matchingAssignments = allAssignments.filter(
+        (assignment: StudentAcademicAssignment) =>
+          assignment.status?.toUpperCase() === "ACTIVE" &&
+          assignment.subject_name?.trim() &&
+          assignment.class_name?.trim().toLowerCase() === className &&
+          assignment.section_name?.trim().toLowerCase() === sectionName &&
+          assignment.academic_year?.trim().toLowerCase() === yearName,
+      );
+
+      setAcademicTeachers(teachers);
+      setAcademicAssignments(matchingAssignments);
+      setAcademicTimetable(timetableData.timetables ?? []);
+    } catch (err) {
+      setAcademicError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load academic information.",
+      );
+      setAcademicTeachers([]);
+      setAcademicAssignments([]);
+      setAcademicTimetable([]);
+    } finally {
+      setAcademicLoading(false);
+    }
+  }
+
+  function startAddGuardian() {
+    setGuardianSaveError("");
+    setEditingGuardianId(null);
+    setGuardianForm({
+      name: "",
+      relationship: "",
+      email: "",
+      phone: "",
+      is_primary: guardians.length === 0,
+      is_emergency_contact: false,
+    });
+    setGuardianEditing(true);
+  }
+
+  function startEditGuardian(guardian: Guardian) {
+    setGuardianSaveError("");
+    setEditingGuardianId(guardian.id);
+    setGuardianForm({
+      name: guardian.name,
+      relationship: guardian.relationship ?? "",
+      email: guardian.email ?? "",
+      phone: guardian.phone ?? "",
+      is_primary: guardian.is_primary,
+      is_emergency_contact: guardian.is_emergency_contact,
+    });
+    setGuardianEditing(true);
+  }
+
+  function cancelGuardianEdit() {
+    setGuardianEditing(false);
+    setEditingGuardianId(null);
+    setGuardianSaveError("");
+  }
+
+  async function saveGuardian() {
+    if (!studentId) {
+      setGuardianSaveError("Student ID is missing.");
+      return;
+    }
+
+    if (!guardianForm.name.trim()) {
+      setGuardianSaveError("Guardian name is required.");
+      return;
+    }
+
+    try {
+      setGuardianSaving(true);
+      setGuardianSaveError("");
+
+      const isEditing = Boolean(editingGuardianId);
+
+      const url = isEditing
+        ? `/api/students/${encodeURIComponent(studentId)}/guardians/${encodeURIComponent(editingGuardianId!)}`
+        : `/api/students/${encodeURIComponent(studentId)}/guardians`;
+
+      const response = await fetch(url, {
+        method: isEditing ? "PATCH" : "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(guardianForm),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "Unable to save guardian.",
+        );
+      }
+
+      const refreshed = await fetch(
+        `/api/students/${encodeURIComponent(studentId)}/guardians`,
+        {
+          credentials: "include",
+          cache: "no-store",
+        },
+      );
+
+      const refreshedData = await refreshed.json();
+
+      if (!refreshed.ok) {
+        throw new Error(
+          refreshedData?.error || "Guardian saved, but refresh failed.",
+        );
+      }
+
+      setGuardians(refreshedData.guardians ?? []);
+      setGuardianEditing(false);
+      setEditingGuardianId(null);
+    } catch (err) {
+      console.error("Student guardian save error:", err);
+      setGuardianSaveError(
+        err instanceof Error
+          ? err.message
+          : "Unable to save guardian.",
+      );
+    } finally {
+      setGuardianSaving(false);
+    }
+  }
+
+  async function deleteGuardian(guardian: Guardian) {
+    if (!studentId) return;
+
+    if (guardian.is_primary) {
+      setGuardiansError(
+        "Primary guardian cannot be deleted. Assign another primary guardian first.",
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete guardian "${guardian.name}"? This action cannot be undone.`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setGuardiansError("");
+
+      const response = await fetch(
+        `/api/students/${encodeURIComponent(studentId)}/guardians/${encodeURIComponent(guardian.id)}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "Unable to delete guardian.",
+        );
+      }
+
+      setGuardians((current) =>
+        current.filter((item) => item.id !== guardian.id),
+      );
+    } catch (err) {
+      console.error("Student guardian delete error:", err);
+      setGuardiansError(
+        err instanceof Error
+          ? err.message
+          : "Unable to delete guardian.",
+      );
+    }
+  }
+
   async function saveEnrollment() {
     if (
       !studentId ||
@@ -489,6 +918,23 @@ export default function StudentDetailPage({ params }: Props) {
       setEnrollmentSaving(false);
     }
   }
+
+
+  useEffect(() => {
+    if (!enrollmentLoading && enrollments.length > 0) {
+      void loadStudentAcademics(enrollments);
+    } else if (!enrollmentLoading && enrollments.length === 0) {
+      setAcademicTeachers([]);
+      setAcademicAssignments([]);
+      setAcademicTimetable([]);
+    }
+  }, [
+    enrollments,
+    enrollmentLoading,
+    academicYears,
+    classes,
+    sections,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1243,9 +1689,16 @@ export default function StudentDetailPage({ params }: Props) {
                 </p>
               </div>
 
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                Student 360
-              </span>
+              {!profileEditing && (
+                <button
+                  type="button"
+                  onClick={startProfileEdit}
+                  disabled={profileLoading}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Edit
+                </button>
+              )}
             </div>
 
             {profileLoading ? (
@@ -1256,61 +1709,180 @@ export default function StudentDetailPage({ params }: Props) {
               <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                 {profileError}
               </div>
+            ) : profileEditing ? (
+              <div className="space-y-5">
+                {profileSaveError && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    {profileSaveError}
+                  </div>
+                )}
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  {[
+                    ["first_name", "First Name"],
+                    ["middle_name", "Middle Name"],
+                    ["last_name", "Last Name"],
+                  ].map(([field, label]) => (
+                    <div key={field}>
+                      <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                        {label}
+                      </label>
+                      <input
+                        type="text"
+                        value={profileForm[field as keyof typeof profileForm]}
+                        onChange={(e) =>
+                          setProfileForm((current) => ({
+                            ...current,
+                            [field]: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Date of Birth
+                    </label>
+                    <input
+                      type="date"
+                      value={profileForm.date_of_birth}
+                      onChange={(e) =>
+                        setProfileForm((current) => ({
+                          ...current,
+                          date_of_birth: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Gender
+                    </label>
+                    <select
+                      value={profileForm.gender}
+                      onChange={(e) =>
+                        setProfileForm((current) => ({
+                          ...current,
+                          gender: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                    >
+                      <option value="">Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Address Line 1
+                    </label>
+                    <input
+                      type="text"
+                      value={profileForm.address_line1}
+                      onChange={(e) =>
+                        setProfileForm((current) => ({
+                          ...current,
+                          address_line1: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Address Line 2
+                    </label>
+                    <input
+                      type="text"
+                      value={profileForm.address_line2}
+                      onChange={(e) =>
+                        setProfileForm((current) => ({
+                          ...current,
+                          address_line2: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-4">
+                  {[
+                    ["city", "City"],
+                    ["state", "State"],
+                    ["country", "Country"],
+                    ["postal_code", "Postal Code"],
+                  ].map(([field, label]) => (
+                    <div key={field}>
+                      <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                        {label}
+                      </label>
+                      <input
+                        type="text"
+                        value={profileForm[field as keyof typeof profileForm]}
+                        onChange={(e) =>
+                          setProfileForm((current) => ({
+                            ...current,
+                            [field]: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
+                  <button
+                    type="button"
+                    onClick={cancelProfileEdit}
+                    disabled={profileSaving}
+                    className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={saveProfile}
+                    disabled={profileSaving}
+                    className="rounded-xl bg-black px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {profileSaving ? "Saving..." : "Save Personal Information"}
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    First Name
-                  </p>
-                  <p className="mt-1 font-semibold text-slate-900">
-                    {profile?.first_name || "—"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    Middle Name
-                  </p>
-                  <p className="mt-1 font-semibold text-slate-900">
-                    {profile?.middle_name || "—"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    Last Name
-                  </p>
-                  <p className="mt-1 font-semibold text-slate-900">
-                    {profile?.last_name || "—"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    Date of Birth
-                  </p>
-                  <p className="mt-1 font-semibold text-slate-900">
-                    {profile?.date_of_birth || "—"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    Gender
-                  </p>
-                  <p className="mt-1 font-semibold text-slate-900">
-                    {profile?.gender || "—"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    Country
-                  </p>
-                  <p className="mt-1 font-semibold text-slate-900">
-                    {profile?.country || "—"}
-                  </p>
-                </div>
+                {[
+                  ["First Name", profile?.first_name],
+                  ["Middle Name", profile?.middle_name],
+                  ["Last Name", profile?.last_name],
+                  ["Date of Birth", profile?.date_of_birth],
+                  ["Gender", profile?.gender],
+                  ["Country", profile?.country],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                      {label}
+                    </p>
+                    <p className="mt-1 font-semibold text-slate-900">
+                      {value || "—"}
+                    </p>
+                  </div>
+                ))}
 
                 <div className="md:col-span-2">
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -1323,32 +1895,20 @@ export default function StudentDetailPage({ params }: Props) {
                   </p>
                 </div>
 
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    City
-                  </p>
-                  <p className="mt-1 font-semibold text-slate-900">
-                    {profile?.city || "—"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    State
-                  </p>
-                  <p className="mt-1 font-semibold text-slate-900">
-                    {profile?.state || "—"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    Postal Code
-                  </p>
-                  <p className="mt-1 font-semibold text-slate-900">
-                    {profile?.postal_code || "—"}
-                  </p>
-                </div>
+                {[
+                  ["City", profile?.city],
+                  ["State", profile?.state],
+                  ["Postal Code", profile?.postal_code],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                      {label}
+                    </p>
+                    <p className="mt-1 font-semibold text-slate-900">
+                      {value || "—"}
+                    </p>
+                  </div>
+                ))}
               </div>
             )}
           </section>
@@ -1365,19 +1925,173 @@ export default function StudentDetailPage({ params }: Props) {
                 </p>
               </div>
 
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                {guardians.length}{" "}
-                {guardians.length === 1 ? "Guardian" : "Guardians"}
-              </span>
+              {!guardianEditing && (
+                <button
+                  type="button"
+                  onClick={startAddGuardian}
+                  className="rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                >
+                  + Add Guardian
+                </button>
+              )}
             </div>
+
+            {guardiansError && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {guardiansError}
+              </div>
+            )}
+
+            {guardianEditing && (
+              <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div className="mb-4">
+                  <h3 className="font-semibold text-slate-900">
+                    {editingGuardianId ? "Edit Guardian" : "Add Guardian"}
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Maintain parent, guardian and emergency contact information.
+                  </p>
+                </div>
+
+                {guardianSaveError && (
+                  <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    {guardianSaveError}
+                  </div>
+                )}
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      value={guardianForm.name}
+                      onChange={(e) =>
+                        setGuardianForm((current) => ({
+                          ...current,
+                          name: e.target.value,
+                        }))
+                      }
+                      placeholder="Guardian name"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Relationship
+                    </label>
+                    <input
+                      type="text"
+                      value={guardianForm.relationship}
+                      onChange={(e) =>
+                        setGuardianForm((current) => ({
+                          ...current,
+                          relationship: e.target.value,
+                        }))
+                      }
+                      placeholder="Parent, Father, Mother, Guardian..."
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={guardianForm.email}
+                      onChange={(e) =>
+                        setGuardianForm((current) => ({
+                          ...current,
+                          email: e.target.value,
+                        }))
+                      }
+                      placeholder="guardian@example.com"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={guardianForm.phone}
+                      onChange={(e) =>
+                        setGuardianForm((current) => ({
+                          ...current,
+                          phone: e.target.value,
+                        }))
+                      }
+                      placeholder="+91..."
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-5">
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={guardianForm.is_primary}
+                      onChange={(e) =>
+                        setGuardianForm((current) => ({
+                          ...current,
+                          is_primary: e.target.checked,
+                        }))
+                      }
+                    />
+                    Primary guardian
+                  </label>
+
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={guardianForm.is_emergency_contact}
+                      onChange={(e) =>
+                        setGuardianForm((current) => ({
+                          ...current,
+                          is_emergency_contact: e.target.checked,
+                        }))
+                      }
+                    />
+                    Emergency contact
+                  </label>
+                </div>
+
+                <div className="mt-5 flex justify-end gap-3 border-t border-slate-200 pt-5">
+                  <button
+                    type="button"
+                    onClick={cancelGuardianEdit}
+                    disabled={guardianSaving}
+                    className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={saveGuardian}
+                    disabled={guardianSaving}
+                    className="rounded-xl bg-black px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {guardianSaving
+                      ? "Saving..."
+                      : editingGuardianId
+                        ? "Save Guardian"
+                        : "Add Guardian"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {guardiansLoading ? (
               <div className="rounded-xl border border-[#E2E8F0] bg-slate-50 p-4 text-sm text-slate-600">
                 Loading guardians...
-              </div>
-            ) : guardiansError ? (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                {guardiansError}
               </div>
             ) : guardians.length === 0 ? (
               <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
@@ -1385,7 +2099,7 @@ export default function StudentDetailPage({ params }: Props) {
                   No guardians added yet.
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
-                  Guardian information can be added from this Student 360 record.
+                  Use Add Guardian to create the first guardian record.
                 </p>
               </div>
             ) : (
@@ -1400,7 +2114,6 @@ export default function StudentDetailPage({ params }: Props) {
                         <h3 className="font-semibold text-slate-900">
                           {guardian.name}
                         </h3>
-
                         <p className="mt-1 text-sm text-slate-500">
                           {guardian.relationship || "Guardian"}
                         </p>
@@ -1440,9 +2153,402 @@ export default function StudentDetailPage({ params }: Props) {
                         </p>
                       </div>
                     </div>
+
+                    <div className="mt-5 flex justify-end gap-2 border-t border-slate-100 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => startEditGuardian(guardian)}
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => deleteGuardian(guardian)}
+                        disabled={guardian.is_primary}
+                        className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        title={
+                          guardian.is_primary
+                            ? "Assign another primary guardian before deleting this guardian."
+                            : "Delete guardian"
+                        }
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
+            )}
+          </section>
+
+          {/* Student 360 — Academics & Timetable */}
+          <section className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-[#0F172A]">
+                Academics & Timetable
+              </h2>
+              <p className="mt-1 text-sm text-[#64748B]">
+                Current academic enrollment, subject requirements and weekly
+                timetable for this student.
+              </p>
+            </div>
+
+            {academicError && (
+              <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {academicError}
+              </div>
+            )}
+
+            {academicLoading ? (
+              <div className="rounded-xl border border-[#E2E8F0] bg-slate-50 p-6 text-center text-sm text-slate-600">
+                Loading academic information...
+              </div>
+            ) : !enrollments.length ? (
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                <p className="text-sm font-semibold text-slate-700">
+                  No academic enrollment found.
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Add an enrollment to view this student's academics and
+                  timetable.
+                </p>
+              </div>
+            ) : (
+              <>
+                {(() => {
+                  const activeEnrollment =
+                    enrollments.find(
+                      (enrollment) =>
+                        String(enrollment.status ?? "").toUpperCase() ===
+                        "ACTIVE",
+                    ) ?? enrollments[0];
+
+                  const academicYear = academicYears.find(
+                    (year) =>
+                      year.id === activeEnrollment?.academic_year_id,
+                  );
+
+                  const selectedClass = classes.find(
+                    (item) =>
+                      item.id === activeEnrollment?.class_id,
+                  );
+
+                  const selectedSection = sections.find(
+                    (item) =>
+                      item.id === activeEnrollment?.section_id,
+                  );
+
+                  const subjectMap = new Map<
+                    string,
+                    {
+                      subjectName: string;
+                      requiredPeriods: number;
+                    }
+                  >();
+
+                  for (const assignment of academicAssignments) {
+                    const subjectName =
+                      assignment.subject_name?.trim() ?? "";
+
+                    if (!subjectName) continue;
+
+                    const key = subjectName.toLowerCase();
+                    const existing = subjectMap.get(key);
+
+                    subjectMap.set(key, {
+                      subjectName:
+                        existing?.subjectName ?? subjectName,
+                      requiredPeriods:
+                        (existing?.requiredPeriods ?? 0) +
+                        Number(assignment.periods_per_week ?? 0),
+                    });
+                  }
+
+                  const scheduledCounts = new Map<string, number>();
+
+                  for (const entry of academicTimetable) {
+                    const subject = Array.isArray(entry.subjects)
+                      ? entry.subjects[0]
+                      : entry.subjects;
+
+                    const subjectName =
+                      subject?.name?.trim().toLowerCase() ?? "";
+
+                    if (!subjectName) continue;
+
+                    scheduledCounts.set(
+                      subjectName,
+                      (scheduledCounts.get(subjectName) ?? 0) + 1,
+                    );
+                  }
+
+                  const subjectRows: StudentAcademicSubjectRow[] =
+                    Array.from(subjectMap.entries()).map(
+                      ([key, value]) => {
+                        const scheduledPeriods =
+                          scheduledCounts.get(key) ?? 0;
+                        const requiredPeriods =
+                          value.requiredPeriods;
+
+                        let status: "Complete" | "Missing" | "Over";
+
+                        if (scheduledPeriods === requiredPeriods) {
+                          status = "Complete";
+                        } else if (scheduledPeriods < requiredPeriods) {
+                          status = "Missing";
+                        } else {
+                          status = "Over";
+                        }
+
+                        return {
+                          subjectName: value.subjectName,
+                          requiredPeriods,
+                          scheduledPeriods,
+                          status,
+                        };
+                      },
+                    );
+
+                  const teacherName = (teacherId?: string | null) =>
+                    academicTeachers.find(
+                      (teacher) => teacher.id === teacherId,
+                    )?.name ?? teacherId ?? "Not assigned";
+
+                  const subjectNameForEntry = (
+                    entry: StudentAcademicTimetableEntry,
+                  ) => {
+                    const subject = Array.isArray(entry.subjects)
+                      ? entry.subjects[0]
+                      : entry.subjects;
+
+                    return subject?.name ?? entry.subject_id;
+                  };
+
+                  const dayLabels: Record<number, string> = {
+                    1: "Monday",
+                    2: "Tuesday",
+                    3: "Wednesday",
+                    4: "Thursday",
+                    5: "Friday",
+                    6: "Saturday",
+                  };
+
+                  return (
+                    <>
+                      {/* Current enrollment */}
+                      <div className="grid gap-4 md:grid-cols-3">
+                        {[
+                          [
+                            "Academic Year",
+                            academicYear?.name ?? "—",
+                          ],
+                          [
+                            "Class",
+                            selectedClass?.name ?? "—",
+                          ],
+                          [
+                            "Section",
+                            selectedSection?.name ?? "—",
+                          ],
+                        ].map(([label, value]) => (
+                          <div
+                            key={label}
+                            className="rounded-xl border border-[#E2E8F0] bg-slate-50 p-4"
+                          >
+                            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                              {label}
+                            </p>
+                            <p className="mt-1 font-semibold text-slate-900">
+                              {value}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Subject summary */}
+                      <div className="mt-6">
+                        <div className="mb-3">
+                          <h3 className="font-semibold text-slate-900">
+                            Subject Summary
+                          </h3>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Weekly subject requirements compared with the
+                            published timetable.
+                          </p>
+                        </div>
+
+                        {subjectRows.length === 0 ? (
+                          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
+                            No active subject assignments found for this
+                            enrollment.
+                          </div>
+                        ) : (
+                          <div className="overflow-hidden rounded-xl border border-[#E2E8F0]">
+                            <div className="hidden grid-cols-[1.6fr_1fr_1fr_1fr] gap-4 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 md:grid">
+                              <div>Subject</div>
+                              <div>Required</div>
+                              <div>Scheduled</div>
+                              <div>Status</div>
+                            </div>
+
+                            {subjectRows.map((row) => (
+                              <div
+                                key={row.subjectName}
+                                className="grid gap-3 border-t border-[#E2E8F0] px-4 py-4 first:border-t-0 md:grid-cols-[1.6fr_1fr_1fr_1fr] md:items-center md:gap-4"
+                              >
+                                <div>
+                                  <p className="font-semibold text-slate-900">
+                                    {row.subjectName}
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <span className="text-xs text-slate-400 md:hidden">
+                                    Required{" "}
+                                  </span>
+                                  <span className="font-medium text-slate-700">
+                                    {row.requiredPeriods}
+                                  </span>
+                                  <span className="ml-1 text-xs text-slate-400">
+                                    periods/week
+                                  </span>
+                                </div>
+
+                                <div>
+                                  <span className="text-xs text-slate-400 md:hidden">
+                                    Scheduled{" "}
+                                  </span>
+                                  <span className="font-medium text-slate-700">
+                                    {row.scheduledPeriods}
+                                  </span>
+                                  <span className="ml-1 text-xs text-slate-400">
+                                    periods
+                                  </span>
+                                </div>
+
+                                <div>
+                                  <span
+                                    className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                      row.status === "Complete"
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : row.status === "Missing"
+                                          ? "bg-amber-50 text-amber-700"
+                                          : "bg-blue-50 text-blue-700"
+                                    }`}
+                                  >
+                                    {row.status}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Weekly timetable */}
+                      <div className="mt-7">
+                        <div className="mb-3">
+                          <h3 className="font-semibold text-slate-900">
+                            Weekly Timetable
+                          </h3>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Published periods for the student's current class
+                            and section.
+                          </p>
+                        </div>
+
+                        {academicTimetable.length === 0 ? (
+                          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
+                            No timetable periods have been published for this
+                            enrollment yet.
+                          </div>
+                        ) : (
+                          <div className="space-y-5">
+                            {Object.entries(dayLabels).map(
+                              ([dayValue, dayName]) => {
+                                const dayNumber = Number(dayValue);
+
+                                const dayEntries =
+                                  academicTimetable
+                                    .filter(
+                                      (entry) =>
+                                        entry.day_of_week === dayNumber,
+                                    )
+                                    .sort(
+                                      (a, b) =>
+                                        a.period_number -
+                                        b.period_number,
+                                    );
+
+                                if (dayEntries.length === 0) {
+                                  return null;
+                                }
+
+                                return (
+                                  <div
+                                    key={dayNumber}
+                                    className="overflow-hidden rounded-xl border border-[#E2E8F0]"
+                                  >
+                                    <div className="border-b border-[#E2E8F0] bg-slate-50 px-4 py-3">
+                                      <h4 className="font-semibold text-slate-900">
+                                        {dayName}
+                                      </h4>
+                                    </div>
+
+                                    <div className="divide-y divide-slate-100">
+                                      {dayEntries.map((entry) => (
+                                        <div
+                                          key={entry.id}
+                                          className="grid gap-3 px-4 py-4 md:grid-cols-[70px_150px_1.5fr_1.5fr] md:items-center"
+                                        >
+                                          <div>
+                                            <span className="rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white">
+                                              P{entry.period_number}
+                                            </span>
+                                          </div>
+
+                                          <div>
+                                            <p className="text-sm font-medium text-slate-700">
+                                              {entry.start_time &&
+                                              entry.end_time
+                                                ? `${entry.start_time} – ${entry.end_time}`
+                                                : "Time not set"}
+                                            </p>
+                                          </div>
+
+                                          <div>
+                                            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                                              Subject
+                                            </p>
+                                            <p className="mt-1 font-semibold text-slate-900">
+                                              {subjectNameForEntry(entry)}
+                                            </p>
+                                          </div>
+
+                                          <div>
+                                            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                                              Teacher
+                                            </p>
+                                            <p className="mt-1 font-medium text-slate-700">
+                                              {teacherName(entry.teacher_id)}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              },
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </>
             )}
           </section>
 
