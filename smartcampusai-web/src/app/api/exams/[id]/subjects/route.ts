@@ -107,89 +107,162 @@ async function getExam(
   tenantId: string,
   examId: string
 ) {
-  const { data, error } = await supabaseAdmin
+  const result = await supabaseAdmin
     .from("exams")
-    .select("id, name, academic_year_id, exam_type, start_date, end_date, status")
+    .select(
+      "id, name, academic_year_id, exam_type, start_date, end_date, status"
+    )
     .eq("id", examId)
     .eq("tenantId", tenantId)
     .maybeSingle();
 
+  if (!result) {
+    throw new Error(
+      "Unable to query examination record."
+    );
+  }
+
+  const { data, error } = result;
+
   if (error) {
     throw error;
+  }
+
+  if (!data) {
+    return null;
   }
 
   return data;
 }
 
 export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  request: Request,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const context = await getAuthContext();
+    const auth = await getAuthContext();
 
-    if ("error" in context) {
-      return context.error;
+    if ("error" in auth) {
+      return auth.error;
     }
 
-    const { supabaseAdmin, tenantId } = context;
-    const { id: examId } = await params;
+    const { tenantId, supabaseAdmin } = auth;
+    const { id: examId } = await context.params;
 
-    const exam = await getExam(supabaseAdmin, tenantId, examId);
+    let exam;
 
-    if (!exam) {
-      return NextResponse.json(
-        { error: "Exam not found." },
-        { status: 404 }
+    try {
+      exam = await getExam(
+        supabaseAdmin,
+        tenantId,
+        examId
       );
-    }
-
-    const { data, error } = await supabaseAdmin
-      .from("exam_subjects")
-      .select(`
-        id,
-        "tenantId",
-        exam_id,
-        subject_id,
-        max_marks,
-        pass_marks,
-        exam_date,
-        start_time,
-        end_time,
-        created_at,
-        updated_at
-      `)
-      .eq("tenantId", tenantId)
-      .eq("exam_id", examId)
-      .order("exam_date", { ascending: true })
-      .order("start_time", { ascending: true });
-
-    if (error) {
-      console.error("Exam Subjects GET error:", error);
+    } catch (error) {
+      console.error("Exam lookup error:", error);
 
       return NextResponse.json(
         {
-          error: "Unable to load exam subjects.",
-          details: error.message,
+          success: false,
+          error: "Unable to load examination.",
+          details:
+            error instanceof Error
+              ? error.message
+              : "Unknown examination lookup error.",
         },
         { status: 500 }
       );
     }
 
+    if (!exam) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Examination not found.",
+        },
+        { status: 404 }
+      );
+    }
+
+    const { data: examSubjects, error: subjectsError } =
+      await supabaseAdmin
+        .from("exam_subjects")
+        .select("*")
+        .eq("tenantId", tenantId)
+        .eq("exam_id", examId)
+        .order("exam_date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+    if (subjectsError) {
+      console.error(
+        "Exam subjects GET error:",
+        subjectsError
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unable to load examination subjects.",
+          details: subjectsError.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    const enrichedExamSubjects = [];
+
+    for (const item of examSubjects || []) {
+      let subject = null;
+
+      if (item.subject_id) {
+        const { data: subjectData, error: subjectError } =
+          await supabaseAdmin
+            .from("subjects")
+            .select(`
+              id,
+              "tenantId",
+              name,
+              code,
+              status
+            `)
+            .eq("tenantId", tenantId)
+            .eq("id", item.subject_id)
+            .maybeSingle();
+
+        if (subjectError) {
+          console.error(
+            "Subject lookup error:",
+            subjectError
+          );
+        } else {
+          subject = subjectData;
+        }
+      }
+
+      enrichedExamSubjects.push({
+        ...item,
+        subject,
+      });
+    }
+
     return NextResponse.json({
       success: true,
       exam,
-      examSubjects: data ?? [],
+      examSubjects: enrichedExamSubjects,
+      total: enrichedExamSubjects.length,
     });
   } catch (error) {
-    console.error("GET /api/exams/[id]/subjects error:", error);
+    console.error(
+      "GET /api/exams/[id]/subjects error:",
+      error
+    );
 
     return NextResponse.json(
       {
+        success: false,
         error:
           error instanceof Error
             ? error.message
-            : "Unable to load exam subjects.",
+            : "Unable to load examination subjects.",
       },
       { status: 500 }
     );
@@ -216,6 +289,16 @@ export async function POST(
       return NextResponse.json(
         { error: "Exam not found." },
         { status: 404 }
+      );
+    }
+
+    if (exam.status === "PUBLISHED") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "This examination is published and subjects are locked.",
+        },
+        { status: 409 }
       );
     }
 
@@ -430,6 +513,16 @@ export async function PATCH(
       );
     }
 
+    if (exam.status === "PUBLISHED") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "This examination is published and subjects are locked.",
+        },
+        { status: 409 }
+      );
+    }
+
     const body = await request.json();
 
     const examSubjectId =
@@ -594,6 +687,16 @@ export async function DELETE(
       return NextResponse.json(
         { error: "Exam not found." },
         { status: 404 }
+      );
+    }
+
+    if (exam.status === "PUBLISHED") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "This examination is published and subjects are locked.",
+        },
+        { status: 409 }
       );
     }
 
