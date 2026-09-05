@@ -129,6 +129,18 @@ export default function ClassesPage() {
   >({});
 
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const [editingClass, setEditingClass] = useState<ClassRecord | null>(null);
+  const [editingSection, setEditingSection] = useState<SectionRecord | null>(null);
+  const [editClassName, setEditClassName] = useState("");
+  const [editClassOrder, setEditClassOrder] = useState("0");
+  const [editSectionName, setEditSectionName] = useState("");
+  const [editSectionOrder, setEditSectionOrder] = useState("0");
+  const [editClassStatus, setEditClassStatus] = useState("ACTIVE");
+  const [editSectionStatus, setEditSectionStatus] = useState("ACTIVE");
+  const [savingEditClass, setSavingEditClass] = useState(false);
+  const [savingEditSection, setSavingEditSection] = useState(false);
 
   async function loadAcademicYears() {
     const response = await fetch("/api/academic-years", {
@@ -462,6 +474,7 @@ export default function ClassesPage() {
       await loadSectionSubjects(
         sections.filter((section) => section.id === sectionId),
       );
+      setSuccess("Subjects saved successfully.");
     } catch (sectionSubjectError) {
       console.error(
         "Section subject save error:",
@@ -873,6 +886,138 @@ export default function ClassesPage() {
     }
   }
 
+  function startEditClass(classRecord: ClassRecord) {
+    setEditingClass(classRecord);
+    setEditClassName(classRecord.name);
+    setEditClassOrder(String(classRecord.display_order ?? 0));
+    setEditClassStatus(classRecord.status || "ACTIVE");
+    setError("");
+  }
+
+  function startEditSection(section: SectionRecord) {
+    setEditingSection(section);
+    setEditSectionName(section.name);
+    setEditSectionOrder(String(section.display_order ?? 0));
+    setEditSectionStatus(section.status || "ACTIVE");
+    setError("");
+  }
+
+  function closeEditClass() {
+    if (savingEditClass) return;
+    setEditingClass(null);
+    setEditClassName("");
+    setEditClassOrder("0");
+    setEditClassStatus("ACTIVE");
+  }
+
+  function closeEditSection() {
+    if (savingEditSection) return;
+    setEditingSection(null);
+    setEditSectionName("");
+    setEditSectionOrder("0");
+    setEditSectionStatus("ACTIVE");
+  }
+
+  async function updateClass() {
+    if (!editingClass) return;
+
+    const name = editClassName.trim();
+
+    if (!name) {
+      setError("Class name is required.");
+      return;
+    }
+
+    try {
+      setSavingEditClass(true);
+      setError("");
+
+      const response = await fetch("/api/classes", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          id: editingClass.id,
+          name,
+          display_order:
+            Number.parseInt(editClassOrder, 10) || 0,
+          status: editClassStatus,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "Unable to update class.",
+        );
+      }
+
+      closeEditClass();
+      await refreshClasses(selectedYearId);
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Unable to update class.",
+      );
+    } finally {
+      setSavingEditClass(false);
+    }
+  }
+
+  async function updateSection() {
+    if (!editingSection) return;
+
+    const name = editSectionName.trim();
+
+    if (!name) {
+      setError("Section name is required.");
+      return;
+    }
+
+    try {
+      setSavingEditSection(true);
+      setError("");
+
+      const response = await fetch("/api/sections", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          id: editingSection.id,
+          name,
+          display_order:
+            Number.parseInt(editSectionOrder, 10) || 0,
+          status: editSectionStatus,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "Unable to update section.",
+        );
+      }
+
+      closeEditSection();
+      await refreshClasses(selectedYearId);
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Unable to update section.",
+      );
+    } finally {
+      setSavingEditSection(false);
+    }
+  }
+
   async function createClass(
     event: FormEvent<HTMLFormElement>,
   ) {
@@ -1078,8 +1223,14 @@ export default function ClassesPage() {
           </div>
         )}
 
+        {success && (
+          <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {success}
+          </div>
+        )}
+
         <section className="mt-8 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-indigo-50 shadow-sm p-6 shadow-sm">
             <div>
               <h2 className="text-lg font-bold text-slate-950">
                 Academic Year
@@ -1163,7 +1314,7 @@ export default function ClassesPage() {
             </form>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-violet-50 shadow-sm p-6 shadow-sm">
             <div>
               <h2 className="text-lg font-bold text-slate-950">
                 Add Class
@@ -1227,7 +1378,7 @@ export default function ClassesPage() {
           </div>
         </section>
 
-        <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <section className="mt-8 overflow-hidden rounded-2xl border border-purple-100 bg-gradient-to-br from-purple-50 via-white to-fuchsia-50 shadow-sm shadow-sm">
           <div className="border-b border-slate-200 px-6 py-5">
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -1261,7 +1412,171 @@ export default function ClassesPage() {
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {classes.map((classRecord) => {
+              {editingClass ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold text-slate-950">Edit Class</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Update the class name, display order, or status.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEditClass}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  Class Name
+                </label>
+                <input
+                  value={editClassName}
+                  onChange={(e) => setEditClassName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder="e.g. Grade 1"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  Display Order
+                </label>
+                <input
+                  type="number"
+                  value={editClassOrder}
+                  onChange={(e) => setEditClassOrder(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  Status
+                </label>
+                <select
+                  value={editClassStatus}
+                  onChange={(e) =>
+                    setEditClassStatus(e.target.value as "ACTIVE" | "INACTIVE")
+                  }
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="INACTIVE">INACTIVE</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeEditClass}
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={updateClass}
+                disabled={savingEditClass}
+                className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingEditClass ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {editingSection ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold text-slate-950">Edit Section</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Update the section name, display order, or status.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEditSection}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  Section Name
+                </label>
+                <input
+                  value={editSectionName}
+                  onChange={(e) => setEditSectionName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                  placeholder="e.g. A"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  Display Order
+                </label>
+                <input
+                  type="number"
+                  value={editSectionOrder}
+                  onChange={(e) => setEditSectionOrder(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  Status
+                </label>
+                <select
+                  value={editSectionStatus}
+                  onChange={(e) =>
+                    setEditSectionStatus(e.target.value as "ACTIVE" | "INACTIVE")
+                  }
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                >
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="INACTIVE">INACTIVE</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeEditSection}
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={updateSection}
+                disabled={savingEditSection}
+                className="rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingEditSection ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {classes.map((classRecord) => {
                 const classSections =
                   sectionsByClass.get(
                     classRecord.id,
@@ -1282,6 +1597,13 @@ export default function ClassesPage() {
                           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
                             {classRecord.status}
                           </span>
+                          <button
+                            type="button"
+                            onClick={() => startEditClass(classRecord)}
+                            className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
+                          >
+                            Edit Class
+                          </button>
                         </div>
 
                         <p className="mt-1 text-sm text-slate-500">
@@ -1324,6 +1646,13 @@ export default function ClassesPage() {
                                     <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
                                       {section.status}
                                     </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => startEditSection(section)}
+                                      className="rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700 transition hover:border-purple-300 hover:bg-purple-100"
+                                    >
+                                      Edit
+                                    </button>
                                   </div>
 
                                   {rosterLoading ? (
@@ -1539,12 +1868,13 @@ export default function ClassesPage() {
                       </div>
                     </div>
 
-                    <div className="mt-5 border-t border-slate-100 pt-5">
-                      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                          <h4 className="text-sm font-bold text-slate-900">
-                            Subjects
-                          </h4>
+                    {classSections.length === 0 ? (
+                      <div className="mt-5 border-t border-slate-100 pt-5">
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-900">
+                              Subjects
+                            </h4>
                           <p className="mt-1 text-xs text-slate-500">
                             Assign subjects taught for this class.
                           </p>
@@ -1727,6 +2057,7 @@ export default function ClassesPage() {
                       </button>
                     </div>
 
+                    ) : null}
                     <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row">
                       <input
                         value={
@@ -1767,7 +2098,7 @@ export default function ClassesPage() {
                           ? "Adding..."
                           : "Add Section"}
                       </button>
-                    </div>
+                      </div>
                   </div>
                 );
               })}
