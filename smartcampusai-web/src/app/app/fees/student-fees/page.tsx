@@ -71,6 +71,16 @@ type StudentFee = {
   remarks?: string | null;
 };
 
+type FeeDiscount = {
+  id: string;
+  name: string;
+  code?: string | null;
+  discount_type: "FIXED" | "PERCENTAGE";
+  value: number | string;
+  description?: string | null;
+  status?: string | null;
+};
+
 function getStudentName(student: Student) {
   if (student.name?.trim()) {
     return student.name.trim();
@@ -97,6 +107,12 @@ export default function StudentFeesPage() {
   const [feeTypes, setFeeTypes] = useState<FeeType[]>([]);
   const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
   const [studentFees, setStudentFees] = useState<StudentFee[]>([]);
+  const [feeDiscounts, setFeeDiscounts] = useState<FeeDiscount[]>([]);
+  const [selectedFeeForDiscount, setSelectedFeeForDiscount] =
+    useState<StudentFee | null>(null);
+  const [selectedDiscountId, setSelectedDiscountId] = useState("");
+  const [discountRemarks, setDiscountRemarks] = useState("");
+  const [applyingDiscount, setApplyingDiscount] = useState(false);
 
   const [academicYearId, setAcademicYearId] = useState("");
   const [studentId, setStudentId] = useState("");
@@ -113,6 +129,63 @@ export default function StudentFeesPage() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  async function applyDiscount() {
+    if (!selectedFeeForDiscount || !selectedDiscountId) {
+      setError("Please select a discount.");
+      return;
+    }
+
+    setApplyingDiscount(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await fetch(
+        `/api/student-fees/${selectedFeeForDiscount.id}/discount`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fee_discount_id: selectedDiscountId,
+            remarks: discountRemarks.trim() || null,
+          }),
+        },
+      );
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json?.error || "Unable to apply discount.");
+      }
+
+      setStudentFees((current) =>
+        current.map((fee) =>
+          fee.id === selectedFeeForDiscount.id
+            ? {
+                ...fee,
+                discount_amount: json.studentFee?.discount_amount ?? fee.discount_amount,
+                net_amount: json.studentFee?.net_amount ?? fee.net_amount,
+                status: json.studentFee?.status ?? fee.status,
+              }
+            : fee,
+        ),
+      );
+
+      setSelectedFeeForDiscount(null);
+      setSelectedDiscountId("");
+      setDiscountRemarks("");
+      setSuccess("Discount applied successfully.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to apply discount.",
+      );
+    } finally {
+      setApplyingDiscount(false);
+    }
+  }
 
   async function loadInitialData() {
     setLoading(true);
@@ -131,6 +204,7 @@ export default function StudentFeesPage() {
         fetch("/api/fee-types"),
         fetch("/api/fee-structures"),
         fetch("/api/student-fees"),
+        fetch("/api/fee-discounts?status=ACTIVE"),
       ]);
 
       const yearsJson = await yearsResponse.json();
@@ -138,10 +212,18 @@ export default function StudentFeesPage() {
       const feeTypesJson = await feeTypesResponse.json();
       const structuresJson = await structuresResponse.json();
       const studentFeesJson = await studentFeesResponse.json();
+      const feeDiscountsResponse = await fetch("/api/fee-discounts?status=ACTIVE");
+      const feeDiscountsJson = await feeDiscountsResponse.json();
 
       if (!yearsResponse.ok) {
         throw new Error(
           yearsJson?.error || "Unable to load academic years.",
+        );
+      }
+
+      if (!feeDiscountsResponse.ok) {
+        throw new Error(
+          feeDiscountsJson?.error || "Unable to load fee discounts.",
         );
       }
 
@@ -921,6 +1003,9 @@ export default function StudentFeesPage() {
                     <th className="px-6 py-3 font-semibold text-slate-600">
                       Status
                     </th>
+                    <th className="px-6 py-3 font-semibold text-slate-600">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
 
@@ -990,6 +1075,27 @@ export default function StudentFeesPage() {
                             {fee.status ?? "PENDING"}
                           </span>
                         </td>
+                        <td className="px-6 py-4">
+                          {fee.status !== "PAID" && fee.status !== "CANCELLED" ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedFeeForDiscount(fee);
+                                setSelectedDiscountId("");
+                                setDiscountRemarks("");
+                                setError("");
+                                setSuccess("");
+                              }}
+                              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                            >
+                              Apply Discount
+                            </button>
+                          ) : (
+                            <span className="text-xs text-slate-400">
+                              Locked
+                            </span>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -999,6 +1105,121 @@ export default function StudentFeesPage() {
           )}
         </section>
       </div>
+
+      {selectedFeeForDiscount && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Apply Discount
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Apply a discount to this student fee.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedFeeForDiscount(null)}
+                className="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-xl bg-slate-50 p-4">
+              <p className="text-sm font-medium text-slate-900">
+                {(() => {
+                  const student = students.find(
+                    (item) => item.id === selectedFeeForDiscount.student_id,
+                  );
+                  const type = feeTypes.find(
+                    (item) => item.id === selectedFeeForDiscount.fee_type_id,
+                  );
+
+                  return `${student ? getStudentName(student) : selectedFeeForDiscount.student_id} — ${type?.name ?? "Fee"}`;
+                })()}
+              </p>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Original amount: ₹
+                {Number(selectedFeeForDiscount.amount).toLocaleString("en-IN", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </p>
+            </div>
+
+            <div className="mt-5">
+              <label className="block text-sm font-medium text-slate-700">
+                Discount
+              </label>
+
+              <select
+                value={selectedDiscountId}
+                onChange={(event) => setSelectedDiscountId(event.target.value)}
+                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+              >
+                <option value="">Select discount</option>
+                {feeDiscounts.map((discount) => (
+                  <option key={discount.id} value={discount.id}>
+                    {discount.name} —{" "}
+                    {discount.discount_type === "PERCENTAGE"
+                      ? `${discount.value}%`
+                      : `₹${Number(discount.value).toLocaleString("en-IN")}`}
+                  </option>
+                ))}
+              </select>
+
+              {feeDiscounts.length === 0 && (
+                <p className="mt-2 text-xs text-amber-600">
+                  No active discounts are available. Create one in Discount
+                  Master first.
+                </p>
+              )}
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-slate-700">
+                Remarks
+              </label>
+
+              <textarea
+                value={discountRemarks}
+                onChange={(event) => setDiscountRemarks(event.target.value)}
+                rows={3}
+                placeholder="Optional remarks"
+                className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+              />
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedFeeForDiscount(null);
+                  setSelectedDiscountId("");
+                  setDiscountRemarks("");
+                }}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={applyDiscount}
+                disabled={!selectedDiscountId || applyingDiscount}
+                className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {applyingDiscount ? "Applying..." : "Apply Discount"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }
