@@ -330,3 +330,189 @@ export async function POST(request: Request) {
     );
   }
 }
+
+/*
+ * ============================================================
+ * PATCH — UPDATE SECTION
+ * ============================================================
+ */
+
+export async function PATCH(request: Request) {
+  try {
+    const context = await getAuthContext();
+
+    if ("error" in context) {
+      return context.error;
+    }
+
+    const { supabaseAdmin, tenantId } = context;
+
+    let body: Record<string, unknown>;
+
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON request body." },
+        { status: 400 },
+      );
+    }
+
+    const sectionId =
+      typeof body.id === "string"
+        ? body.id.trim()
+        : "";
+
+    const name =
+      typeof body.name === "string"
+        ? body.name.trim()
+        : "";
+
+    const displayOrder =
+      typeof body.display_order === "number" &&
+      Number.isInteger(body.display_order)
+        ? body.display_order
+        : null;
+
+    const status =
+      typeof body.status === "string"
+        ? body.status.trim().toUpperCase()
+        : null;
+
+    if (!sectionId) {
+      return NextResponse.json(
+        { error: "Section ID is required." },
+        { status: 400 },
+      );
+    }
+
+    if (!name && displayOrder === null && !status) {
+      return NextResponse.json(
+        { error: "No section changes were provided." },
+        { status: 400 },
+      );
+    }
+
+    if (name && name.length > 120) {
+      return NextResponse.json(
+        { error: "Section name is too long." },
+        { status: 400 },
+      );
+    }
+
+    if (
+      status &&
+      !["ACTIVE", "INACTIVE"].includes(status)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid section status." },
+        { status: 400 },
+      );
+    }
+
+    const { data: existingSection, error: lookupError } =
+      await supabaseAdmin
+        .from("sections")
+        .select(
+          `
+            id,
+            "tenantId",
+            class_id,
+            name,
+            display_order,
+            status
+          `,
+        )
+        .eq("id", sectionId)
+        .eq("tenantId", tenantId)
+        .maybeSingle();
+
+    if (lookupError) {
+      console.error(
+        "Section PATCH lookup error:",
+        lookupError,
+      );
+
+      return NextResponse.json(
+        { error: "Unable to find section." },
+        { status: 500 },
+      );
+    }
+
+    if (!existingSection) {
+      return NextResponse.json(
+        { error: "Section not found." },
+        { status: 404 },
+      );
+    }
+
+    const updates: Record<string, unknown> = {};
+
+    if (name) {
+      updates.name = name;
+    }
+
+    if (displayOrder !== null) {
+      updates.display_order = displayOrder;
+    }
+
+    if (status) {
+      updates.status = status;
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("sections")
+      .update(updates)
+      .eq("id", sectionId)
+      .eq("tenantId", tenantId)
+      .select(
+        `
+          id,
+          "tenantId",
+          class_id,
+          name,
+          display_order,
+          status,
+          created_at,
+          updated_at
+        `,
+      )
+      .single();
+
+    if (error) {
+      if (error.code === "23505") {
+        return NextResponse.json(
+          {
+            error:
+              "A section with this name already exists for this class.",
+          },
+          { status: 409 },
+        );
+      }
+
+      console.error("Section PATCH error:", error);
+
+      return NextResponse.json(
+        { error: "Unable to update section." },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      section: data,
+    });
+  } catch (error) {
+    console.error("PATCH /api/sections error:", error);
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to update section.",
+      },
+      { status: 500 },
+    );
+  }
+}

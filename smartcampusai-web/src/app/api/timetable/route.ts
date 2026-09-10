@@ -567,6 +567,7 @@ export async function POST(request: Request) {
       await supabaseAdmin
         .from("teacher_assignments")
         .select("periods_per_week")
+        .eq("tenantId", tenantId)
         .eq("teacher_id", teacherId)
         .eq("subject_name", subject.name)
         .eq("class_name", contextValidation.classRecord.name)
@@ -612,6 +613,7 @@ export async function POST(request: Request) {
         .eq("section_id", sectionId)
         .eq("day_of_week", dayOfWeek)
         .eq("period_number", periodNumber)
+        .eq("status", "ACTIVE")
         .maybeSingle();
 
     if (existingPeriodError) throw existingPeriodError;
@@ -636,6 +638,7 @@ export async function POST(request: Request) {
           .eq("teacher_id", teacherId)
           .eq("day_of_week", dayOfWeek)
           .eq("period_number", periodNumber)
+          .eq("status", "ACTIVE")
           .maybeSingle();
 
       if (teacherConflictError) throw teacherConflictError;

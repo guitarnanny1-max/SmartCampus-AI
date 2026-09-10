@@ -1,0 +1,169 @@
+import { NextResponse } from "next/server";
+import crypto from "crypto";
+
+import {
+  createSupabaseServerClient,
+  getAuthContext,
+} from "@/lib/supabase/server";
+
+export async function GET(request: Request) {
+  try {
+    const auth = await getAuthContext();
+
+    if (!auth) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const supabase = await createSupabaseServerClient();
+    const { searchParams } = new URL(request.url);
+
+    const sectionId = searchParams.get("section_id");
+
+    let query = supabase
+      .from("section_subjects")
+      .select(`
+        id,
+        "tenantId",
+        class_id,
+        section_id,
+        subject_id,
+        status,
+        created_at,
+        updated_at,
+        subjects (
+          id,
+          name,
+          code,
+          status
+        )
+      `)
+      .eq("tenantId", auth.tenantId)
+      .order("created_at", { ascending: true });
+
+    if (sectionId) {
+      query = query.eq("section_id", sectionId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Section subjects GET error:", error);
+
+      return NextResponse.json(
+        { error: "Unable to load section subjects." },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      sectionSubjects: data ?? [],
+      total: data?.length ?? 0,
+    });
+  } catch (error) {
+    console.error("Section subjects GET exception:", error);
+
+    return NextResponse.json(
+      { error: "Unable to load section subjects." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const auth = await getAuthContext();
+
+    if (!auth) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const body = await request.json();
+
+    const sectionId = body?.section_id;
+    const classId = body?.class_id;
+    const subjectId = body?.subject_id;
+
+    if (!sectionId || !classId || !subjectId) {
+      return NextResponse.json(
+        {
+          error:
+            "section_id, class_id and subject_id are required.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const supabase = await createSupabaseServerClient();
+
+    const id = `section_subject_${crypto.randomUUID()}`;
+
+    const { data, error } = await supabase
+      .from("section_subjects")
+      .insert({
+        id,
+        tenantId: auth.tenantId,
+        class_id: classId,
+        section_id: sectionId,
+        subject_id: subjectId,
+        status: "ACTIVE",
+      })
+      .select(`
+        id,
+        "tenantId",
+        class_id,
+        section_id,
+        subject_id,
+        status,
+        created_at,
+        updated_at,
+        subjects (
+          id,
+          name,
+          code,
+          status
+        )
+      `)
+      .single();
+
+    if (error) {
+      console.error("Section subjects POST error:", error);
+
+      if (error.code === "23505") {
+        return NextResponse.json(
+          {
+            error:
+              "This subject is already assigned to the section.",
+          },
+          { status: 409 },
+        );
+      }
+
+      return NextResponse.json(
+        { error: "Unable to assign subject to section." },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        sectionSubject: data,
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    console.error("Section subjects POST exception:", error);
+
+    return NextResponse.json(
+      { error: "Unable to assign subject to section." },
+      { status: 500 },
+    );
+  }
+}

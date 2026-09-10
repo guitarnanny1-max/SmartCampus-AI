@@ -145,6 +145,7 @@ export async function POST(request: Request) {
       periodTimingsResult,
       assignmentsResult,
       existingTimetableResult,
+      subjectsResult,
     ] = await Promise.all([
       supabaseAdmin
         .from("academic_years")
@@ -199,6 +200,11 @@ export async function POST(request: Request) {
         .eq("tenantId", tenantId)
         .eq("academic_year_id", academicYearId)
         .eq("status", "ACTIVE"),
+
+      supabaseAdmin
+        .from("subjects")
+        .select("id,name")
+        .eq("tenantId", tenantId),
     ]);
 
     if (academicYearResult.error) throw academicYearResult.error;
@@ -209,6 +215,7 @@ export async function POST(request: Request) {
     if (assignmentsResult.error) throw assignmentsResult.error;
     if (existingTimetableResult.error)
       throw existingTimetableResult.error;
+    if (subjectsResult.error) throw subjectsResult.error;
 
     if (!academicYearResult.data) {
       return NextResponse.json(
@@ -277,6 +284,16 @@ export async function POST(request: Request) {
 
     const existingTimetable =
       existingTimetableResult.data ?? [];
+    const subjects = subjectsResult.data ?? [];
+
+    const subjectIdByName = new Map(
+      subjects
+        .filter((subject) => subject?.id && subject?.name)
+        .map((subject) => [
+          subject.name.trim().toLowerCase(),
+          subject.id,
+        ]),
+    );
 
     const existingSectionSlots = new Set(
       existingTimetable
@@ -386,22 +403,28 @@ export async function POST(request: Request) {
           row.teacher_id === assignment.teacher_id,
       ).length;
 
-      const subjectIds = new Set(
-        generated
-          .filter(
-            (row) =>
-              row.subject_name === assignment.subject_name &&
-              row.teacher_id === assignment.teacher_id,
-          )
-          .map((row) => row.subject_id),
-      );
+      const assignmentSubjectId =
+        subjectIdByName.get(
+          assignment.subject_name.trim().toLowerCase(),
+        ) ?? null;
 
-      const existingCount = existingTimetableResult.data.filter(
-        (row) =>
-          row.section_id === sectionId &&
-          row.subject_id &&
-          subjectIds.has(row.subject_id),
-      ).length;
+      const sectionSubjectId =
+        assignmentSubjectId &&
+        (sectionSubjectsResult.data ?? []).some(
+          (row) =>
+            row.status === "ACTIVE" &&
+            row.subject_id === assignmentSubjectId,
+        )
+          ? assignmentSubjectId
+          : null;
+
+      const existingCount = sectionSubjectId
+        ? existingTimetableResult.data.filter(
+            (row) =>
+              row.section_id === sectionId &&
+              row.subject_id === sectionSubjectId,
+          ).length
+        : 0;
 
       const totalAfterPublish = existingCount + previewCount;
 

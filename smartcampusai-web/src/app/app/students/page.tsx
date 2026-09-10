@@ -186,12 +186,12 @@ export default function StudentsPage() {
   const otherCount = students.length - activeCount;
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC]">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/50">
       <div className="mx-auto max-w-7xl px-6 py-10">
         <div className="mb-8">
           <a
             href="/app"
-            className="text-sm font-medium text-[#64748B] hover:text-black"
+            className="text-sm font-semibold text-blue-600 transition hover:text-indigo-700"
           >
             ← Back to dashboard
           </a>
@@ -199,11 +199,11 @@ export default function StudentsPage() {
 
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-[#64748B]">
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-600">
               Student Enrollment & Records
             </p>
 
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#0F172A]">
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-950">
               Students
             </h1>
 
@@ -215,7 +215,7 @@ export default function StudentsPage() {
 
           <button
             onClick={() => setShowAdd(true)}
-            className="rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white hover:bg-[#1F2937]"
+            className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 hover:from-blue-700 hover:to-violet-700"
           >
             + Add student
           </button>
@@ -228,21 +228,21 @@ export default function StudentsPage() {
         )}
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border bg-white p-6">
+          <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <p className="text-sm text-[#64748B]">Total students</p>
             <p className="mt-2 text-3xl font-bold">
               {students.length}
             </p>
           </div>
 
-          <div className="rounded-2xl border bg-white p-6">
+          <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <p className="text-sm text-[#64748B]">Active</p>
             <p className="mt-2 text-3xl font-bold">
               {activeCount}
             </p>
           </div>
 
-          <div className="rounded-2xl border bg-white p-6">
+          <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <p className="text-sm text-[#64748B]">
               Other statuses
             </p>
@@ -252,8 +252,8 @@ export default function StudentsPage() {
           </div>
         </div>
 
-        <section className="mt-8 overflow-hidden rounded-2xl border bg-white">
-          <div className="flex flex-col gap-4 border-b p-5 md:flex-row md:items-center md:justify-between">
+        <section className="mt-8 overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm">
+          <div className="flex flex-col gap-4 border-b border-blue-100 bg-gradient-to-r from-blue-50 via-indigo-50 to-violet-50 p-5 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="font-semibold text-[#0F172A]">
                 Enrolled Student Roster

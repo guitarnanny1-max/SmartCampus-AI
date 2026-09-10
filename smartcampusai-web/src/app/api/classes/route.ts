@@ -334,3 +334,189 @@ export async function POST(request: Request) {
     );
   }
 }
+
+/*
+ * ============================================================
+ * PATCH — UPDATE CLASS
+ * ============================================================
+ */
+
+export async function PATCH(request: Request) {
+  try {
+    const context = await getAuthContext();
+
+    if ("error" in context) {
+      return context.error;
+    }
+
+    const { supabaseAdmin, tenantId } = context;
+
+    let body: Record<string, unknown>;
+
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON request body." },
+        { status: 400 },
+      );
+    }
+
+    const classId =
+      typeof body.id === "string"
+        ? body.id.trim()
+        : "";
+
+    const name =
+      typeof body.name === "string"
+        ? body.name.trim()
+        : "";
+
+    const displayOrder =
+      typeof body.display_order === "number" &&
+      Number.isInteger(body.display_order)
+        ? body.display_order
+        : null;
+
+    const status =
+      typeof body.status === "string"
+        ? body.status.trim().toUpperCase()
+        : null;
+
+    if (!classId) {
+      return NextResponse.json(
+        { error: "Class ID is required." },
+        { status: 400 },
+      );
+    }
+
+    if (!name && displayOrder === null && !status) {
+      return NextResponse.json(
+        { error: "No class changes were provided." },
+        { status: 400 },
+      );
+    }
+
+    if (name && name.length > 120) {
+      return NextResponse.json(
+        { error: "Class name is too long." },
+        { status: 400 },
+      );
+    }
+
+    if (
+      status &&
+      !["ACTIVE", "INACTIVE"].includes(status)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid class status." },
+        { status: 400 },
+      );
+    }
+
+    const { data: existingClass, error: lookupError } =
+      await supabaseAdmin
+        .from("classes")
+        .select(
+          `
+            id,
+            "tenantId",
+            academic_year_id,
+            name,
+            display_order,
+            status
+          `,
+        )
+        .eq("id", classId)
+        .eq("tenantId", tenantId)
+        .maybeSingle();
+
+    if (lookupError) {
+      console.error(
+        "Class PATCH lookup error:",
+        lookupError,
+      );
+
+      return NextResponse.json(
+        { error: "Unable to find class." },
+        { status: 500 },
+      );
+    }
+
+    if (!existingClass) {
+      return NextResponse.json(
+        { error: "Class not found." },
+        { status: 404 },
+      );
+    }
+
+    const updates: Record<string, unknown> = {};
+
+    if (name) {
+      updates.name = name;
+    }
+
+    if (displayOrder !== null) {
+      updates.display_order = displayOrder;
+    }
+
+    if (status) {
+      updates.status = status;
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("classes")
+      .update(updates)
+      .eq("id", classId)
+      .eq("tenantId", tenantId)
+      .select(
+        `
+          id,
+          "tenantId",
+          academic_year_id,
+          name,
+          display_order,
+          status,
+          created_at,
+          updated_at
+        `,
+      )
+      .single();
+
+    if (error) {
+      if (error.code === "23505") {
+        return NextResponse.json(
+          {
+            error:
+              "A class with this name already exists for this academic year.",
+          },
+          { status: 409 },
+        );
+      }
+
+      console.error("Class PATCH error:", error);
+
+      return NextResponse.json(
+        { error: "Unable to update class." },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      class: data,
+    });
+  } catch (error) {
+    console.error("PATCH /api/classes error:", error);
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to update class.",
+      },
+      { status: 500 },
+    );
+  }
+}

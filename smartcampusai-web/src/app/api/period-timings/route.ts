@@ -11,9 +11,19 @@ type AuthContext = {
 async function getAuthContext(): Promise<AuthContext | null> {
   const cookieStore = await cookies();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publishableKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
+    return null;
+  }
+
+  const supabaseAuth = createServerClient(
+    supabaseUrl,
+    publishableKey,
     {
       cookies: {
         getAll() {
@@ -21,9 +31,9 @@ async function getAuthContext(): Promise<AuthContext | null> {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
-            );
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
           } catch {}
         },
       },
@@ -31,14 +41,17 @@ async function getAuthContext(): Promise<AuthContext | null> {
   );
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { user: authUser },
+    error: authError,
+  } = await supabaseAuth.auth.getUser();
 
-  if (!user) return null;
+  if (authError || !authUser?.email) {
+    return null;
+  }
 
   const service = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    supabaseUrl,
+    serviceRoleKey,
     {
       auth: {
         autoRefreshToken: false,
@@ -47,16 +60,21 @@ async function getAuthContext(): Promise<AuthContext | null> {
     },
   );
 
-  const { data: profile } = await service
+  const { data: profile, error: profileError } = await service
     .from("User")
-    .select("id, tenantId")
-    .eq("id", user.id)
+    .select("id, tenantId, email")
+    .eq("email", authUser.email)
     .maybeSingle();
+
+  if (profileError) {
+    console.error("Period timings User lookup error:", profileError);
+    return null;
+  }
 
   if (!profile?.tenantId) return null;
 
   return {
-    userId: user.id,
+    userId: profile.id,
     tenantId: profile.tenantId,
   };
 }

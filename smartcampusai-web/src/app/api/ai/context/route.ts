@@ -1,0 +1,422 @@
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
+
+async function getAuthContext() {
+  const cookieStore = await cookies();
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
+    return {
+      error: NextResponse.json(
+        {
+          success: false,
+          error: "Supabase configuration is incomplete.",
+        },
+        { status: 500 }
+      ),
+    };
+  }
+
+  const supabase = createServerClient(
+    supabaseUrl,
+    publishableKey,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Read-only request context.
+          }
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.email) {
+    return {
+      error: NextResponse.json(
+        {
+          success: false,
+          error: "Authentication required.",
+        },
+        { status: 401 }
+      ),
+    };
+  }
+
+  const admin = createClient(
+    supabaseUrl,
+    serviceRoleKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+
+  const { data: appUser, error: userError } = await admin
+    .from("User")
+    .select('id, "tenantId", email, name, role')
+    .eq("email", user.email)
+    .maybeSingle();
+
+  if (userError || !appUser) {
+    return {
+      error: NextResponse.json(
+        {
+          success: false,
+          error: "Application user not found.",
+        },
+        { status: 404 }
+      ),
+    };
+  }
+
+  if (!appUser.tenantId) {
+    return {
+      error: NextResponse.json(
+        {
+          success: false,
+          error: "User has no school tenant.",
+        },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return {
+    admin,
+    tenantId: appUser.tenantId as string,
+    appUser,
+  };
+}
+
+export async function GET() {
+  try {
+    const context = await getAuthContext();
+
+    if ("error" in context) {
+      return context.error;
+    }
+
+    const { admin, tenantId, appUser } = context;
+
+    const [
+      studentsResult,
+      teachersResult,
+      feesResult,
+      paymentsResult,
+      allocationsResult,
+      examsResult,
+    ] = await Promise.all([
+      admin
+        .from("Student")
+        .select("id, name, status, grade", { count: "exact" })
+        .eq("tenantId", tenantId),
+
+      admin
+        .from("Staff")
+        .select("id, name, status", { count: "exact" })
+        .eq("tenantId", tenantId)
+        .eq("role", "Teacher"),
+
+      admin
+        .from("student_fees")
+        .select(
+          "id, student_id, amount, discount_amount, net_amount, due_date, status"
+        )
+        .eq("tenantId", tenantId),
+
+      admin
+        .from("fee_payments")
+        .select(
+          "id, student_id, payment_date, amount, payment_method, status"
+        )
+        .eq("tenantId", tenantId)
+        .eq("status", "COMPLETED"),
+
+      admin
+        .from("fee_payment_allocations")
+        .select("id, payment_id, student_fee_id, amount")
+        .eq("tenantId", tenantId),
+
+      admin
+        .from("exams")
+        .select(
+          "id, name, exam_type, start_date, end_date, status"
+        )
+        .eq("tenantId", tenantId)
+        .order("start_date", { ascending: true }),
+    ]);
+
+    if (studentsResult.error) {
+      throw new Error(`Students: ${studentsResult.error.message}`);
+    }
+
+    if (teachersResult.error) {
+      throw new Error(`Teachers: ${teachersResult.error.message}`);
+    }
+
+    if (feesResult.error) {
+      throw new Error(`Fees: ${feesResult.error.message}`);
+    }
+
+    if (paymentsResult.error) {
+      throw new Error(`Payments: ${paymentsResult.error.message}`);
+    }
+
+    if (allocationsResult.error) {
+      throw new Error(
+        `Payment allocations: ${allocationsResult.error.message}`
+      );
+    }
+
+    if (examsResult.error) {
+      throw new Error(`Exams: ${examsResult.error.message}`);
+    }
+
+    const students = studentsResult.data ?? [];
+    const teachers = teachersResult.data ?? [];
+    const fees = feesResult.data ?? [];
+    const payments = paymentsResult.data ?? [];
+    const allocations = allocationsResult.data ?? [];
+    const exams = examsResult.data ?? [];
+
+    /*
+     * Build completed payment totals per student fee.
+     *
+     * Only allocations belonging to completed payments are counted.
+     */
+    const completedPaymentIds = new Set(
+      payments.map((payment) => payment.id)
+    );
+
+    const paidByFee = new Map<string, number>();
+
+    for (const allocation of allocations) {
+      if (!completedPaymentIds.has(allocation.payment_id)) {
+        continue;
+      }
+
+      const current = paidByFee.get(allocation.student_fee_id) ?? 0;
+
+      paidByFee.set(
+        allocation.student_fee_id,
+        current + Number(allocation.amount ?? 0)
+      );
+    }
+
+    const totalStudents = students.length;
+
+    const activeStudents = students.filter(
+      (student) => student.status === "ACTIVE"
+    ).length;
+
+    const totalTeachers = teachers.length;
+
+    const activeTeachers = teachers.filter(
+      (teacher) => teacher.status === "ACTIVE"
+    ).length;
+
+    const totalAssignedFees = fees.reduce(
+      (sum, fee) => sum + Number(fee.net_amount ?? 0),
+      0
+    );
+
+    const totalCollected = payments.reduce(
+      (sum, payment) => sum + Number(payment.amount ?? 0),
+      0
+    );
+
+    /*
+     * Calculate actual outstanding balance per fee:
+     *
+     * outstanding = net amount - completed allocations
+     *
+     * This correctly handles:
+     * - PENDING fees
+     * - PARTIAL fees
+     * - PAID fees
+     */
+    const feeBalances = fees.map((fee) => {
+      const netAmount = Number(fee.net_amount ?? 0);
+      const paidAmount = paidByFee.get(fee.id) ?? 0;
+      const outstandingAmount = Math.max(
+        0,
+        netAmount - paidAmount
+      );
+
+      return {
+        ...fee,
+        paidAmount,
+        outstandingAmount,
+      };
+    });
+
+    const outstandingFees = feeBalances.filter(
+      (fee) => fee.outstandingAmount > 0
+    );
+
+    const outstandingAmount = outstandingFees.reduce(
+      (sum, fee) => sum + fee.outstandingAmount,
+      0
+    );
+
+    // Live analytics prepared for the Visual AI Command Center.
+    const studentsByGradeMap = new Map<string, number>();
+
+    for (const student of students) {
+      const grade = String(student.grade ?? "").trim() || "Unassigned";
+      studentsByGradeMap.set(
+        grade,
+        (studentsByGradeMap.get(grade) ?? 0) + 1
+      );
+    }
+
+    const studentsByGrade = Array.from(studentsByGradeMap.entries())
+      .map(([grade, count]) => ({ grade, count }))
+      .sort((a, b) => {
+        if (a.grade === "Unassigned") return 1;
+        if (b.grade === "Unassigned") return -1;
+        return a.grade.localeCompare(b.grade, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
+      });
+
+    const studentsByStatusMap = new Map<string, number>();
+
+    for (const student of students) {
+      const status = String(student.status ?? "").trim() || "UNKNOWN";
+      studentsByStatusMap.set(
+        status,
+        (studentsByStatusMap.get(status) ?? 0) + 1
+      );
+    }
+
+    const studentsByStatus = Array.from(studentsByStatusMap.entries()).map(
+      ([status, count]) => ({ status, count })
+    );
+
+    const paymentsByMethodMap = new Map<string, number>();
+
+    for (const payment of payments) {
+      const method =
+        String(payment.payment_method ?? "").trim() || "UNKNOWN";
+
+      paymentsByMethodMap.set(
+        method,
+        (paymentsByMethodMap.get(method) ?? 0) +
+          Number(payment.amount ?? 0)
+      );
+    }
+
+    const paymentsByMethod = Array.from(paymentsByMethodMap.entries())
+      .map(([method, amount]) => ({ method, amount }))
+      .sort((a, b) => b.amount - a.amount);
+
+    const upcomingExams = exams
+      .filter(
+        (exam) =>
+          exam.status === "SCHEDULED" ||
+          exam.status === "PUBLISHED"
+      )
+      .slice(0, 6)
+      .map((exam) => ({
+        id: exam.id,
+        name: exam.name,
+        examType: exam.exam_type,
+        startDate: exam.start_date,
+        endDate: exam.end_date,
+        status: exam.status,
+      }));
+
+    const analytics = {
+      studentsByGrade,
+      studentsByStatus,
+      fees: {
+        assigned: totalAssignedFees,
+        collected: totalCollected,
+        outstanding: outstandingAmount,
+      },
+      paymentsByMethod,
+      upcomingExams,
+    };
+
+    return NextResponse.json({
+      success: true,
+
+      school: {
+        tenantId,
+        administrator: {
+          name: appUser.name,
+          role: appUser.role,
+        },
+      },
+
+      students: {
+        total: totalStudents,
+        active: activeStudents,
+      },
+
+      teachers: {
+        total: totalTeachers,
+        active: activeTeachers,
+      },
+
+      fees: {
+        assignedTotal: totalAssignedFees,
+        collectedTotal: totalCollected,
+        outstandingAmount,
+        outstandingCount: outstandingFees.length,
+      },
+
+      payments: {
+        completedCount: payments.length,
+        totalCollected,
+      },
+
+      exams: {
+        total: exams.length,
+        upcoming: exams.filter(
+          (exam) =>
+            exam.status === "SCHEDULED" ||
+            exam.status === "PUBLISHED"
+        ),
+      },
+
+      analytics,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("AI context error:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to generate AI school context.",
+      },
+      { status: 500 }
+    );
+  }
+}

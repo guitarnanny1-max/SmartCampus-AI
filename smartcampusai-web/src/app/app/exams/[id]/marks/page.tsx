@@ -434,6 +434,9 @@ export default function StudentMarksPage({
           ? err.message
           : "Unable to save student marks."
       );
+
+      // Restore the UI from persisted database state after a rejected save.
+      await loadStudents();
     } finally {
       setSavingId("");
     }
@@ -759,16 +762,11 @@ export default function StudentMarksPage({
                             </span>
 
                             <input
-                              key={`${student.student_id}-${student.marks?.marks_obtained ?? "empty"}`}
                               type="number"
                               min="0"
                               max={selectedSubject?.max_marks}
                               step="0.01"
-                              defaultValue={
-                                markInputs[student.student_id] ??
-                                student.marks?.marks_obtained ??
-                                ""
-                              }
+                              value={markInputs[student.student_id] ?? ""}
                               onChange={(e) =>
                                 updateLocalMarks(
                                   student.student_id,

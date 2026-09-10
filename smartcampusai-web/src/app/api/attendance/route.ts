@@ -208,6 +208,22 @@ export async function GET(request: Request) {
       url.searchParams.get("teacher_id") || ""
     ).trim();
 
+    const classId = (
+      url.searchParams.get("class_id") || ""
+    ).trim();
+
+    const sectionId = (
+      url.searchParams.get("section_id") || ""
+    ).trim();
+
+    const studentId = (
+      url.searchParams.get("student_id") || ""
+    ).trim();
+
+    const academicYearId = (
+      url.searchParams.get("academic_year_id") || ""
+    ).trim();
+
     if (date && !validDate(date)) {
       return NextResponse.json(
         {
@@ -424,6 +440,7 @@ export async function GET(request: Request) {
           tenantId: item.tenantId,
           createdAt: item.created_at,
           updatedAt: item.updated_at,
+          source: "TEACHER" as const,
         };
       },
     );
@@ -467,6 +484,13 @@ export async function GET(request: Request) {
       studentQuery = studentQuery.eq("status", status);
     }
 
+    if (studentId) {
+      studentQuery = studentQuery.eq(
+        "studentId",
+        studentId,
+      );
+    }
+
     const {
       data: studentAttendance,
       error: studentAttendanceError,
@@ -504,12 +528,236 @@ export async function GET(request: Request) {
         tenantId: item.tenantId,
         createdAt: item.createdAt,
         updatedAt: null,
+        source: "DAILY" as const,
       }),
     );
 
+    /*
+     * ----------------------------------------------------------
+     * CLASS-PERIOD STUDENT ATTENDANCE
+     * ----------------------------------------------------------
+     *
+     * Class-wise attendance is stored separately from the
+     * legacy Attendance table. Convert each student status into
+     * the same normalized AttendanceRecord shape used by the
+     * Daily Register.
+     */
+    let classPeriodQuery = supabaseAdmin
+      .from("class_period_attendance")
+      .select(`
+        id,
+        attendance_date,
+        period_number,
+        subject_id,
+        class_id,
+        section_id,
+        teacher_id,
+        created_at,
+        updated_at,
+        class_period_attendance_students (
+          id,
+          student_id,
+          status,
+          notes
+        )
+      `)
+      .eq("tenantId", tenantId)
+      .order("attendance_date", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (date) {
+      classPeriodQuery = classPeriodQuery.eq(
+        "attendance_date",
+        date,
+      );
+    }
+
+    if (from) {
+      classPeriodQuery = classPeriodQuery.gte(
+        "attendance_date",
+        from,
+      );
+    }
+
+    if (to) {
+      classPeriodQuery = classPeriodQuery.lte(
+        "attendance_date",
+        to,
+      );
+    }
+
+    if (classId) {
+      classPeriodQuery = classPeriodQuery.eq(
+        "class_id",
+        classId,
+      );
+    }
+
+    if (sectionId) {
+      classPeriodQuery = classPeriodQuery.eq(
+        "section_id",
+        sectionId,
+      );
+    }
+
+    if (academicYearId) {
+      classPeriodQuery = classPeriodQuery.eq(
+        "academic_year_id",
+        academicYearId,
+      );
+    }
+
+    const {
+      data: classPeriodAttendance,
+      error: classPeriodError,
+    } = await classPeriodQuery;
+
+    if (classPeriodError) {
+      console.error(
+        "Central class-period attendance query error:",
+        classPeriodError,
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            process.env.NODE_ENV === "development"
+              ? classPeriodError.message
+              : "Unable to load class-period attendance.",
+        },
+        { status: 500 },
+      );
+    }
+
+    const classStudentIds = Array.from(
+      new Set(
+        (classPeriodAttendance ?? []).flatMap(
+          (item: any) =>
+            (
+              item.class_period_attendance_students ??
+              []
+            ).map((student: any) => student.student_id),
+        ),
+      ),
+    );
+
+    let classStudents: Array<{
+      id: string;
+      name: string | null;
+      admission_number: string | null;
+    }> = [];
+
+    if (classStudentIds.length > 0) {
+      const {
+        data,
+        error,
+      } = await supabaseAdmin
+        .from("Student")
+        .select(
+          `
+            id,
+            name
+          `,
+        )
+        .eq("tenantId", tenantId)
+        .in("id", classStudentIds);
+
+      if (error) {
+        console.error(
+          "Central class-period student lookup error:",
+          error,
+        );
+
+        return NextResponse.json(
+          {
+            error:
+              process.env.NODE_ENV === "development"
+                ? error.message
+                : "Unable to load class attendance students.",
+          },
+          { status: 500 },
+        );
+      }
+
+      classStudents = (data ?? []).map((student: any) => ({
+        id: student.id,
+        name: student.name ?? null,
+        admission_number: null,
+      }));
+    }
+
+    const classStudentMap = new Map(
+      classStudents.map((student) => [
+        student.id,
+        student,
+      ]),
+    );
+
+    const classPeriodRecords = (
+      classPeriodAttendance ?? []
+    ).flatMap((item: any) =>
+      (
+        item.class_period_attendance_students ?? []
+      )
+        .filter(
+          (student: any) =>
+            (!status ||
+              student.status === status) &&
+            (!studentId ||
+              student.student_id === studentId),
+        )
+        .map((student: any) => {
+          const profile = classStudentMap.get(
+            student.student_id,
+          );
+
+          return {
+            id: student.id,
+            personId: student.student_id,
+            personName:
+              profile?.name ??
+              student.student_id,
+            employeeId: null,
+            role: "Student" as const,
+            date: item.attendance_date,
+            status:
+              student.status as AttendanceStatus,
+            checkIn: null,
+            checkOut: null,
+            notes: student.notes ?? null,
+            hours: null,
+            tenantId,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at,
+            classPeriodAttendanceId: item.id,
+            classId: item.class_id,
+            sectionId: item.section_id,
+            subjectId: item.subject_id,
+            periodNumber: item.period_number,
+            source: "CLASS_PERIOD" as const,
+          };
+        }),
+    );
+
+    const hasClassPeriodScope =
+      Boolean(classId || sectionId);
+
+    /*
+     * Reporting scope:
+     *
+     * Class/section filtered reports use class-period attendance.
+     * An unfiltered student report uses daily/manual attendance.
+     *
+     * This prevents daily attendance and period attendance from
+     * being added together as separate sessions for the same student.
+     */
+    const reportStudentRecords = hasClassPeriodScope
+      ? classPeriodRecords
+      : studentRecords;
+
     const records = [
       ...teacherRecords,
-      ...studentRecords,
+      ...reportStudentRecords,
     ].sort((a, b) => {
       const dateCompare = b.date.localeCompare(a.date);
 
@@ -522,25 +770,39 @@ export async function GET(request: Request) {
       );
     });
 
-    const total = records.length;
+    /*
+     * The central Daily Register may contain both:
+     *   - DAILY student attendance
+     *   - CLASS_PERIOD student attendance
+     *
+     * Class-period records are timetable/session-specific and must
+     * remain visible in history, but they must not be added to the
+     * daily attendance summary as a second attendance event for the
+     * same student/date.
+     *
+     * The summary therefore uses DAILY and TEACHER records only.
+     */
+    const summaryRecords = records;
 
-    const present = records.filter(
+    const total = summaryRecords.length;
+
+    const present = summaryRecords.filter(
       (item) => item.status === "PRESENT",
     ).length;
 
-    const absent = records.filter(
+    const absent = summaryRecords.filter(
       (item) => item.status === "ABSENT",
     ).length;
 
-    const late = records.filter(
+    const late = summaryRecords.filter(
       (item) => item.status === "LATE",
     ).length;
 
-    const halfDay = records.filter(
+    const halfDay = summaryRecords.filter(
       (item) => item.status === "HALF_DAY",
     ).length;
 
-    const leave = records.filter(
+    const leave = summaryRecords.filter(
       (item) => item.status === "LEAVE",
     ).length;
 

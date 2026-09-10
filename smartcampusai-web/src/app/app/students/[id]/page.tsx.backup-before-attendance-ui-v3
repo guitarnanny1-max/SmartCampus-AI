@@ -1,0 +1,299 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+type Student = {
+  id: string;
+  tenantId: string;
+  name: string;
+  rollNumber: string | null;
+  grade: string | null;
+  parentEmail: string | null;
+  status: string;
+  createdAt: string;
+};
+
+type Props = {
+  params: Promise<{ id: string }>;
+};
+
+export default function StudentDetailPage({ params }: Props) {
+  const [studentId, setStudentId] = useState("");
+  const [student, setStudent] = useState<Student | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStudent() {
+      try {
+        const { id } = await params;
+
+        if (!id) {
+          throw new Error("Student ID is missing.");
+        }
+
+        if (!cancelled) {
+          setStudentId(id);
+        }
+
+        const response = await fetch(
+          `/api/students/${encodeURIComponent(id)}`,
+          {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+          },
+        );
+
+        const text = await response.text();
+
+        let data: {
+          student?: Student;
+          error?: string;
+        } = {};
+
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch {
+            throw new Error(
+              "The server returned an invalid response.",
+            );
+          }
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "Unable to load student.",
+          );
+        }
+
+        if (!data.student) {
+          throw new Error("Student record was not returned.");
+        }
+
+        if (!cancelled) {
+          setStudent(data.student);
+        }
+      } catch (err) {
+        console.error("Student detail loading error:", err);
+
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load student.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadStudent();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [params]);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#F8FAFC]">
+        <div className="mx-auto max-w-7xl px-6 py-10">
+          <p className="text-sm text-[#64748B]">
+            Loading student profile...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (error || !student) {
+    return (
+      <main className="min-h-screen bg-[#F8FAFC]">
+        <div className="mx-auto max-w-7xl px-6 py-10">
+          <Link
+            href="/app/students"
+            className="text-sm font-medium text-[#2563EB] hover:underline"
+          >
+            ← Back to students
+          </Link>
+
+          <section className="mt-6 rounded-2xl border border-red-200 bg-white p-8 shadow-sm">
+            <h1 className="text-xl font-semibold text-[#0F172A]">
+              Unable to load student
+            </h1>
+
+            <p className="mt-2 text-sm text-red-600">
+              {error || "Student record not found."}
+            </p>
+
+            <p className="mt-2 text-xs text-[#64748B]">
+              Student ID: {studentId || "unknown"}
+            </p>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-[#F8FAFC]">
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        <Link
+          href="/app/students"
+          className="text-sm font-medium text-[#2563EB] hover:underline"
+        >
+          ← Back to students
+        </Link>
+
+        <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-sm font-medium text-[#64748B]">
+              Student 360°
+            </p>
+
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-[#0F172A]">
+              {student.name}
+            </h1>
+
+            <p className="mt-2 text-sm text-[#64748B]">
+              Complete student profile, enrollment and academic
+              workspace.
+            </p>
+          </div>
+
+          <span className="inline-flex w-fit rounded-full bg-[#DCFCE7] px-4 py-2 text-xs font-semibold text-[#166534]">
+            {student.status}
+          </span>
+        </div>
+
+        <section className="mt-8 grid gap-5 md:grid-cols-4">
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-[#64748B]">
+              Roll number
+            </p>
+            <p className="mt-2 text-lg font-semibold text-[#0F172A]">
+              {student.rollNumber || "—"}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-[#64748B]">
+              Grade / Class
+            </p>
+            <p className="mt-2 text-lg font-semibold text-[#0F172A]">
+              {student.grade || "—"}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-[#64748B]">
+              Parent email
+            </p>
+            <p className="mt-2 break-all text-sm font-semibold text-[#0F172A]">
+              {student.parentEmail || "—"}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-[#64748B]">
+              Enrollment
+            </p>
+            <p className="mt-2 text-lg font-semibold text-[#0F172A]">
+              Active record
+            </p>
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
+          <div className="border-b border-[#E2E8F0] px-6 py-5">
+            <h2 className="text-lg font-semibold text-[#0F172A]">
+              Student profile
+            </h2>
+            <p className="mt-1 text-sm text-[#64748B]">
+              Core identity and enrollment information.
+            </p>
+          </div>
+
+          <div className="grid gap-6 p-6 md:grid-cols-2">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-[#64748B]">
+                Student ID
+              </p>
+              <p className="mt-2 break-all text-sm font-medium text-[#0F172A]">
+                {student.id}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-[#64748B]">
+                Tenant
+              </p>
+              <p className="mt-2 break-all text-sm font-medium text-[#0F172A]">
+                {student.tenantId}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-[#64748B]">
+                Student name
+              </p>
+              <p className="mt-2 text-sm font-medium text-[#0F172A]">
+                {student.name}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-[#64748B]">
+                Created
+              </p>
+              <p className="mt-2 text-sm font-medium text-[#0F172A]">
+                {student.createdAt
+                  ? new Date(student.createdAt).toLocaleString(
+                      "en-IN",
+                    )
+                  : "—"}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-6 grid gap-6 md:grid-cols-3">
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-[#0F172A]">
+              Attendance
+            </p>
+            <p className="mt-2 text-sm text-[#64748B]">
+              Attendance history will appear here.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-[#0F172A]">
+              Academics
+            </p>
+            <p className="mt-2 text-sm text-[#64748B]">
+              Subjects, results and academic performance.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-[#0F172A]">
+              Fees
+            </p>
+            <p className="mt-2 text-sm text-[#64748B]">
+              Student fee and payment information.
+            </p>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}

@@ -175,7 +175,10 @@ async function calculateGrade(
     const min = Number(scale.min_percentage);
     const max = Number(scale.max_percentage);
 
-    return percentage >= min && percentage <= max;
+    const matches =
+      percentage >= min && percentage <= max;
+
+    return matches;
   });
 
   if (!matchingScale) {

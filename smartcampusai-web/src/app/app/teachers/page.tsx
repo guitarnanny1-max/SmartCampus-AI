@@ -393,7 +393,7 @@ export default function TeachersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/40 to-fuchsia-50/40">
       <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
 
         {/* HEADER */}

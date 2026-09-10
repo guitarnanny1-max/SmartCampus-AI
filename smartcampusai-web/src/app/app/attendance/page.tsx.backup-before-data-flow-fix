@@ -1,0 +1,511 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+type AttendanceStatus =
+  | "PRESENT"
+  | "ABSENT"
+  | "LATE"
+  | "HALF_DAY"
+  | "LEAVE";
+
+type AttendanceRecord = {
+  id: string;
+  personId: string;
+  personName: string;
+  role: "Teacher" | "Student";
+  date: string;
+  status: AttendanceStatus;
+  checkIn?: string | null;
+  checkOut?: string | null;
+  hours?: string | null;
+};
+
+const STATUS_CONFIG: Record<
+  AttendanceStatus,
+  {
+    label: string;
+    description: string;
+  }
+> = {
+  PRESENT: {
+    label: "Present",
+    description: "On duty",
+  },
+  ABSENT: {
+    label: "Absent",
+    description: "Not present",
+  },
+  LATE: {
+    label: "Late",
+    description: "Late arrival",
+  },
+  HALF_DAY: {
+    label: "Half Day",
+    description: "Partial day",
+  },
+  LEAVE: {
+    label: "Leave",
+    description: "Approved leave",
+  },
+};
+
+export default function AttendancePage() {
+  const [date, setDate] = useState(
+    new Date().toISOString().slice(0, 10),
+  );
+
+  const [role, setRole] = useState<"ALL" | "Teacher" | "Student">(
+    "ALL",
+  );
+
+  const [status, setStatus] = useState<
+    "ALL" | AttendanceStatus
+  >("ALL");
+
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAttendance() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const params = new URLSearchParams();
+
+        if (date) {
+          params.set("date", date);
+        }
+
+        if (status !== "ALL") {
+          params.set("status", status);
+        }
+
+        if (role === "Teacher") {
+          // Central API currently exposes teacher attendance.
+          // Role filtering is therefore applied to the returned
+          // records below.
+        }
+
+        const response = await fetch(
+          `/api/attendance?${params.toString()}`,
+          {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+          },
+        );
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(
+            data?.error ||
+              "Unable to load attendance records.",
+          );
+        }
+
+        if (cancelled) return;
+
+        const apiRecords = Array.isArray(data?.records)
+          ? data.records
+          : Array.isArray(data?.attendance)
+            ? data.attendance
+            : [];
+
+        const normalized: AttendanceRecord[] =
+          apiRecords.map((item: any) => ({
+            id: String(item.id ?? ""),
+            personId: String(
+              item.personId ??
+                item.teacher_id ??
+                item.teacherId ??
+                "",
+            ),
+            personName:
+              item.personName ??
+              item.teacher_name ??
+              item.teacherName ??
+              "Teacher",
+            role:
+              item.role === "Student"
+                ? "Student"
+                : "Teacher",
+            date:
+              item.date ??
+              item.attendance_date ??
+              "",
+            status: item.status as AttendanceStatus,
+            checkIn:
+              item.checkIn ??
+              item.check_in_time ??
+              null,
+            checkOut:
+              item.checkOut ??
+              item.check_out_time ??
+              null,
+            hours:
+              item.hours ??
+              null,
+          }));
+
+        setRecords(normalized);
+      } catch (err) {
+        console.error(
+          "Central attendance load error:",
+          err,
+        );
+
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load attendance records.",
+          );
+          setRecords([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadAttendance();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [date, status]);
+
+  const counts = useMemo(() => {
+    return {
+      total: records.length,
+      present: records.filter(
+        (item) => item.status === "PRESENT",
+      ).length,
+      absent: records.filter(
+        (item) => item.status === "ABSENT",
+      ).length,
+      late: records.filter(
+        (item) => item.status === "LATE",
+      ).length,
+      halfDay: records.filter(
+        (item) => item.status === "HALF_DAY",
+      ).length,
+      leave: records.filter(
+        (item) => item.status === "LEAVE",
+      ).length,
+    };
+  }, [records]);
+
+  const filteredRecords = useMemo(() => {
+    return records.filter((record) => {
+      if (role !== "ALL" && record.role !== role) {
+        return false;
+      }
+
+      if (status !== "ALL" && record.status !== status) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [records, role, status]);
+
+  const attendanceRate =
+    counts.total > 0
+      ? Math.round((counts.present / counts.total) * 100)
+      : 0;
+
+  const summaryCards = [
+    {
+      label: "Attendance rate",
+      value: `${attendanceRate}%`,
+      description: "Overall attendance",
+    },
+    {
+      label: "Present",
+      value: counts.present,
+      description: "On duty",
+    },
+    {
+      label: "Absent",
+      value: counts.absent,
+      description: "Not present",
+    },
+    {
+      label: "Late",
+      value: counts.late,
+      description: "Late arrivals",
+    },
+    {
+      label: "Leave",
+      value: counts.leave,
+      description: "Approved leave",
+    },
+  ];
+
+  return (
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
+
+        {/* Header */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                Academics
+              </p>
+
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
+                Attendance
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm text-slate-500">
+                Monitor student and teacher attendance across the
+                school.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Date
+                </label>
+
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(event) =>
+                    setDate(event.target.value)
+                  }
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Role
+                </label>
+
+                <select
+                  value={role}
+                  onChange={(event) =>
+                    setRole(
+                      event.target.value as
+                        | "ALL"
+                        | "Teacher"
+                        | "Student",
+                    )
+                  }
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+                >
+                  <option value="ALL">Everyone</option>
+                  <option value="Student">Students</option>
+                  <option value="Teacher">Teachers</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Status
+                </label>
+
+                <select
+                  value={status}
+                  onChange={(event) =>
+                    setStatus(
+                      event.target.value as
+                        | "ALL"
+                        | AttendanceStatus,
+                    )
+                  }
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+                >
+                  <option value="ALL">All statuses</option>
+                  <option value="PRESENT">Present</option>
+                  <option value="ABSENT">Absent</option>
+                  <option value="LATE">Late</option>
+                  <option value="HALF_DAY">Half Day</option>
+                  <option value="LEAVE">Leave</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Summary */}
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {summaryCards.map((card) => (
+            <div
+              key={card.label}
+              className="rounded-2xl border border-slate-200 bg-white p-5"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                {card.label}
+              </p>
+
+              <p className="mt-2 text-2xl font-semibold text-slate-950">
+                {card.value}
+              </p>
+
+              <p className="mt-1 text-xs text-slate-500">
+                {card.description}
+              </p>
+            </div>
+          ))}
+        </section>
+
+        {/* Daily Register */}
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="border-b border-slate-200 p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-950">
+                  Daily attendance register
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Attendance records for {date}.
+                </p>
+              </div>
+
+              <span className="w-fit rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                {filteredRecords.length}{" "}
+                {filteredRecords.length === 1
+                  ? "record"
+                  : "records"}
+              </span>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="p-12 text-center">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
+              <p className="mt-4 text-sm font-medium text-slate-700">
+                Loading attendance...
+              </p>
+            </div>
+          ) : error ? (
+            <div className="p-12 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-sm font-semibold text-red-600">
+                !
+              </div>
+              <h3 className="mt-4 text-sm font-semibold text-slate-950">
+                Unable to load attendance
+              </h3>
+              <p className="mx-auto mt-1 max-w-md text-sm text-red-600">
+                {error}
+              </p>
+            </div>
+          ) : filteredRecords.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-lg">
+                A
+              </div>
+
+              <h3 className="mt-4 text-sm font-semibold text-slate-950">
+                No attendance records
+              </h3>
+
+              <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
+                Central attendance records will appear here once
+                the school-wide attendance service is connected.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[850px] text-left">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50">
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Person
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Role
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Check-in
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Check-out
+                    </th>
+                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Hours
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filteredRecords.map((record) => {
+                    const config =
+                      STATUS_CONFIG[record.status];
+
+                    return (
+                      <tr
+                        key={record.id}
+                        className="border-b border-slate-100 last:border-0"
+                      >
+                        <td className="px-6 py-4 text-sm font-semibold text-slate-900">
+                          {record.personName}
+                        </td>
+
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {record.role}
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                            {config.label}
+                          </span>
+                        </td>
+
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {record.checkIn || "—"}
+                        </td>
+
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {record.checkOut || "—"}
+                        </td>
+
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {record.hours || "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {/* Coming next */}
+        <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+            Next
+          </p>
+
+          <h2 className="mt-2 text-base font-semibold text-slate-950">
+            School-wide attendance service
+          </h2>
+
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500">
+            The next phase will connect this dashboard to tenant-aware
+            student and teacher attendance data, followed by daily
+            registers, class filters, monthly summaries, and reports.
+          </p>
+        </section>
+
+      </div>
+    </main>
+  );
+}

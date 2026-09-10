@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 type AdminShellProps = {
   children: React.ReactNode;
@@ -55,7 +56,7 @@ const navigation = [
   {
     title: "Intelligence",
     items: [
-      { label: "Reports & Analytics", href: "/app/reports" },
+      { label: "Reports & Analytics", href: "/app/reports/attendance" },
       { label: "AI Command Center", href: "/app/ai" },
     ],
   },
@@ -71,6 +72,7 @@ export default function AdminShell({
 }: AdminShellProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { theme, activeOccasion } = useTheme();
 
   const initials =
     adminName
@@ -84,7 +86,17 @@ export default function AdminShell({
   const schoolInitial = schoolName.trim().charAt(0).toUpperCase() || "S";
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
+    <div className="relative min-h-screen">
+      {activeOccasion && (
+        <div
+          className="fixed inset-x-0 top-0 z-[100] h-1"
+          style={{
+            background: `linear-gradient(90deg, ${activeOccasion.colors[0]}, ${activeOccasion.colors[1]}, ${activeOccasion.colors[2]})`,
+          }}
+          aria-label={`${activeOccasion.name} occasion theme`}
+        />
+      )}
+      <div className="min-h-screen bg-gradient-to-br from-[var(--sc-primary-soft)] via-white to-[var(--sc-secondary-soft)] text-[#0F172A]">
       <div className="flex min-h-screen">
 
         {/* SIDEBAR */}
@@ -105,7 +117,7 @@ export default function AdminShell({
                 collapsed ? "justify-center" : "gap-3"
               }`}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black text-sm font-bold text-white">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--sc-primary)] via-[var(--sc-secondary)] to-[var(--sc-accent)] text-sm font-bold text-white shadow-lg">
                 S
               </div>
 
@@ -143,7 +155,7 @@ export default function AdminShell({
               }`}
             >
               {/* SCHOOL LOGO */}
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white text-sm font-bold text-slate-700 shadow-sm ring-1 ring-slate-200">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white text-sm font-bold text-[var(--sc-primary)] shadow-sm ring-2 ring-[var(--sc-primary-soft)]">
                 {schoolLogo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -185,11 +197,7 @@ export default function AdminShell({
 
                 <div className="space-y-1">
                   {section.items.map((item, itemIndex) => {
-                    const active =
-                      item.href === "/app"
-                        ? pathname === "/app"
-                        : pathname === item.href ||
-                          pathname.startsWith(`${item.href}/`);
+                    const active = pathname === item.href;
 
                     return (
                       <Link
@@ -202,7 +210,7 @@ export default function AdminShell({
                             : "px-3 py-2.5"
                         } ${
                           active
-                            ? "bg-black text-white shadow-sm"
+                            ? "bg-gradient-to-r from-[var(--sc-primary)] via-[var(--sc-secondary)] to-[var(--sc-accent)] text-white shadow-lg"
                             : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
                         }`}
                       >
@@ -237,7 +245,7 @@ export default function AdminShell({
                   : "flex items-center gap-3 p-3"
               }`}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-xs font-bold text-white">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--sc-secondary)] to-[var(--sc-accent)] text-xs font-bold text-white shadow-md">
                 {initials}
               </div>
 
@@ -293,7 +301,7 @@ export default function AdminShell({
           {/* MOBILE HEADER */}
           <header className="border-b border-slate-200 bg-white px-5 py-4 lg:hidden">
             <Link href="/app" className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black text-sm font-bold text-white">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--sc-primary)] text-sm font-bold text-white">
                 S
               </div>
 
@@ -328,6 +336,7 @@ export default function AdminShell({
             </div>
           </footer>
         </div>
+      </div>
       </div>
     </div>
   );

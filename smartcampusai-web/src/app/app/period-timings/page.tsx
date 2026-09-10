@@ -47,7 +47,7 @@ export default function PeriodTimingsPage() {
         throw new Error(data.error ?? "Failed to load academic years.");
       }
 
-      const years = data.academic_years ?? [];
+      const years = data.academicYears ?? [];
       setAcademicYears(years);
 
       if (!academicYearId && years.length) {
@@ -75,7 +75,18 @@ export default function PeriodTimingsPage() {
         )}`,
       );
 
-      const data = await response.json();
+      let data: {
+        error?: string;
+        period_timings?: PeriodTiming[];
+      } = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(
+          `Failed to load period timings (HTTP ${response.status}).`,
+        );
+      }
 
       if (!response.ok) {
         throw new Error(data.error ?? "Failed to load period timings.");
@@ -202,13 +213,31 @@ export default function PeriodTimingsPage() {
   }
 
   async function createDefaultPeriods() {
+    if (!academicYearId) return;
+
     setSaving(true);
     setError("");
 
     try {
-      for (let index = 0; index < DEFAULT_PERIODS.length; index++) {
-        const [name, start, end] = DEFAULT_PERIODS[index];
+      const existingPeriods = new Set(
+        timings.map((timing) => timing.period_number),
+      );
 
+      const missingPeriods = DEFAULT_PERIODS
+        .map((period, index) => ({
+          periodNumber: index + 1,
+          name: period[0],
+          start: period[1],
+          end: period[2],
+        }))
+        .filter((period) => !existingPeriods.has(period.periodNumber));
+
+      if (missingPeriods.length === 0) {
+        await loadTimings();
+        return;
+      }
+
+      for (const period of missingPeriods) {
         const response = await fetch("/api/period-timings", {
           method: "POST",
           headers: {
@@ -216,18 +245,28 @@ export default function PeriodTimingsPage() {
           },
           body: JSON.stringify({
             academic_year_id: academicYearId,
-            period_number: index + 1,
-            name,
-            start_time: start,
-            end_time: end,
+            period_number: period.periodNumber,
+            name: period.name,
+            start_time: period.start,
+            end_time: period.end,
             is_break: false,
             status: "ACTIVE",
           }),
         });
 
-        if (!response.ok && response.status !== 409) {
-          const data = await response.json();
-          throw new Error(data.error ?? "Failed to create periods.");
+        if (!response.ok) {
+          let message = "Failed to create periods.";
+
+          try {
+            const data = await response.json();
+            message = data.error ?? message;
+          } catch {}
+
+          if (response.status === 409) {
+            continue;
+          }
+
+          throw new Error(message);
         }
       }
 

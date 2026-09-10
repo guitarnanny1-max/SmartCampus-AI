@@ -114,6 +114,39 @@ async function getAuthContext() {
   };
 }
 
+async function findOverlappingScale(
+  supabaseAdmin: any,
+  tenantId: string,
+  minPercentage: number,
+  maxPercentage: number,
+  excludeId?: string
+) {
+  const { data, error } = await supabaseAdmin
+    .from("grading_scales")
+    .select(
+      "id, name, min_percentage, max_percentage, grade"
+    )
+    .eq("tenantId", tenantId);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).find((scale: any) => {
+    if (excludeId && scale.id === excludeId) {
+      return false;
+    }
+
+    const existingMin = Number(scale.min_percentage);
+    const existingMax = Number(scale.max_percentage);
+
+    return (
+      existingMin <= maxPercentage &&
+      existingMax >= minPercentage
+    );
+  }) ?? null;
+}
+
 export async function GET() {
   try {
     const context = await getAuthContext();
@@ -277,6 +310,23 @@ export async function POST(request: Request) {
           success: false,
           error:
             "Grade point must be a non-negative number.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const overlappingScale = await findOverlappingScale(
+      supabaseAdmin,
+      tenantId,
+      minPercentage,
+      maxPercentage
+    );
+
+    if (overlappingScale) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Grading range overlaps with existing scale "${overlappingScale.name}" (${overlappingScale.min_percentage}-${overlappingScale.max_percentage}%).`,
         },
         { status: 400 }
       );
@@ -479,6 +529,24 @@ export async function PATCH(request: Request) {
             success: false,
             error:
               "Minimum percentage cannot exceed maximum percentage.",
+          },
+          { status: 400 }
+        );
+      }
+
+      const overlappingScale = await findOverlappingScale(
+        supabaseAdmin,
+        tenantId,
+        min,
+        max,
+        id
+      );
+
+      if (overlappingScale) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Grading range overlaps with existing scale "${overlappingScale.name}" (${overlappingScale.min_percentage}-${overlappingScale.max_percentage}%).`,
           },
           { status: 400 }
         );

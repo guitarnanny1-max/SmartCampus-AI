@@ -204,7 +204,7 @@ export default function AppDashboard() {
   const tenantName = me.tenant?.name || "your school";
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC]">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40">
       <div className="mx-auto max-w-[1500px] px-5 py-6 sm:px-8 sm:py-8">
 
         {/* PREMIUM HERO */}
@@ -265,7 +265,7 @@ export default function AppDashboard() {
 
           <Link
             href="/app/students"
-            className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            className="group rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-indigo-100 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -282,7 +282,7 @@ export default function AppDashboard() {
                 </p>
               </div>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-xl">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-xl text-white shadow-md">
                 🎓
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function AppDashboard() {
 
           <Link
             href="/app/teachers"
-            className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            className="group rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 via-white to-fuchsia-100 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -307,7 +307,7 @@ export default function AppDashboard() {
                 </p>
               </div>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-xl">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 text-xl text-white shadow-md">
                 👨‍🏫
               </div>
             </div>
@@ -315,7 +315,7 @@ export default function AppDashboard() {
 
           <Link
             href="/app/fees/payments"
-            className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            className="group rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-green-100 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -333,7 +333,7 @@ export default function AppDashboard() {
                 </p>
               </div>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-xl">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-xl text-white shadow-md">
                 ₹
               </div>
             </div>
@@ -341,7 +341,7 @@ export default function AppDashboard() {
 
           <Link
             href="/app/fees/dues"
-            className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            className="group rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-amber-100 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -359,7 +359,7 @@ export default function AppDashboard() {
                 </p>
               </div>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-xl">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 text-xl text-white shadow-md">
                 !
               </div>
             </div>
@@ -380,7 +380,7 @@ export default function AppDashboard() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Link
               href="/app/students"
-              className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+              className="group rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-sm transition hover:border-blue-400 hover:shadow-md"
             >
               <span className="text-lg">🎓</span>
               <p className="mt-3 text-sm font-bold text-slate-900">
@@ -393,7 +393,7 @@ export default function AppDashboard() {
 
             <Link
               href="/app/teachers"
-              className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+              className="group rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 to-fuchsia-50 p-4 shadow-sm transition hover:border-purple-400 hover:shadow-md"
             >
               <span className="text-lg">👨‍🏫</span>
               <p className="mt-3 text-sm font-bold text-slate-900">
@@ -406,7 +406,7 @@ export default function AppDashboard() {
 
             <Link
               href="/app/fees/student-fees"
-              className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+              className="group rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 p-4 shadow-sm transition hover:border-emerald-400 hover:shadow-md"
             >
               <span className="text-lg">📋</span>
               <p className="mt-3 text-sm font-bold text-slate-900">
@@ -419,7 +419,7 @@ export default function AppDashboard() {
 
             <Link
               href="/app/fees/payments"
-              className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+              className="group rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-4 shadow-sm transition hover:border-orange-400 hover:shadow-md"
             >
               <span className="text-lg">₹</span>
               <p className="mt-3 text-sm font-bold text-slate-900">
@@ -436,8 +436,8 @@ export default function AppDashboard() {
         <div className="mt-8 grid gap-6 xl:grid-cols-2">
 
           {/* FEE COLLECTION */}
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-5">
+          <section className="overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/30 to-blue-50/40 shadow-sm">
+            <div className="flex items-center justify-between border-b border-indigo-100 bg-gradient-to-r from-indigo-50/70 via-white to-blue-50/50 px-5 py-5">
               <div>
                 <h2 className="font-bold text-slate-950">
                   Recent Fee Collections
@@ -449,7 +449,7 @@ export default function AppDashboard() {
 
               <Link
                 href="/app/fees/payments"
-                className="text-xs font-bold text-blue-600 hover:text-blue-700"
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-800"
               >
                 View all →
               </Link>
@@ -471,7 +471,7 @@ export default function AppDashboard() {
                     className="flex items-center justify-between px-5 py-4"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-sm font-bold text-emerald-700">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-sm font-bold text-white shadow-md">
                         ₹
                       </div>
 
@@ -488,7 +488,7 @@ export default function AppDashboard() {
                       </div>
                     </div>
 
-                    <p className="ml-4 shrink-0 text-sm font-bold text-emerald-600">
+                    <p className="ml-4 shrink-0 text-sm font-bold text-emerald-700">
                       +{formatMoney(Number(payment.amount || 0))}
                     </p>
                   </div>
@@ -498,8 +498,8 @@ export default function AppDashboard() {
           </section>
 
           {/* EXAMS */}
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-5">
+          <section className="overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/30 to-blue-50/40 shadow-sm">
+            <div className="flex items-center justify-between border-b border-indigo-100 bg-gradient-to-r from-indigo-50/70 via-white to-blue-50/50 px-5 py-5">
               <div>
                 <h2 className="font-bold text-slate-950">
                   Upcoming Exams
@@ -511,7 +511,7 @@ export default function AppDashboard() {
 
               <Link
                 href="/app/exams"
-                className="text-xs font-bold text-blue-600 hover:text-blue-700"
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-800"
               >
                 View all →
               </Link>
@@ -564,7 +564,7 @@ export default function AppDashboard() {
 
         {/* DUES */}
         <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-5">
+          <div className="flex items-center justify-between border-b border-indigo-100 bg-gradient-to-r from-indigo-50/70 via-white to-blue-50/50 px-5 py-5">
             <div>
               <h2 className="font-bold text-slate-950">
                 Outstanding Fees
@@ -576,7 +576,7 @@ export default function AppDashboard() {
 
             <Link
               href="/app/fees/dues"
-              className="text-xs font-bold text-blue-600 hover:text-blue-700"
+              className="text-xs font-bold text-indigo-600 hover:text-indigo-800"
             >
               Open dues →
             </Link>

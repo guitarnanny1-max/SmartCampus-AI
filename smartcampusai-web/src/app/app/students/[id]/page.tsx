@@ -1078,7 +1078,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#F8FAFC]">
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
         <div className="mx-auto max-w-7xl px-6 py-10">
           <p className="text-sm text-[#64748B]">
             Loading student profile...
@@ -1090,7 +1090,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
 
   if (error || !student) {
     return (
-      <main className="min-h-screen bg-[#F8FAFC]">
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
         <div className="mx-auto max-w-7xl px-6 py-10">
           <Link
             href="/app/students"
@@ -1163,7 +1163,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
     "—";
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC]">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       <div className="mx-auto max-w-7xl px-6 py-8">
         <Link
           href="/app/students"
@@ -1405,7 +1405,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
               <button
                 type="button"
                 onClick={() => setShowEnrollmentForm((value) => !value)}
-                className="rounded-xl bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white hover:bg-black"
+                className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-indigo-200 transition hover:-translate-y-0.5 hover:from-blue-700 hover:to-indigo-700"
               >
                 {showEnrollmentForm
                   ? "Cancel"
@@ -1422,7 +1422,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
             )}
 
             {enrollmentLoading ? (
-              <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+              <div className="mt-5 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50/70 via-white to-indigo-50/50 p-4 text-sm text-slate-500">
                 Loading enrollment...
               </div>
             ) : enrollments.length > 0 ? (
@@ -1518,7 +1518,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
             )}
 
             {showEnrollmentForm && (
-              <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="mt-5 rounded-2xl border border-blue-100 bg-white shadow-sm p-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className="block">
                     <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -1666,7 +1666,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
                     type="button"
                     onClick={saveEnrollment}
                     disabled={enrollmentSaving}
-                    className="rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {enrollmentSaving
                       ? "Saving..."
@@ -1858,7 +1858,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
                     type="button"
                     onClick={saveProfile}
                     disabled={profileSaving}
-                    className="rounded-xl bg-black px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {profileSaving ? "Saving..." : "Save Personal Information"}
                   </button>
@@ -1929,7 +1929,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
                 <button
                   type="button"
                   onClick={startAddGuardian}
-                  className="rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                  className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-indigo-200 transition hover:-translate-y-0.5 hover:opacity-95"
                 >
                   + Add Guardian
                 </button>
@@ -1943,7 +1943,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
             )}
 
             {guardianEditing && (
-              <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div className="mb-6 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/70 via-white to-indigo-50/50 p-5">
                 <div className="mb-4">
                   <h3 className="font-semibold text-slate-900">
                     {editingGuardianId ? "Edit Guardian" : "Add Guardian"}
@@ -2077,7 +2077,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
                     type="button"
                     onClick={saveGuardian}
                     disabled={guardianSaving}
-                    className="rounded-xl bg-black px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {guardianSaving
                       ? "Saving..."

@@ -21,7 +21,7 @@ body {
 }
 
 ::selection {
-  background: #111827;
+  background: var(--sc-selection);
   color: white;
 }
 
@@ -31,22 +31,41 @@ body {
    ============================================================ */
 
 :root {
-  /* Brand */
-  --sc-blue: #2563EB;
-  --sc-blue-dark: #1E40AF;
-  --sc-blue-soft: #EFF6FF;
+  /* ============================================================
+     LIVING THEME — GLOBAL BRAND TOKENS
+     These variables are controlled by Theme Studio.
+     ============================================================ */
 
-  /* Intelligence */
-  --sc-cyan: #0891B2;
-  --sc-cyan-soft: #ECFEFF;
+  --sc-primary: #334155;
+  --sc-primary-dark: #1E293B;
+  --sc-primary-soft: #F8FAFC;
 
-  /* AI */
-  --sc-violet: #7C3AED;
-  --sc-violet-soft: #F5F3FF;
+  --sc-secondary: #64748B;
+  --sc-secondary-soft: #F1F5F9;
 
-  /* Academics */
-  --sc-indigo: #4F46E5;
-  --sc-indigo-soft: #EEF2FF;
+  --sc-accent: #0F766E;
+  --sc-accent-soft: #F0FDFA;
+
+  --sc-occasion-1: transparent;
+  --sc-occasion-2: transparent;
+  --sc-occasion-3: transparent;
+
+  --sc-selection: #334155;
+
+  /* Existing semantic tokens */
+  --sc-blue: var(--sc-primary);
+  --sc-blue-dark: var(--sc-primary-dark);
+  --sc-blue-soft: var(--sc-primary-soft);
+
+  --sc-cyan: var(--sc-secondary);
+  --sc-cyan-soft: var(--sc-secondary-soft);
+
+  /* Neutral semantic fallback — intentionally not purple */
+  --sc-violet: var(--sc-primary);
+  --sc-violet-soft: var(--sc-primary-soft);
+
+  --sc-indigo: var(--sc-primary);
+  --sc-indigo-soft: var(--sc-primary-soft);
 
   /* Success */
   --sc-emerald: #059669;
@@ -68,6 +87,54 @@ body {
   --sc-surface-2: #F1F5F9;
   --sc-border: #E2E8F0;
   --sc-white: #FFFFFF;
+}
+
+/* Living Theme utilities */
+
+.sc-primary {
+  color: var(--sc-primary);
+}
+
+.sc-primary-bg {
+  background: var(--sc-primary);
+}
+
+.sc-primary-soft {
+  background: var(--sc-primary-soft);
+}
+
+.sc-secondary {
+  color: var(--sc-secondary);
+}
+
+.sc-secondary-bg {
+  background: var(--sc-secondary);
+}
+
+.sc-accent {
+  color: var(--sc-accent);
+}
+
+.sc-accent-bg {
+  background: var(--sc-accent);
+}
+
+.sc-occasion-border {
+  border-image: linear-gradient(
+    90deg,
+    var(--sc-occasion-1),
+    var(--sc-occasion-2),
+    var(--sc-occasion-3)
+  ) 1;
+}
+
+.sc-occasion-strip {
+  background: linear-gradient(
+    90deg,
+    var(--sc-occasion-1),
+    var(--sc-occasion-2),
+    var(--sc-occasion-3)
+  );
 }
 
 /* Brand utilities */

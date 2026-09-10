@@ -156,6 +156,7 @@ export async function POST(request: Request) {
       sectionSubjectsResult,
       assignmentsResult,
       timetableResult,
+      subjectsResult,
     ] = await Promise.all([
       supabaseAdmin
         .from("academic_years")
@@ -210,6 +211,11 @@ export async function POST(request: Request) {
         .eq("tenantId", tenantId)
         .eq("academic_year_id", academicYearId)
         .eq("status", "ACTIVE"),
+
+      supabaseAdmin
+        .from("subjects")
+        .select("id,name")
+        .eq("tenantId", tenantId),
     ]);
 
     if (academicYearResult.error) throw academicYearResult.error;
@@ -219,6 +225,7 @@ export async function POST(request: Request) {
     if (sectionSubjectsResult.error) throw sectionSubjectsResult.error;
     if (assignmentsResult.error) throw assignmentsResult.error;
     if (timetableResult.error) throw timetableResult.error;
+    if (subjectsResult.error) throw subjectsResult.error;
 
     if (!academicYearResult.data) {
       return NextResponse.json(
@@ -258,6 +265,16 @@ export async function POST(request: Request) {
     const sectionSubjects = sectionSubjectsResult.data ?? [];
     const assignments = assignmentsResult.data ?? [];
     const existingTimetable = timetableResult.data ?? [];
+    const subjects = subjectsResult.data ?? [];
+
+    const subjectIdByName = new Map(
+      subjects
+        .filter((subject) => subject?.id && subject?.name)
+        .map((subject) => [
+          subject.name.trim().toLowerCase(),
+          subject.id,
+        ]),
+    );
 
     const timingByPeriod = new Map(
       periodTimings.map((period) => [
@@ -451,22 +468,21 @@ export async function POST(request: Request) {
           row.teacher_id === assignment.teacher_id,
       ).length;
 
-      const subjectIds = new Set(
-        generated
-          .filter(
-            (row) =>
-              row.subject_name === assignment.subject_name &&
-              row.teacher_id === assignment.teacher_id,
-          )
-          .map((row) => row.subject_id),
+      // Existing periods must be counted from the assignment's
+      // actual subject, not from preview rows. A subject may have
+      // zero preview rows when its existing weekly requirement is
+      // already fully scheduled.
+      const assignmentSubjectId = subjectIdByName.get(
+        assignment.subject_name.trim().toLowerCase(),
       );
 
-      const existingCountForSubject = existingTimetable.filter(
-        (row) =>
-          row.section_id === sectionId &&
-          row.subject_id &&
-          subjectIds.has(row.subject_id),
-      ).length;
+      const existingCountForSubject = assignmentSubjectId
+        ? existingTimetable.filter(
+            (row) =>
+              row.section_id === sectionId &&
+              row.subject_id === assignmentSubjectId,
+          ).length
+        : 0;
 
       const required = Number(
         assignment.periods_per_week ?? 0,

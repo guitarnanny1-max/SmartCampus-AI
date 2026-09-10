@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import ProcessStepper from "@/components/app/ProcessStepper";
 
 type PeriodTiming = {
   id: string;
@@ -166,6 +167,9 @@ export default function TimetablePage() {
   const [classId, setClassId] = useState("");
   const [sectionId, setSectionId] = useState("");
 
+  // Prevent an older class->sections request from overwriting a newer class selection.
+  const sectionLoadVersion = useRef(0);
+
   const [showForm, setShowForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
   const [saving, setSaving] = useState(false);
@@ -224,25 +228,68 @@ export default function TimetablePage() {
 
   useEffect(() => {
     void loadAcademicYears();
-    void loadClasses();
     void loadTeachers();
   }, []);
 
   useEffect(() => {
+    if (!academicYearId) {
+      setClasses([]);
+      setClassId("");
+      setSections([]);
+      setSectionId("");
+      return;
+    }
+
+    setClassId("");
+    setSectionId("");
+    setSections([]);
+    void loadClasses(academicYearId).then((rows) => {
+      if (rows.length > 0) {
+        setClassId(rows[0].id);
+      }
+    });
+  }, [academicYearId]);
+
+  useEffect(() => {
+    const loadVersion = ++sectionLoadVersion.current;
+
     if (!classId) {
       setSections([]);
       setSectionId("");
       return;
     }
 
-    void loadSections(classId);
+    void loadSections(classId, loadVersion);
   }, [classId]);
 
   useEffect(() => {
+    // Clear state that belongs to the previously selected section.
+    setError("");
+    setSuggestionError("");
+    setAutoGenerateError("");
+    setValidationError("");
+    setSuggestions([]);
+    setSuggestionSubjectId("");
+    setAutoGeneratePreview([]);
+    setAutoGenerateUnresolved([]);
+
     if (!sectionId) {
       setSubjects([]);
+      setForm((current) => ({
+        ...current,
+        subject_id: "",
+        teacher_id: "",
+      }));
       return;
     }
+
+    // Reset the form subject immediately; loadSubjects() will select
+    // the first valid subject for the newly selected section.
+    setForm((current) => ({
+      ...current,
+      subject_id: "",
+      teacher_id: "",
+    }));
 
     void loadSubjects(sectionId);
   }, [sectionId]);
@@ -280,24 +327,60 @@ export default function TimetablePage() {
     }
   }
 
-  async function loadClasses() {
+  async function loadClasses(selectedAcademicYearId?: string): Promise<ClassRecord[]> {
     try {
-      const response = await fetch("/api/classes");
+      const query = selectedAcademicYearId
+        ? `?academic_year_id=${encodeURIComponent(selectedAcademicYearId)}`
+        : "";
+
+      const response = await fetch(`/api/classes${query}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+
       const data = await response.json();
-      setClasses(data.classes ?? []);
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to load classes.");
+      }
+
+      const rows = data.classes ?? [];
+      setClasses(rows);
+      return rows;
     } catch {
+      setClasses([]);
+      setClassId("");
+      setSectionId("");
+      setSections([]);
       setError("Failed to load classes.");
+      return [];
     }
   }
 
-  async function loadSections(selectedClassId: string) {
+  async function loadSections(
+    selectedClassId: string,
+    loadVersion: number,
+  ) {
     try {
       const response = await fetch(
         `/api/sections?class_id=${encodeURIComponent(selectedClassId)}`,
       );
       const data = await response.json();
 
-      const rows = data.sections ?? [];
+      // Ignore a response belonging to an older class selection.
+      if (loadVersion !== sectionLoadVersion.current) {
+        return;
+      }
+
+      const rows = (data.sections ?? []) as Section[];
+      console.log("TIMETABLE SECTIONS:", {
+        selectedClassId,
+        rows: rows.map((row: Section) => ({
+          id: row.id,
+          class_id: row.class_id,
+          name: row.name,
+        })),
+      });
       setSections(rows);
 
       if (rows.length > 0) {
@@ -306,6 +389,9 @@ export default function TimetablePage() {
         setSectionId("");
       }
     } catch {
+      if (loadVersion !== sectionLoadVersion.current) {
+        return;
+      }
       setError("Failed to load sections.");
     }
   }
@@ -328,12 +414,14 @@ export default function TimetablePage() {
 
       setSubjects(mapped);
 
-      if (mapped.length > 0) {
-        setForm((current) => ({
-          ...current,
-          subject_id: current.subject_id || mapped[0].id,
-        }));
-      }
+      // The subject belongs to the selected section.
+      // Never carry a subject ID from a previously selected section.
+      setForm((current) => ({
+        ...current,
+        subject_id: mapped.some((subject: Subject) => subject.id === current.subject_id)
+          ? current.subject_id
+          : mapped[0]?.id ?? "",
+      }));
     } catch {
       setError("Failed to load section subjects.");
     }
@@ -990,6 +1078,22 @@ export default function TimetablePage() {
           </button>
         </div>
 
+        <ProcessStepper
+          currentStep="academic-year"
+          steps={[
+            { id: "academic-year", label: "Academic Year" },
+            { id: "classes", label: "Classes" },
+            { id: "subjects", label: "Subjects" },
+            { id: "teachers", label: "Teachers" },
+            { id: "period-timings", label: "Period Timings" },
+            { id: "availability", label: "Availability" },
+            { id: "generate", label: "Generate" },
+            { id: "validate", label: "Validate" },
+            { id: "review", label: "Review" },
+            { id: "publish", label: "Publish" },
+          ]}
+        />
+
         <section className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="grid gap-4 md:grid-cols-3">
             <label className="text-sm font-medium text-slate-700">
@@ -1013,6 +1117,20 @@ export default function TimetablePage() {
               <select
                 value={classId}
                 onChange={(event) => {
+                  setError("");
+                  setSuggestionError("");
+                  setAutoGenerateError("");
+                  setValidationError("");
+                  setSuggestions([]);
+                  setSuggestionSubjectId("");
+                  setAutoGeneratePreview([]);
+                  setAutoGenerateUnresolved([]);
+                  setEditingEntry(null);
+                  setForm((current) => ({
+                    ...current,
+                    subject_id: "",
+                    teacher_id: "",
+                  }));
                   setClassId(event.target.value);
                   setSectionId("");
                 }}
