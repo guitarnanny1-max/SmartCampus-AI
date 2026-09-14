@@ -35,23 +35,6 @@ function validStatus(
   );
 }
 
-function normalizeTime(value: unknown): string | null {
-  const result = String(value ?? "").trim();
-
-  if (!result) {
-    return null;
-  }
-
-  if (/^\d{2}:\d{2}$/.test(result)) {
-    return `${result}:00`;
-  }
-
-  if (/^\d{2}:\d{2}:\d{2}$/.test(result)) {
-    return result;
-  }
-
-  return null;
-}
 
 async function getAuthContext(): Promise<
   AuthContext | { error: NextResponse }

@@ -51,7 +51,49 @@ export default function FeesPage() {
   }
 
   useEffect(() => {
-    void loadFeeTypes();
+    let cancelled = false;
+
+    async function initialize() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch("/api/fee-types", {
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data?.error || "Unable to load fee types.",
+          );
+        }
+
+        if (!cancelled) {
+          setFeeTypes(data?.feeTypes ?? []);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Unable to load fee types.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void initialize();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function createFeeType(

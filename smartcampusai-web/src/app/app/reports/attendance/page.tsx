@@ -226,7 +226,7 @@ export default function AttendanceReportsPage() {
 
         if (!cancelled) {
           setClasses(
-            (data.classes ?? []).map((item: any) => ({
+            (data.classes ?? []).map((item: { id: string; name: string }) => ({
               id: item.id,
               name: item.name,
             })),
@@ -388,7 +388,7 @@ export default function AttendanceReportsPage() {
 
         const studentMap = new Map<string, StudentOption>(
           (studentsData.students ?? []).map(
-            (item: any) => [
+            (item: { id: string; name?: string | null }) => [
               item.id,
               {
                 id: item.id,
@@ -649,6 +649,9 @@ export default function AttendanceReportsPage() {
     }
   }
 
+  // This memo is intentionally retained because studentSummaries is reused
+  // by CSV export, analytics, and the rendered student summary.
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const studentSummaries = useMemo(() => {
     const map = new Map<
       string,

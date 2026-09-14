@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 type Teacher = {
@@ -78,7 +78,6 @@ type TeacherAttendance = {
   updated_at?: string;
 };
 
-type AttendanceStatus = TeacherAttendance["status"];
 
 function teacherName(teacher: Teacher) {
   const firstLast = [teacher.first_name, teacher.last_name]
@@ -116,6 +115,7 @@ type TeacherActivity = {
 };
 
 export default function TeacherProfilePage() {
+  const router = useRouter();
   const params = useParams();
   const id = String(params?.id ?? "");
 
@@ -370,22 +370,34 @@ export default function TeacherProfilePage() {
 
   useEffect(() => {
     if (!showAssignmentForm) return;
+    // Async loader synchronizes assignment academic years with form visibility.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadAssignmentAcademicYears();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showAssignmentForm]);
 
   useEffect(() => {
     if (!showAssignmentForm || !assignmentForm.academic_year) return;
+    // Async loader synchronizes classes with the selected academic year.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadAssignmentClasses(assignmentForm.academic_year);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showAssignmentForm, assignmentForm.academic_year, academicYears.length]);
 
   useEffect(() => {
     if (!showAssignmentForm || !assignmentForm.class_name) return;
+    // Async loader synchronizes sections with the selected class.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadAssignmentSections(assignmentForm.class_name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showAssignmentForm, assignmentForm.class_name, classes.length]);
 
   useEffect(() => {
     if (!showAssignmentForm || !assignmentForm.section_name) return;
+    // Async loader synchronizes assignment subjects with the selected section.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadAssignmentSubjects(assignmentForm.section_name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showAssignmentForm, assignmentForm.section_name, sections.length]);
 
   async function toggleTeacherStatus() {
@@ -467,7 +479,7 @@ export default function TeacherProfilePage() {
         );
       }
 
-      window.location.href = "/app/teachers";
+      router.push("/app/teachers");
     } catch (err) {
       console.error("Teacher delete error:", err);
       setError(
@@ -1070,7 +1082,12 @@ export default function TeacherProfilePage() {
   }
 
   useEffect(() => {
-    if (id) loadProfile();
+    if (id) {
+      // Async loader synchronizes the profile with the route id.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void loadProfile();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const totalPeriods = useMemo(
@@ -1206,7 +1223,7 @@ export default function TeacherProfilePage() {
                   Edit teacher profile
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Update the teacher's staff information.
+                  Update the teacher&apos;s staff information.
                 </p>
               </div>
 
@@ -2108,7 +2125,7 @@ export default function TeacherProfilePage() {
                         </h3>
 
                         <p className="mt-1 text-sm text-slate-500">
-                          Record today's attendance and working hours.
+                          Record today&apos;s attendance and working hours.
                         </p>
                       </div>
                     </div>

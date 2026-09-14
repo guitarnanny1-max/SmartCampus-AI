@@ -65,8 +65,11 @@ export default function ManageExamSubjectsPage({
 
   useEffect(() => {
     if (examId) {
-      loadData();
+      // Async loader synchronizes subjects with the loaded exam.
+      void loadData();
     }
+    // loadData is intentionally omitted because it is recreated on render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [examId]);
 
   async function loadData() {

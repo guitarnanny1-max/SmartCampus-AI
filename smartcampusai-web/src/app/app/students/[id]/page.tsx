@@ -922,12 +922,16 @@ const [guardianEditing, setGuardianEditing] = useState(false);
 
   useEffect(() => {
     if (!enrollmentLoading && enrollments.length > 0) {
+      // Async loader synchronizes academic data with enrollment changes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void loadStudentAcademics(enrollments);
     } else if (!enrollmentLoading && enrollments.length === 0) {
-      setAcademicTeachers([]);
+      // Clear derived academic data when there are no enrollments.
+        setAcademicTeachers([]);
       setAcademicAssignments([]);
       setAcademicTimetable([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     enrollments,
     enrollmentLoading,
@@ -1129,21 +1133,6 @@ const [guardianEditing, setGuardianEditing] = useState(false);
       )
     : undefined;
 
-  const enrolledSection = currentEnrollment
-    ? sections.find(
-        (item) =>
-          item.id === currentEnrollment.section_id,
-      )
-    : undefined;
-
-  const enrolledAcademicYear = currentEnrollment
-    ? academicYears.find(
-        (item) =>
-          item.id ===
-          currentEnrollment.academic_year_id,
-      )
-    : undefined;
-
   const displayRollNumber =
     currentEnrollment?.roll_number ||
     student.rollNumber ||
@@ -1152,14 +1141,6 @@ const [guardianEditing, setGuardianEditing] = useState(false);
   const displayClass =
     enrolledClass?.name ||
     student.grade ||
-    "—";
-
-  const displaySection =
-    enrolledSection?.name ||
-    "—";
-
-  const displayAcademicYear =
-    enrolledAcademicYear?.name ||
     "—";
 
   return (
@@ -2211,7 +2192,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
                   No academic enrollment found.
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
-                  Add an enrollment to view this student's academics and
+                  Add an enrollment to view this student&apos;s academics and
                   timetable.
                 </p>
               </div>
@@ -2454,7 +2435,7 @@ const [guardianEditing, setGuardianEditing] = useState(false);
                             Weekly Timetable
                           </h3>
                           <p className="mt-1 text-xs text-slate-500">
-                            Published periods for the student's current class
+                            Published periods for the student&apos;s current class
                             and section.
                           </p>
                         </div>

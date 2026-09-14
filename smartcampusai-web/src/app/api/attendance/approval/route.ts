@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 type ApprovalStatus =
@@ -13,6 +13,10 @@ type AuditAction =
   | "APPROVED"
   | "REJECTED"
   | "RESUBMITTED";
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 async function getAuthContext() {
   const cookieStore = await cookies();
@@ -151,7 +155,7 @@ function isSchoolAdmin(role: unknown) {
 }
 
 async function loadAttendanceStudent(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   tenantId: string,
   attendanceStudentId: string,
 ) {
@@ -179,7 +183,7 @@ async function loadAttendanceStudent(
 }
 
 async function loadApproval(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   tenantId: string,
   attendanceStudentId: string,
 ) {
@@ -213,7 +217,7 @@ async function loadApproval(
 }
 
 async function writeAuditEvent(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   input: {
     tenantId: string;
     attendanceStudentId: string;
@@ -391,7 +395,7 @@ export async function GET(request: Request) {
       success: true,
       approvals: approvalMap,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(
       "GET /api/attendance/approval error:",
       error,
@@ -404,7 +408,7 @@ export async function GET(request: Request) {
           "Unable to load attendance approval.",
         details:
           process.env.NODE_ENV === "development"
-            ? error?.message
+            ? errorMessage(error)
             : undefined,
       },
       { status: 500 },
@@ -548,7 +552,7 @@ export async function POST(request: Request) {
       success: true,
       approval,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(
       "POST /api/attendance/approval error:",
       error,
@@ -561,7 +565,7 @@ export async function POST(request: Request) {
           "Unable to submit attendance for approval.",
         details:
           process.env.NODE_ENV === "development"
-            ? error?.message
+            ? errorMessage(error)
             : undefined,
       },
       { status: 500 },
@@ -740,7 +744,7 @@ export async function PATCH(request: Request) {
       success: true,
       approval,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(
       "PATCH /api/attendance/approval error:",
       error,
@@ -753,7 +757,7 @@ export async function PATCH(request: Request) {
           "Unable to update attendance approval.",
         details:
           process.env.NODE_ENV === "development"
-            ? error?.message
+            ? errorMessage(error)
             : undefined,
       },
       { status: 500 },

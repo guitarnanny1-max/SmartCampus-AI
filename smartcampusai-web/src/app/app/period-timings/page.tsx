@@ -105,11 +105,17 @@ export default function PeriodTimingsPage() {
   }
 
   useEffect(() => {
-    loadAcademicYears();
+    // Async loader synchronizes academic years with the page mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadAcademicYears();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    loadTimings();
+    // Async loader synchronizes period timings with the selected academic year.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadTimings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [academicYearId]);
 
   function updateTiming(
@@ -312,7 +318,7 @@ export default function PeriodTimingsPage() {
               Period Timings
             </h1>
             <p className="mt-2 text-sm text-slate-500">
-              Configure the school's daily period schedule.
+              Configure the school&apos;s daily period schedule.
             </p>
           </div>
 

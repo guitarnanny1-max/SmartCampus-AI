@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 async function getAuthContext() {
   const cookieStore = await cookies();
@@ -104,7 +104,7 @@ async function getAuthContext() {
 }
 
 async function getExam(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   tenantId: string,
   examId: string
 ) {
@@ -125,7 +125,7 @@ async function getExam(
 }
 
 async function getExamSubject(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   tenantId: string,
   examId: string,
   examSubjectId: string
@@ -155,7 +155,7 @@ async function getExamSubject(
  * min_percentage <= percentage <= max_percentage
  */
 async function calculateGrade(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   tenantId: string,
   percentage: number
 ) {
@@ -171,7 +171,11 @@ async function calculateGrade(
     throw error;
   }
 
-  const matchingScale = (scales ?? []).find((scale: any) => {
+  const matchingScale = (scales ?? []).find(
+    (scale: {
+      min_percentage: number | string | null;
+      max_percentage: number | string | null;
+    }) => {
     const min = Number(scale.min_percentage);
     const max = Number(scale.max_percentage);
 
@@ -179,7 +183,8 @@ async function calculateGrade(
       percentage >= min && percentage <= max;
 
     return matches;
-  });
+  },
+  );
 
   if (!matchingScale) {
     return {
@@ -331,7 +336,7 @@ export async function GET(
     const studentIds = [
       ...new Set(
         enrollmentRows
-          .map((row: any) => row.student_id)
+          .map((row: { student_id: string | null }) => row.student_id)
           .filter(Boolean)
       ),
     ];
@@ -430,14 +435,14 @@ export async function GET(
     );
 
     const marksMap = new Map(
-      (marks ?? []).map((mark: any) => [
+      (marks ?? []).map((mark: { student_id: string }) => [
         mark.student_id,
         mark,
       ])
     );
 
     const rows = enrollmentRows
-      .map((enrollment: any) => {
+      .map((enrollment: { id: string; student_id: string; roll_number?: string | null }) => {
         const student = studentMap.get(
           enrollment.student_id
         );

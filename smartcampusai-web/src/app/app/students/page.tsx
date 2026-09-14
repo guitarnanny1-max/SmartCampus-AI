@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
@@ -45,6 +47,8 @@ type Student = {
 };
 
 export default function StudentsPage() {
+
+  const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -77,8 +81,9 @@ export default function StudentsPage() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        window.location.href =
-          `/login?next=${encodeURIComponent("/app/students")}`;
+        router.push(
+          `/login?next=${encodeURIComponent("/app/students")}`,
+        );
         return;
       }
 
@@ -113,7 +118,10 @@ export default function StudentsPage() {
   }
 
   useEffect(() => {
-    loadStudents();
+    // Async loader synchronizes the student list with the search query.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadStudents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   async function addStudent(event: React.FormEvent) {
@@ -133,8 +141,9 @@ export default function StudentsPage() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        window.location.href =
-          `/login?next=${encodeURIComponent("/app/students")}`;
+        router.push(
+          `/login?next=${encodeURIComponent("/app/students")}`,
+        );
         return;
       }
 

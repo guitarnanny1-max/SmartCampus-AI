@@ -180,12 +180,16 @@ export default function FeeStructuresPage() {
   }
 
   useEffect(() => {
-    loadInitialData();
+    // Async loader synchronizes initial fee data with the page mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadInitialData();
   }, []);
 
   useEffect(() => {
     if (academicYearId) {
-      loadClasses(academicYearId);
+      // Async loader synchronizes classes with the selected academic year.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void loadClasses(academicYearId);
     }
   }, [academicYearId]);
 

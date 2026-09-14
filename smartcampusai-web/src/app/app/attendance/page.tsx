@@ -21,6 +21,20 @@ type AttendanceStudent = {
   status: string | null;
 };
 
+type AttendanceAcademicYear = {
+  id: string;
+  status: string;
+};
+
+type AttendanceEnrollment = {
+  status: string;
+  academic_year_id: string;
+  class_id: string;
+  section_id: string;
+  student_id: string;
+  roll_number?: string | null;
+};
+
 type AttendanceRecord = {
   id: string;
   personId: string;
@@ -164,18 +178,76 @@ function formatDate(value: string) {
   });
 }
 
+function getLocalDateKey() {
+  const date = new Date();
+
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 function shiftDate(value: string, amount: number) {
-  const date = new Date(`${value}T00:00:00`);
+  const [year, month, day] = value.split("-").map(Number);
 
-  date.setDate(date.getDate() + amount);
+  if (amount === 1) {
+    const daysInMonth = new Date(year, month, 0).getDate();
 
-  return date.toISOString().slice(0, 10);
+    if (day < daysInMonth) {
+      return `${year}-${String(month).padStart(2, "0")}-${String(day + 1).padStart(2, "0")}`;
+    }
+
+    if (month < 12) {
+      return `${year}-${String(month + 1).padStart(2, "0")}-01`;
+    }
+
+    return `${year + 1}-01-01`;
+  }
+
+  if (amount === -1) {
+    if (day > 1) {
+      return `${year}-${String(month).padStart(2, "0")}-${String(day - 1).padStart(2, "0")}`;
+    }
+
+    if (month > 1) {
+      const previousMonth = month - 1;
+      const daysInPreviousMonth = new Date(year, previousMonth, 0).getDate();
+
+      return `${year}-${String(previousMonth).padStart(2, "0")}-${String(daysInPreviousMonth).padStart(2, "0")}`;
+    }
+
+    return `${year - 1}-12-31`;
+  }
+
+  return value;
 }
 
 export default function AttendancePage() {
-  const [date, setDate] = useState(
-    new Date().toISOString().slice(0, 10),
-  );
+  const [date, setDateState] = useState("");
+  const [today, setToday] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  // Hydrate browser-local date after the server/client markup matches.
+  useEffect(() => {
+    const localToday = getLocalDateKey();
+    // Intentional client-only initialization: avoids server/client date hydration mismatch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setToday(localToday);
+    setDateState(localToday);
+    setMounted(true);
+  }, []);
+
+  const setDate = (value: string | ((current: string) => string)) => {
+    setDateState((current) => {
+      const next =
+        typeof value === "function"
+          ? value(current)
+          : value;
+
+      return next;
+    });
+  };
 
   const [role, setRole] = useState<RoleFilter>("ALL");
 
@@ -189,20 +261,9 @@ export default function AttendancePage() {
     AttendanceRecord[]
   >([]);
 
-  const [summary, setSummary] = useState<Summary>({
-    total: 0,
-    present: 0,
-    absent: 0,
-    late: 0,
-    halfDay: 0,
-    leave: 0,
-    attendanceRate: 0,
-  });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [attendanceRefreshVersion, setAttendanceRefreshVersion] =
-    useState(0);
 
   type ApprovalStatus =
     | "PENDING"
@@ -236,8 +297,6 @@ export default function AttendancePage() {
   const [editSaving, setEditSaving] =
     useState(false);
 
-  const [creatingStudentAttendance, setCreatingStudentAttendance] =
-    useState(false);
   const [createStudentId, setCreateStudentId] =
     useState("");
   const [createStatus, setCreateStatus] =
@@ -291,16 +350,19 @@ export default function AttendancePage() {
     } | null;
   };
 
+  const [, setAttendanceAcademicYears] =
+    useState<AttendanceAcademicYear[]>([]);
+  const [, setSummary] = useState({
+    total: 0,
+    present: 0,
+    absent: 0,
+    late: 0,
+    halfDay: 0,
+    leave: 0,
+    attendanceRate: 0,
+  });
   const [attendanceAcademicYearId, setAttendanceAcademicYearId] =
     useState("");
-  const [attendanceAcademicYears, setAttendanceAcademicYears] =
-    useState<Array<{
-      id: string;
-      name: string;
-      start_date?: string | null;
-      end_date?: string | null;
-      status?: string | null;
-    }>>([]);
 
   const [attendanceClasses, setAttendanceClasses] =
     useState<ClassOption[]>([]);
@@ -322,8 +384,6 @@ export default function AttendancePage() {
   const [classAttendanceMarks, setClassAttendanceMarks] =
     useState<Record<string, "PRESENT" | "ABSENT">>({});
 
-  const [classAttendanceTeacherId, setClassAttendanceTeacherId] =
-    useState<string | null>(null);
 
   const [detailsRecord, setDetailsRecord] =
     useState<AttendanceRecord | null>(null);
@@ -623,7 +683,7 @@ export default function AttendancePage() {
 
         const activeYear =
           years.find(
-            (year: any) => year.status === "ACTIVE"
+            (year: AttendanceAcademicYear) => year.status === "ACTIVE"
           ) ?? years[0];
 
         if (activeYear) {
@@ -765,7 +825,6 @@ export default function AttendancePage() {
       setAttendanceTimetable([]);
       setClassAttendancePeriod("");
       setClassAttendanceSubject("");
-      setClassAttendanceTeacherId(null);
       setClassAttendanceMarks({});
 
       if (
@@ -829,22 +888,12 @@ export default function AttendancePage() {
     classAttendanceSection,
   ]);
 
-  useEffect(() => {
-    const timetableEntry =
-      attendanceTimetable.find(
-        (item) =>
-          String(item.period_number) === classAttendancePeriod &&
-          item.subject_id === classAttendanceSubject
-      ) ?? null;
-
-    setClassAttendanceTeacherId(
-      timetableEntry?.teacher_id ?? null
-    );
-  }, [
-    attendanceTimetable,
-    classAttendancePeriod,
-    classAttendanceSubject,
-  ]);
+  const classAttendanceTeacherId =
+    attendanceTimetable.find(
+      (item) =>
+        String(item.period_number) === classAttendancePeriod &&
+        item.subject_id === classAttendanceSubject
+    )?.teacher_id ?? null;
 
   useEffect(() => {
     let cancelled = false;
@@ -932,69 +981,7 @@ export default function AttendancePage() {
     classAttendanceSection,
     classAttendancePeriod,
     classAttendanceSubject,
-    attendanceRefreshVersion,
   ]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadAttendanceStudents() {
-      try {
-        setAttendanceStudentsLoading(true);
-        setAttendanceStudentsError("");
-
-        const response = await fetch("/api/students", {
-          credentials: "include",
-          cache: "no-store",
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data?.error || "Unable to load students.",
-          );
-        }
-
-        if (cancelled) return;
-
-        const students: AttendanceStudent[] = (
-          data?.students ?? []
-        )
-          .filter(
-            (student: AttendanceStudent) =>
-              student.status === "ACTIVE",
-          )
-          .map((student: AttendanceStudent) => ({
-            id: student.id,
-            name: student.name ?? null,
-            rollNumber: student.rollNumber ?? null,
-            grade: student.grade ?? null,
-            status: student.status ?? null,
-          }));
-
-        setAttendanceStudents(students);
-      } catch (error) {
-        if (cancelled) return;
-
-        setAttendanceStudentsError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load students.",
-        );
-      } finally {
-        if (!cancelled) {
-          setAttendanceStudentsLoading(false);
-        }
-      }
-    }
-
-    loadAttendanceStudents();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   /*
    * The master student endpoint contains student profile data,
@@ -1071,7 +1058,7 @@ export default function AttendancePage() {
         const activeEnrollments = (
           enrollmentsData.enrollments ?? []
         ).filter(
-          (enrollment: any) =>
+          (enrollment: AttendanceEnrollment) =>
             enrollment.status === "ACTIVE" &&
             enrollment.academic_year_id ===
               attendanceAcademicYearId &&
@@ -1099,7 +1086,7 @@ export default function AttendancePage() {
 
         const sectionStudents =
           activeEnrollments
-            .map((enrollment: any) => {
+            .map((enrollment: AttendanceEnrollment) => {
               const student = studentMap.get(
                 enrollment.student_id,
               );
@@ -1308,7 +1295,7 @@ export default function AttendancePage() {
     return () => {
       cancelled = true;
     };
-  }, [date, status, teacherId, attendanceRefreshVersion]);
+  }, [date, status, teacherId]);
 
   function setClassStudentAttendance(
     studentId: string,
@@ -1320,7 +1307,6 @@ export default function AttendancePage() {
     }));
   }
 
-  const selectedClassStudents = attendanceStudents;
 
   async function saveClassAttendance() {
     setClassAttendanceMessage("");
@@ -1409,7 +1395,74 @@ export default function AttendancePage() {
         "Class attendance saved successfully."
       );
 
-      setAttendanceRefreshVersion((value) => value + 1);
+      const refreshParams = new URLSearchParams();
+      refreshParams.set("date", date);
+      refreshParams.set("class_id", classAttendanceClass);
+      refreshParams.set("section_id", classAttendanceSection);
+      refreshParams.set("academic_year_id", attendanceAcademicYearId);
+
+      const refreshResponse = await fetch(
+        `/api/attendance?${refreshParams.toString()}`,
+        {
+          credentials: "include",
+          cache: "no-store",
+        },
+      );
+
+      const refreshData = await refreshResponse.json();
+
+      if (!refreshResponse.ok) {
+        throw new Error(
+          refreshData?.error ||
+            "Attendance was saved, but the register could not be refreshed.",
+        );
+      }
+
+      const refreshedRecords: AttendanceRecord[] = (
+        refreshData?.records ?? []
+      ).map((item: AttendanceRecord) => ({
+        id: item.id,
+        personId: item.personId,
+        personName: item.personName,
+        employeeId: item.employeeId ?? null,
+        role: item.role,
+        date: item.date,
+        status: item.status,
+        checkIn: item.checkIn ?? null,
+        checkOut: item.checkOut ?? null,
+        notes: item.notes ?? null,
+        hours:
+          item.hours ??
+          calculateHours(item.checkIn, item.checkOut),
+        classPeriodAttendanceId:
+          item.classPeriodAttendanceId ?? null,
+        classId: item.classId ?? null,
+        sectionId: item.sectionId ?? null,
+        subjectId: item.subjectId ?? null,
+        periodNumber:
+          item.periodNumber != null
+            ? Number(item.periodNumber)
+            : null,
+      }));
+
+      setRecords(refreshedRecords);
+      setSummary({
+        total:
+          Number(refreshData?.summary?.total) ||
+          refreshedRecords.length,
+        present:
+          Number(refreshData?.summary?.present) || 0,
+        absent:
+          Number(refreshData?.summary?.absent) || 0,
+        late:
+          Number(refreshData?.summary?.late) || 0,
+        halfDay:
+          Number(refreshData?.summary?.halfDay) || 0,
+        leave:
+          Number(refreshData?.summary?.leave) || 0,
+        attendanceRate:
+          Number(refreshData?.summary?.attendanceRate) || 0,
+      });
 
       const savedMarks: Record<
         string,
@@ -1597,9 +1650,16 @@ export default function AttendancePage() {
         return false;
       }
 
+      if (
+        status !== "ALL" &&
+        record.status !== status
+      ) {
+        return false;
+      }
+
       return true;
     });
-  }, [records, role]);
+  }, [records, role, status]);
 
   const filteredSummary = useMemo<Summary>(() => {
     const total = filteredRecords.length;
@@ -1850,9 +1910,11 @@ export default function AttendancePage() {
               <button
                 type="button"
                 onClick={() =>
-                  setDate(
-                    shiftDate(date, -1),
-                  )
+                  setDate((currentDate) => {
+                    const nextDate = shiftDate(currentDate, -1);
+                    console.log("[Attendance] PREVIOUS", currentDate, "=>", nextDate);
+                    return nextDate;
+                  })
                 }
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
@@ -1867,21 +1929,35 @@ export default function AttendancePage() {
                 <input
                   type="date"
                   value={date}
-                  onChange={(event) =>
-                    setDate(event.target.value)
-                  }
+                  max={today || undefined}
+                  onChange={(event) => {
+                    const selectedDate = event.target.value;
+                    if (today && selectedDate > today) {
+                      setDate(today);
+                      return;
+                    }
+
+                    setDate(selectedDate);
+                  }}
                   className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500"
                 />
               </div>
 
               <button
                 type="button"
+                disabled={!mounted || !today || date >= today}
                 onClick={() =>
-                  setDate(
-                    shiftDate(date, 1),
-                  )
+                  setDate((currentDate) => {
+                    if (!today || currentDate >= today) {
+                      return today || currentDate;
+                    }
+
+                    const nextDate = shiftDate(currentDate, 1);
+                    console.log("[Attendance] NEXT", currentDate, "=>", nextDate);
+                    return nextDate;
+                  })
                 }
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white"
               >
                 Next →
               </button>
@@ -1889,11 +1965,7 @@ export default function AttendancePage() {
               <button
                 type="button"
                 onClick={() =>
-                  setDate(
-                    new Date()
-                      .toISOString()
-                      .slice(0, 10),
-                  )
+                  setDate(today)
                 }
                 className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
               >
@@ -1932,7 +2004,7 @@ export default function AttendancePage() {
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                {formatDate(date)}
+                {mounted ? formatDate(date) : "—"}
               </p>
             </div>
 
@@ -2263,7 +2335,11 @@ export default function AttendancePage() {
               <button
                 type="button"
                 onClick={markAllClassStudentsPresent}
-                disabled={!classAttendanceClass || attendanceStudentsLoading}
+                disabled={
+  !classAttendanceClass ||
+  !classAttendanceSection ||
+  attendanceStudentsLoading
+}
                 className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 ✓ Mark All Present
@@ -2359,7 +2435,7 @@ export default function AttendancePage() {
                     No students found
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    There are no active students for this class.
+                    There are no active students in this section.
                   </p>
                 </div>
               )}
@@ -2580,7 +2656,7 @@ export default function AttendancePage() {
 
                 <p className="mt-1 text-sm text-slate-500">
                   Attendance records for{" "}
-                  {formatDate(date)}.
+                  {mounted ? formatDate(date) : "—"}.
                 </p>
               </div>
 

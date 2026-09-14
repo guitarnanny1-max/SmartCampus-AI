@@ -315,7 +315,7 @@ export async function POST(request: Request) {
 
     const assignmentByTeacherSubject = new Map<
       string,
-      any
+      (typeof selectedAssignments)[number]
     >();
 
     for (const assignment of selectedAssignments) {

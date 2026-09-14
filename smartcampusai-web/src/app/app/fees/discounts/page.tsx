@@ -49,7 +49,9 @@ export default function FeeDiscountsPage() {
   }
 
   useEffect(() => {
-    loadDiscounts();
+    // Async loader synchronizes discounts with the page mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadDiscounts();
   }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

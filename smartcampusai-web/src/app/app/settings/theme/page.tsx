@@ -166,7 +166,7 @@ export default function ThemeStudioPage() {
                 School Brand Theme
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                These colors remain your school's identity throughout the year.
+                These colors remain your school&apos;s identity throughout the year.
               </p>
             </div>
 
@@ -453,7 +453,7 @@ export default function ThemeStudioPage() {
               </div>
 
               <p className="mt-2 text-xs leading-5 text-slate-500">
-                The school's permanent colors remain intact. The occasion
+                The school&apos;s permanent colors remain intact. The occasion
                 palette is applied as a restrained seasonal accent.
               </p>
             </div>

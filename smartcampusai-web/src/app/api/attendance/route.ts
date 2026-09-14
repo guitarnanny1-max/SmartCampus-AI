@@ -10,6 +10,27 @@ type AttendanceStatus =
   | "HALF_DAY"
   | "LEAVE";
 
+type ClassPeriodAttendanceStudent = {
+  id: string;
+  student_id: string;
+  status: AttendanceStatus;
+  notes: string | null;
+};
+
+type ClassPeriodAttendanceRow = {
+  id: string;
+  attendance_date: string;
+  created_at: string;
+  updated_at: string;
+  class_id: string;
+  section_id: string;
+  subject_id: string;
+  period_number: number;
+  class_period_attendance_students:
+    | ClassPeriodAttendanceStudent[]
+    | null;
+};
+
 function validDate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
@@ -632,11 +653,11 @@ export async function GET(request: Request) {
     const classStudentIds = Array.from(
       new Set(
         (classPeriodAttendance ?? []).flatMap(
-          (item: any) =>
+          (item: ClassPeriodAttendanceRow) =>
             (
               item.class_period_attendance_students ??
               []
-            ).map((student: any) => student.student_id),
+            ).map((student) => student.student_id),
         ),
       ),
     );
@@ -679,7 +700,7 @@ export async function GET(request: Request) {
         );
       }
 
-      classStudents = (data ?? []).map((student: any) => ({
+      classStudents = (data ?? []).map((student) => ({
         id: student.id,
         name: student.name ?? null,
         admission_number: null,
@@ -695,18 +716,18 @@ export async function GET(request: Request) {
 
     const classPeriodRecords = (
       classPeriodAttendance ?? []
-    ).flatMap((item: any) =>
+    ).flatMap((item: ClassPeriodAttendanceRow) =>
       (
         item.class_period_attendance_students ?? []
       )
         .filter(
-          (student: any) =>
+          (student: ClassPeriodAttendanceStudent) =>
             (!status ||
               student.status === status) &&
             (!studentId ||
               student.student_id === studentId),
         )
-        .map((student: any) => {
+        .map((student: ClassPeriodAttendanceStudent) => {
           const profile = classStudentMap.get(
             student.student_id,
           );

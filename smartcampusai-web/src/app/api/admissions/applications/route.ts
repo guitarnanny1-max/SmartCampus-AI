@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
      * 3. Prevent duplicate applications for the
      *    same applicant and academic year.
      */
-    let duplicateQuery = supabase
+    const duplicateQuery = supabase
       .from("Application")
       .select(`
         id,

@@ -193,52 +193,78 @@ function getAutomaticOccasion(date = new Date()): Occasion | null {
   );
 }
 
+function getStoredTheme(): ThemeDefinition {
+  if (typeof window === "undefined") {
+    return DEFAULT_THEME;
+  }
+
+  try {
+    const storedTheme = localStorage.getItem(STORAGE_KEY);
+
+    if (!storedTheme) {
+      return DEFAULT_THEME;
+    }
+
+    const parsed = JSON.parse(storedTheme);
+
+    if (
+      parsed &&
+      typeof parsed.primary === "string" &&
+      typeof parsed.accent === "string"
+    ) {
+      return {
+        ...DEFAULT_THEME,
+        ...parsed,
+        secondary:
+          typeof parsed.secondary === "string"
+            ? parsed.secondary
+            : DEFAULT_THEME.secondary,
+      };
+    }
+  } catch {
+    // Fall back to the default theme when persisted data is invalid.
+  }
+
+  return DEFAULT_THEME;
+}
+
+function getStoredAutomaticOccasions(): boolean {
+  if (typeof window === "undefined") {
+    return true;
+  }
+
+  try {
+    const storedAutomatic = localStorage.getItem(AUTO_OCCASION_KEY);
+
+    return storedAutomatic === null
+      ? true
+      : storedAutomatic === "true";
+  } catch {
+    return true;
+  }
+}
+
+function getStoredManualOccasion(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return localStorage.getItem(MANUAL_OCCASION_KEY);
+  } catch {
+    return null;
+  }
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<ThemeDefinition>(DEFAULT_THEME);
-  const [automaticOccasions, setAutomaticOccasionsState] = useState(true);
+  const [theme, setTheme] = useState<ThemeDefinition>(getStoredTheme);
+  const [automaticOccasions, setAutomaticOccasionsState] = useState(
+    getStoredAutomaticOccasions,
+  );
   const [manualOccasion, setManualOccasionState] = useState<string | null>(
-    null,
+    getStoredManualOccasion,
   );
   const [today, setToday] = useState(() => new Date());
-
-  useEffect(() => {
-    try {
-      const storedTheme = localStorage.getItem(STORAGE_KEY);
-
-      if (storedTheme) {
-        const parsed = JSON.parse(storedTheme);
-
-        if (
-          parsed &&
-          typeof parsed.primary === "string" &&
-          typeof parsed.accent === "string"
-        ) {
-          setTheme({
-            ...DEFAULT_THEME,
-            ...parsed,
-            secondary:
-              typeof parsed.secondary === "string"
-                ? parsed.secondary
-                : DEFAULT_THEME.secondary,
-          });
-        }
-      }
-
-      const storedAutomatic = localStorage.getItem(AUTO_OCCASION_KEY);
-
-      if (storedAutomatic !== null) {
-        setAutomaticOccasionsState(storedAutomatic === "true");
-      }
-
-      const storedManual = localStorage.getItem(MANUAL_OCCASION_KEY);
-
-      if (storedManual) {
-        setManualOccasionState(storedManual);
-      }
-    } catch {
-      // Keep safe defaults.
-    }
-  }, []);
 
   useEffect(() => {
     const timer = window.setInterval(() => {

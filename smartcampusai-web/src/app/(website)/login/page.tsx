@@ -1,10 +1,14 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -29,7 +33,7 @@ export default function LoginPage() {
       return;
     }
 
-    window.location.href = "/app";
+    router.push("/app");
   }
 
   return (

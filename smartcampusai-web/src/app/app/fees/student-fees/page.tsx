@@ -107,7 +107,7 @@ export default function StudentFeesPage() {
   const [feeTypes, setFeeTypes] = useState<FeeType[]>([]);
   const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
   const [studentFees, setStudentFees] = useState<StudentFee[]>([]);
-  const [feeDiscounts, setFeeDiscounts] = useState<FeeDiscount[]>([]);
+  const [feeDiscounts] = useState<FeeDiscount[]>([]);
   const [selectedFeeForDiscount, setSelectedFeeForDiscount] =
     useState<StudentFee | null>(null);
   const [selectedDiscountId, setSelectedDiscountId] = useState("");
@@ -122,7 +122,7 @@ export default function StudentFeesPage() {
   const [remarks, setRemarks] = useState("");
 
   const [loading, setLoading] = useState(true);
-  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [loadingStudents] = useState(false);
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
   const [loadingStructures, setLoadingStructures] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -465,14 +465,18 @@ export default function StudentFeesPage() {
   }
 
   useEffect(() => {
-    loadInitialData();
+    // Async loader synchronizes initial fee data with the page mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadInitialData();
   }, []);
 
   useEffect(() => {
     if (academicYearId) {
-      loadStudentEnrollments(studentId, academicYearId);
-      loadClasses(academicYearId);
-      loadFeeStructures(academicYearId);
+      // Async loaders synchronize fee data with the selected academic year.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void loadStudentEnrollments(studentId, academicYearId);
+      void loadClasses(academicYearId);
+      void loadFeeStructures(academicYearId);
     }
   }, [academicYearId, studentId]);
 
@@ -482,7 +486,9 @@ export default function StudentFeesPage() {
     );
 
     if (selectedEnrollment?.class_id) {
-      loadSections(selectedEnrollment.class_id);
+      // Async loader synchronizes sections with the selected enrollment.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void loadSections(selectedEnrollment.class_id);
     } else {
       setSections([]);
     }

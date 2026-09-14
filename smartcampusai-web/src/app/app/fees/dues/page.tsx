@@ -95,7 +95,9 @@ export default function FeeDuesPage() {
   }
 
   useEffect(() => {
-    loadData();
+    // Async loader synchronizes fee dues with the page mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadData();
   }, []);
 
   return (

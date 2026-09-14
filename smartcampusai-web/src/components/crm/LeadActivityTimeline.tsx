@@ -89,40 +89,52 @@ export default function LeadActivityTimeline({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  async function loadActivities() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const response = await fetch(
-        `/api/crm/leads/${leadId}/activities`,
-        {
-          cache: "no-store",
-        },
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result?.error || "Unable to load lead activities.",
-        );
-      }
-
-      setActivities(result.activities || []);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to load lead activities.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadActivities() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(
+          `/api/crm/leads/${leadId}/activities`,
+          {
+            cache: "no-store",
+          },
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result?.error || "Unable to load lead activities.",
+          );
+        }
+
+        if (cancelled) return;
+
+        setActivities(result.activities || []);
+      } catch (err) {
+        if (cancelled) return;
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load lead activities.",
+        );
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
     void loadActivities();
+
+    return () => {
+      cancelled = true;
+    };
   }, [leadId]);
 
   async function createActivity() {

@@ -49,6 +49,8 @@ export default function SubjectsPage() {
   }
 
   useEffect(() => {
+    // Async loader synchronizes the subject list with the page mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadSubjects();
   }, []);
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 async function getAuthContext() {
   const cookieStore = await cookies();
@@ -110,7 +110,7 @@ async function getAuthContext() {
 }
 
 async function calculateGrade(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   tenantId: string,
   percentage: number
 ) {
@@ -189,6 +189,7 @@ export async function GET(
     }
 
     let studentIds: string[] = [];
+    const enrollmentRollNumbers = new Map<string, string | null>();
 
     if (studentId) {
       studentIds = [studentId];
@@ -196,7 +197,7 @@ export async function GET(
       const { data: enrollments, error: enrollmentError } =
         await supabaseAdmin
           .from("student_enrollments")
-          .select("student_id")
+          .select("student_id, roll_number")
           .eq("tenantId", tenantId)
           .eq("academic_year_id", exam.academic_year_id)
           .eq("class_id", classId)
@@ -206,7 +207,10 @@ export async function GET(
       if (enrollmentError) throw enrollmentError;
 
       studentIds = (enrollments ?? []).map(
-        (item: any) => item.student_id
+        (item: { student_id: string; roll_number: string | null }) => {
+          enrollmentRollNumbers.set(item.student_id, item.roll_number);
+          return item.student_id;
+        }
       );
     }
 
@@ -244,7 +248,7 @@ export async function GET(
     const subjectIds = [
       ...new Set(
         (examSubjects ?? []).map(
-          (item: any) => item.subject_id
+          (item: { subject_id: string }) => item.subject_id
         )
       ),
     ];
@@ -273,22 +277,42 @@ export async function GET(
     if (marksError) throw marksError;
 
     const subjectMap = new Map(
-      (subjects ?? []).map((subject: any) => [
+      (subjects ?? []).map(
+        (subject: { id: string; name: string }) => [
         subject.id,
         subject,
       ])
     );
 
     const marksMap = new Map(
-      (marks ?? []).map((mark: any) => [
+      (marks ?? []).map(
+        (mark: {
+          student_id: string;
+          exam_subject_id: string;
+          marks_obtained: number | null;
+          max_marks: number | null;
+          grade: string | null;
+          remarks: string | null;
+        }) => [
         `${mark.student_id}:${mark.exam_subject_id}`,
         mark,
       ])
     );
 
-    const results = (students ?? []).map((student: any) => {
+    const results = (students ?? []).map(
+      (student: {
+        id: string;
+        name: string;
+        parentEmail: string | null;
+        status: string;
+      }) => {
       const subjectResults = (examSubjects ?? []).map(
-        (examSubject: any) => {
+        (examSubject: {
+          id: string;
+          subject_id: string;
+          max_marks: number | null;
+          pass_marks: number | null;
+        }) => {
           const mark = marksMap.get(
             `${student.id}:${examSubject.id}`
           );
@@ -323,17 +347,17 @@ export async function GET(
       );
 
       const enteredSubjects = subjectResults.filter(
-        (item: any) => item.marks_obtained !== null
+        (item: { marks_obtained: number | null }) => item.marks_obtained !== null
       );
 
       const totalMarks = enteredSubjects.reduce(
-        (sum: number, item: any) =>
+        (sum: number, item: { marks_obtained: number | null }) =>
           sum + Number(item.marks_obtained),
         0
       );
 
       const totalMaxMarks = enteredSubjects.reduce(
-        (sum: number, item: any) =>
+        (sum: number, item: { max_marks: number }) =>
           sum + Number(item.max_marks),
         0
       );
@@ -346,7 +370,10 @@ export async function GET(
       const passed =
         enteredSubjects.length > 0 &&
         enteredSubjects.every(
-          (item: any) =>
+          (item: {
+            marks_obtained: number | null;
+            pass_marks: number;
+          }) =>
             Number(item.marks_obtained) >=
             Number(item.pass_marks)
         );
@@ -355,7 +382,7 @@ export async function GET(
         student: {
           id: student.id,
           name: student.name,
-          admission_number: null,
+          admission_number: enrollmentRollNumbers.get(student.id) ?? null,
           parentEmail: student.parentEmail,
           status: student.status,
         },
@@ -370,6 +397,8 @@ export async function GET(
             enteredSubjects.length === 0
               ? null
               : passed,
+          grade: null as string | null,
+          grade_point: null as number | null,
         },
       };
     });
@@ -382,14 +411,14 @@ export async function GET(
           result.summary.percentage
         );
 
-        (result.summary as any).grade =
+        result.summary.grade =
           scale?.grade ?? null;
 
-        (result.summary as any).grade_point =
+        result.summary.grade_point =
           scale?.grade_point ?? null;
       } else {
-        (result.summary as any).grade = null;
-        (result.summary as any).grade_point = null;
+        result.summary.grade = null;
+        result.summary.grade_point = null;
       }
     }
 
@@ -398,14 +427,14 @@ export async function GET(
       exam,
       students: results,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Results GET error:", error);
 
     return NextResponse.json(
       {
         success: false,
         error: "Unable to load examination results.",
-        details: error?.message ?? "Unknown error",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

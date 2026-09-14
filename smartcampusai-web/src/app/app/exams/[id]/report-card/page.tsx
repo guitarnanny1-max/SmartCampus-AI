@@ -89,9 +89,11 @@ export default function ReportCardPage({
         }
 
         setExam(currentExam);
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(
-          err?.message || "Unable to load examination."
+          err instanceof Error
+            ? err.message
+            : "Unable to load examination."
         );
       } finally {
         setLoading(false);
@@ -173,9 +175,11 @@ export default function ReportCardPage({
           "No student results are available for this examination."
         );
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err?.message || "Unable to load report card data."
+        err instanceof Error
+          ? err.message
+          : "Unable to load report card data."
       );
     } finally {
       setResultsLoading(false);
@@ -184,8 +188,11 @@ export default function ReportCardPage({
 
   useEffect(() => {
     if (exam) {
-      loadResults();
+      // Async loader synchronizes report-card results with the loaded exam.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void loadResults();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exam]);
 
   const selectedResult =

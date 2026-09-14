@@ -111,8 +111,6 @@ const DAYS = [
   { value: 6, label: "Saturday" },
 ];
 
-const PERIODS = Array.from({ length: 8 }, (_, index) => index + 1);
-
 function getName(item: AcademicYear) {
   return item.name ?? item.label ?? item.year ?? "";
 }
@@ -123,12 +121,6 @@ function getSubjectName(entry: TimetableEntry) {
   }
 
   return entry.subjects?.name ?? "Subject";
-}
-
-function formatTime(value?: string | null) {
-  if (!value) return "";
-
-  return value.slice(0, 5);
 }
 
 const DEFAULT_PERIODS: number[] = [
@@ -147,16 +139,12 @@ export default function TimetablePage() {
   const [timetables, setTimetables] = useState<TimetableEntry[]>([]);
 
   const [academicYearId, setAcademicYearId] = useState("");
-  const [periodTimings, setPeriodTimings] = useState<PeriodTiming[]>([]);
+  const [periodTimings] = useState<PeriodTiming[]>([]);
 
   function getPeriodTiming(periodNumber: number) {
     return periodTimings.find(
       (timing) => timing.period_number === periodNumber
     );
-  }
-
-  function isBreakPeriod(periodNumber: number) {
-    return getPeriodTiming(periodNumber)?.is_break === true;
   }
 
   function formatTime(value?: string | null) {
@@ -233,6 +221,8 @@ export default function TimetablePage() {
 
   useEffect(() => {
     if (!academicYearId) {
+      // Intentional dependent-state reset when academic-year scope is cleared.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setClasses([]);
       setClassId("");
       setSections([]);
@@ -254,6 +244,8 @@ export default function TimetablePage() {
     const loadVersion = ++sectionLoadVersion.current;
 
     if (!classId) {
+      // Intentional dependent-state reset when class scope is cleared.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSections([]);
       setSectionId("");
       return;
@@ -264,6 +256,7 @@ export default function TimetablePage() {
 
   useEffect(() => {
     // Clear state that belongs to the previously selected section.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setError("");
     setSuggestionError("");
     setAutoGenerateError("");
@@ -296,11 +289,15 @@ export default function TimetablePage() {
 
   useEffect(() => {
     if (!academicYearId || !classId || !sectionId) {
+      // Intentional reset while timetable scope is incomplete.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTimetables([]);
       return;
     }
 
     void loadTimetable();
+  // The loader reads the three scope values listed above; keep this effect scoped to those values.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [academicYearId, classId, sectionId]);
 
   async function loadAcademicYears() {
@@ -446,30 +443,6 @@ export default function TimetablePage() {
       setTeacherAssignments(assignmentsData.assignments ?? []);
     } catch {
       setError("Failed to load teachers and assignments.");
-    }
-  }
-
-  async function loadPeriodTimings(yearId: string) {
-    if (!yearId) {
-      setPeriodTimings([]);
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `/api/period-timings?academic_year_id=${encodeURIComponent(yearId)}`
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to load period timings.");
-      }
-
-      setPeriodTimings(data.timings || []);
-    } catch (err) {
-      console.error("Failed to load period timings:", err);
-      setPeriodTimings([]);
     }
   }
 

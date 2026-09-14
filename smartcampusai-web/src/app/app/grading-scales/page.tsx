@@ -57,7 +57,9 @@ export default function GradingScalesPage() {
   }
 
   useEffect(() => {
-    loadScales();
+    // Async loader synchronizes grading scales with the page mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadScales();
   }, []);
 
   function resetForm() {

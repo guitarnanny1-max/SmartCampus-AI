@@ -147,55 +147,6 @@ export default function ClassesPage() {
   const [savingEditClass, setSavingEditClass] = useState(false);
   const [savingEditSection, setSavingEditSection] = useState(false);
 
-  async function loadAcademicYears() {
-    const response = await fetch("/api/academic-years", {
-      credentials: "include",
-      cache: "no-store",
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data?.error || "Unable to load academic years.",
-      );
-    }
-
-    const years: AcademicYear[] =
-      data?.academicYears ?? [];
-
-    setAcademicYears(years);
-
-    if (!selectedYearId && years.length > 0) {
-      setSelectedYearId(years[0].id);
-    }
-  }
-
-  async function loadClasses(yearId: string) {
-    if (!yearId) {
-      setClasses([]);
-      return;
-    }
-
-    const response = await fetch(
-      `/api/classes?academic_year_id=${encodeURIComponent(yearId)}`,
-      {
-        credentials: "include",
-        cache: "no-store",
-      },
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data?.error || "Unable to load classes.",
-      );
-    }
-
-    setClasses(data?.classes ?? []);
-  }
-
   async function loadSections(classRecords: ClassRecord[]) {
     if (classRecords.length === 0) {
       setSections([]);
@@ -892,6 +843,8 @@ export default function ClassesPage() {
     return () => {
       cancelled = true;
     };
+  // refreshClasses is intentionally omitted; loadSelectedYear owns the refresh flow.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYearId, loading]);
 
   async function createAcademicYear(
@@ -2053,33 +2006,8 @@ export default function ClassesPage() {
                                     type="checkbox"
                                     checked={checked}
                                     onChange={(event) => {
-                                      const activeAssignments =
-                                        (
-                                          classSubjects[
-                                            classRecord.id
-                                          ] ?? []
-                                        ).filter(
-                                          (item) =>
-                                            item.status === "ACTIVE",
-                                        );
 
-                                      const selectedIds =
-                                        activeAssignments.map(
-                                          (item) =>
-                                            item.subject_id,
-                                        );
 
-                                      const nextIds = event.target.checked
-                                        ? Array.from(
-                                            new Set([
-                                              ...selectedIds,
-                                              subject.id,
-                                            ]),
-                                          )
-                                        : selectedIds.filter(
-                                            (id) =>
-                                              id !== subject.id,
-                                          );
 
                                       setClassSubjects(
                                         (current) => {

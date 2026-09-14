@@ -73,7 +73,11 @@ export default function ExamsPage() {
   }
 
   useEffect(() => {
-    loadData();
+    // Async loader synchronizes examinations with the page mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadData();
+    // loadData is intentionally omitted because it is recreated on render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function createExam(event: React.FormEvent) {
@@ -171,9 +175,11 @@ export default function ExamsPage() {
             : item
         )
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       window.alert(
-        error?.message || "Unable to update examination status."
+        error instanceof Error
+          ? error.message
+          : "Unable to update examination status."
       );
     } finally {
       setPublishingId(null);

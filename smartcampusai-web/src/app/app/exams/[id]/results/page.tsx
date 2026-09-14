@@ -156,9 +156,11 @@ export default function ResultsPage({
         );
 
         setClasses(filteredClasses);
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(
-          err?.message || "Unable to load examination results."
+          err instanceof Error
+            ? err.message
+            : "Unable to load examination results."
         );
       } finally {
         setLoading(false);
@@ -170,6 +172,8 @@ export default function ResultsPage({
 
   useEffect(() => {
     if (!classId) {
+      // Intentional reset when the selected class is cleared.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSections([]);
       setSectionId("");
       return;
@@ -190,8 +194,12 @@ export default function ResultsPage({
         }
 
         setSections(data.sections || []);
-      } catch (err: any) {
-        setError(err?.message || "Unable to load sections.");
+      } catch (err: unknown) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load sections."
+        );
         setSections([]);
       }
     }
@@ -239,9 +247,11 @@ export default function ResultsPage({
       ) {
         setSelectedStudentId(loadedResults[0].student.id);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err?.message || "Unable to load examination results."
+        err instanceof Error
+          ? err.message
+          : "Unable to load examination results."
       );
       setResults([]);
     } finally {
@@ -250,7 +260,10 @@ export default function ResultsPage({
   }
 
   useEffect(() => {
-    loadResults();
+    // Async loader synchronizes results with the selected exam scope.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadResults();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [examId, classId, sectionId]);
 
   const selectedResult = useMemo(

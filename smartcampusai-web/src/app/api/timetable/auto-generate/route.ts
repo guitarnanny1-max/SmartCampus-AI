@@ -263,7 +263,20 @@ export async function GET(request: Request) {
 
     const subjectRows = subjectsResult.data ?? [];
     const activeSubjects = subjectRows
-      .map((row: any) => {
+      .map((row: {
+        subjects:
+          | {
+              id: string;
+              name: string;
+              code: string | null;
+            }
+          | Array<{
+              id: string;
+              name: string;
+              code: string | null;
+            }>
+          | null;
+      }) => {
         const subject = Array.isArray(row.subjects)
           ? row.subjects[0]
           : row.subjects;

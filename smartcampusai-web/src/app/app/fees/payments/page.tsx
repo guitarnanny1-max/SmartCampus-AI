@@ -160,13 +160,20 @@ export default function FeePaymentsPage() {
   }, []);
 
   useEffect(() => {
-    loadStudentFees();
+    // Async loader synchronizes student fees with the selected student/year.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadStudentFees();
+    // Intentional form reset when the student/year scope changes.
     setStudentFeeId("");
     setAmount("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentId, academicYearId]);
 
   useEffect(() => {
-    loadPayments();
+    // Async loader synchronizes payments with the selected student/year.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadPayments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentId, academicYearId]);
 
   const selectedFee = useMemo(

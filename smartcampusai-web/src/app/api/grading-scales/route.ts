@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 async function getAuthContext() {
   const cookieStore = await cookies();
@@ -115,7 +115,7 @@ async function getAuthContext() {
 }
 
 async function findOverlappingScale(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   tenantId: string,
   minPercentage: number,
   maxPercentage: number,
@@ -132,7 +132,11 @@ async function findOverlappingScale(
     throw error;
   }
 
-  return (data ?? []).find((scale: any) => {
+  return (data ?? []).find((scale: {
+    id: string;
+    min_percentage: number | string | null;
+    max_percentage: number | string | null;
+  }) => {
     if (excludeId && scale.id === excludeId) {
       return false;
     }

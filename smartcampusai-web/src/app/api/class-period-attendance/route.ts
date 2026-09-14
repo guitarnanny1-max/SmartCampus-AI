@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 type AttendanceStatus = "PRESENT" | "ABSENT";
@@ -13,6 +13,10 @@ type AttendanceRecord = {
 
 function validDate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 /*
@@ -162,7 +166,7 @@ async function getAuthContext() {
 }
 
 async function validateContext(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   tenantId: string,
   academicYearId: string,
   classId: string,
@@ -484,7 +488,7 @@ export async function POST(request: Request) {
     }
 
     const normalizedRecords: AttendanceRecord[] = records.map(
-      (record: any) => ({
+      (record: AttendanceRecord) => ({
         student_id:
           typeof record.student_id === "string"
             ? record.student_id.trim()
@@ -547,7 +551,7 @@ export async function POST(request: Request) {
 
     const enrolledIds = new Set(
       (enrollments ?? []).map(
-        (item: any) => item.student_id
+        (item: { student_id: string }) => item.student_id
       )
     );
 
@@ -760,7 +764,7 @@ export async function POST(request: Request) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(
       "POST /api/class-period-attendance error:",
       error
@@ -772,7 +776,7 @@ export async function POST(request: Request) {
         error: "Unable to save class attendance.",
         details:
           process.env.NODE_ENV === "development"
-            ? error?.message
+            ? errorMessage(error)
             : undefined,
       },
       { status: 500 }
@@ -953,7 +957,7 @@ export async function PATCH(request: Request) {
       success: true,
       attendance: updated,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(
       "PATCH /api/class-period-attendance error:",
       error,
@@ -965,7 +969,7 @@ export async function PATCH(request: Request) {
         error: "Unable to update class attendance.",
         details:
           process.env.NODE_ENV === "development"
-            ? error?.message
+            ? errorMessage(error)
             : undefined,
       },
       { status: 500 },
@@ -1130,7 +1134,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({
       success: true,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(
       "DELETE /api/class-period-attendance error:",
       error,
@@ -1143,7 +1147,7 @@ export async function DELETE(request: Request) {
           "Unable to delete class-period attendance.",
         details:
           process.env.NODE_ENV === "development"
-            ? error?.message
+            ? errorMessage(error)
             : undefined,
       },
       { status: 500 },

@@ -395,7 +395,19 @@ export async function GET(request: Request) {
      * enrollment record.
      * ------------------------------------------------------------
      */
-    const enrollmentMap = new Map<string, any>();
+    const enrollmentMap = new Map<
+      string,
+      {
+        id: string;
+        student_id: string;
+        status: string;
+        class_id: string;
+        section_id: string;
+        academic_year_id: string;
+        roll_number?: string | null;
+        enrolled_at?: string | null;
+      }
+    >();
 
     for (const enrollment of enrollments ?? []) {
       const existing = enrollmentMap.get(

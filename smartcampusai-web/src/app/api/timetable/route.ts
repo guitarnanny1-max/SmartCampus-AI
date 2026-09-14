@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type AnySupabaseClient = SupabaseClient<any, any, any>;
+type AnySupabaseClient = SupabaseClient;
 
 type AcademicYearRecord = {
   id: string;
@@ -159,7 +159,7 @@ async function validateContext(
     .eq("tenantId", tenantId)
     .maybeSingle() as {
       data: AcademicYearRecord | null;
-      error: any;
+      error: unknown;
     };
 
   if (yearError) throw yearError;
@@ -174,7 +174,7 @@ async function validateContext(
     .eq("tenantId", tenantId)
     .maybeSingle() as {
       data: ClassRecord | null;
-      error: any;
+      error: unknown;
     };
 
   if (classError) throw classError;
@@ -189,7 +189,7 @@ async function validateContext(
     .eq("tenantId", tenantId)
     .maybeSingle() as {
       data: SectionRecord | null;
-      error: any;
+      error: unknown;
     };
 
   if (sectionError) throw sectionError;
@@ -240,7 +240,7 @@ async function validateSubject(
     .eq("status", "ACTIVE")
     .maybeSingle() as {
       data: SectionSubjectRecord | null;
-      error: any;
+      error: unknown;
     };
 
   if (error) throw error;

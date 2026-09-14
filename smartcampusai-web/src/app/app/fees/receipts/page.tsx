@@ -143,15 +143,23 @@ export default function FeeReceiptsPage() {
   }
 
   useEffect(() => {
-    loadAll();
+    // Async loader synchronizes receipt data with the page mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadAll();
+    // loadAll is intentionally omitted because it is recreated on render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (!academicYearId && !studentId) return;
 
-    Promise.all([loadPayments(), loadReceipts()]).catch(() => {
+    // Async loaders synchronize payments and receipts with the selected scope.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void Promise.all([loadPayments(), loadReceipts()]).catch(() => {
       setError("Unable to load payment or receipt data.");
     });
+    // Loader functions are intentionally omitted because they are recreated on render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [academicYearId, studentId]);
 
   const receiptPaymentIds = new Set(

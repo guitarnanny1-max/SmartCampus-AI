@@ -91,6 +91,8 @@ export default function StudentMarksPage({
     if (examId) {
       loadInitialData();
     }
+    // loadInitialData is intentionally omitted because it is recreated on render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [examId]);
 
   async function loadInitialData() {
@@ -166,12 +168,15 @@ export default function StudentMarksPage({
 
   useEffect(() => {
     if (!classId) {
+      // Intentional reset when the selected class is cleared.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSections([]);
       setSectionId("");
       return;
     }
 
-    loadSections(classId);
+    // Async loader synchronizes sections with the selected class.
+    void loadSections(classId);
   }, [classId]);
 
   async function loadSections(selectedClassId: string) {
@@ -223,10 +228,15 @@ export default function StudentMarksPage({
       classId &&
       sectionId
     ) {
-      loadStudents();
+      // Async loader synchronizes students with the selected exam scope.
+      void loadStudents();
     } else {
+      // Intentional reset when the exam scope is incomplete.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStudents([]);
     }
+    // loadStudents is intentionally omitted because it is recreated on render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     examId,
     examSubjectId,

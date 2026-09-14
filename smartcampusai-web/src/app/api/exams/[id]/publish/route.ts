@@ -206,14 +206,14 @@ export async function PATCH(
           ? "Examination results published successfully."
           : "Examination moved back to draft.",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Exam publish API error:", error);
 
     return NextResponse.json(
       {
         success: false,
         error: "Unable to update examination status.",
-        details: error?.message ?? "Unknown error",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

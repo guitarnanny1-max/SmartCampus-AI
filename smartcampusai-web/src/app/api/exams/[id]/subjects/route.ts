@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 async function getAuthContext() {
   const cookieStore = await cookies();
@@ -103,7 +103,7 @@ async function getAuthContext() {
 }
 
 async function getExam(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   tenantId: string,
   examId: string
 ) {

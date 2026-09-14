@@ -72,7 +72,7 @@ export default function AdminShell({
 }: AdminShellProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const { theme, activeOccasion } = useTheme();
+  const { activeOccasion } = useTheme();
 
   const initials =
     adminName

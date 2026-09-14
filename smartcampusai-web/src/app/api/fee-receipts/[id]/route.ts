@@ -194,7 +194,10 @@ export async function GET(
       (allocation) => allocation.student_fee_id
     );
 
-    let studentFees: any[] = [];
+    let studentFees: Array<{
+      id: string;
+      fee_type_id: string | null;
+    }> = [];
 
     if (studentFeeIds.length > 0) {
       const { data } = await admin
@@ -214,7 +217,10 @@ export async function GET(
       ),
     ];
 
-    let feeTypes: any[] = [];
+    let feeTypes: Array<{
+      id: string;
+      name: string;
+    }> = [];
 
     if (feeTypeIds.length > 0) {
       const { data } = await admin

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -135,6 +134,8 @@ export default function TeachersPage() {
   }
 
   useEffect(() => {
+    // Intentional initial data load from the API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTeachers();
   }, []);
 
@@ -691,7 +692,7 @@ export default function TeachersPage() {
                   Edit teacher
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Update this teacher's staff profile.
+                  Update this teacher&apos;s staff profile.
                 </p>
               </div>
 
