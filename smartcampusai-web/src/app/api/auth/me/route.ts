@@ -106,7 +106,9 @@ export async function GET() {
             "tenantId",
             email,
             name,
-            role
+            role,
+            "platformRole",
+            "isPlatformUser"
           `,
         )
         .eq("email", authUser.email)

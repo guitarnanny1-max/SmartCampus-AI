@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 type AdminShellProps = {
   children: React.ReactNode;
@@ -71,8 +72,93 @@ export default function AdminShell({
   adminRole = "School Administrator",
 }: AdminShellProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const router = useRouter();
+  const [collapsed, setCollapsed] = useState<boolean | null>(null);
   const { activeOccasion } = useTheme();
+  const [showIdleWarning, setShowIdleWarning] = useState(false);
+
+  useEffect(() => {
+    const supabase = supabaseBrowser();
+
+    let warningTimer: number | undefined;
+    let logoutTimer: number | undefined;
+    let activityTimer: number | undefined;
+
+    const WARNING_AFTER = 28 * 60 * 1000;
+    const LOGOUT_AFTER = 30 * 60 * 1000;
+
+    const logout = async () => {
+      await supabase.auth.signOut();
+      router.push("/login");
+    };
+
+    const resetIdleTimer = () => {
+      setShowIdleWarning(false);
+
+      if (warningTimer) {
+        window.clearTimeout(warningTimer);
+      }
+
+      if (logoutTimer) {
+        window.clearTimeout(logoutTimer);
+      }
+
+      warningTimer = window.setTimeout(() => {
+        setShowIdleWarning(true);
+      }, WARNING_AFTER);
+
+      logoutTimer = window.setTimeout(() => {
+        void logout();
+      }, LOGOUT_AFTER);
+    };
+
+    const handleActivity = () => {
+      if (activityTimer) {
+        window.clearTimeout(activityTimer);
+      }
+
+      activityTimer = window.setTimeout(resetIdleTimer, 500);
+    };
+
+    const events = [
+      "mousedown",
+      "mousemove",
+      "keydown",
+      "scroll",
+      "touchstart",
+      "click",
+    ] as const;
+
+    events.forEach((event) => {
+      window.addEventListener(event, handleActivity, { passive: true });
+    });
+
+    resetIdleTimer();
+
+    return () => {
+      if (warningTimer) {
+        window.clearTimeout(warningTimer);
+      }
+
+      if (logoutTimer) {
+        window.clearTimeout(logoutTimer);
+      }
+
+      if (activityTimer) {
+        window.clearTimeout(activityTimer);
+      }
+
+      events.forEach((event) => {
+        window.removeEventListener(event, handleActivity);
+      });
+    };
+  }, [router]);
+
+  const handleSignOut = async () => {
+    const supabase = supabaseBrowser();
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
   const initials =
     adminName
@@ -96,13 +182,39 @@ export default function AdminShell({
           aria-label={`${activeOccasion.name} occasion theme`}
         />
       )}
+      {showIdleWarning && (
+        <div className="fixed inset-x-0 top-4 z-[200] flex justify-center px-4">
+          <div
+            role="alert"
+            className="flex w-full max-w-xl items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-white px-5 py-4 shadow-xl"
+          >
+            <div>
+              <p className="text-sm font-bold text-slate-950">
+                You will be signed out soon
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Your session will expire after 30 minutes of inactivity.
+                Move the mouse, press a key, or touch the screen to stay signed in.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowIdleWarning(false)}
+              className="shrink-0 rounded-lg bg-[var(--sc-primary)] px-3 py-2 text-xs font-bold text-white"
+            >
+              Stay signed in
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen bg-gradient-to-br from-[var(--sc-primary-soft)] via-white to-[var(--sc-secondary-soft)] text-[#0F172A]">
       <div className="flex min-h-screen">
 
         {/* SIDEBAR */}
         <aside
           className={`hidden shrink-0 border-r border-slate-200 bg-white transition-all duration-300 lg:flex lg:flex-col ${
-            collapsed ? "w-[88px]" : "w-72"
+            collapsed === true ? "w-[88px]" : "w-72"
           }`}
         >
           {/* BRAND */}
@@ -114,14 +226,14 @@ export default function AdminShell({
             <Link
               href="/app"
               className={`flex items-center ${
-                collapsed ? "justify-center" : "gap-3"
+                collapsed === true ? "justify-center" : "gap-3"
               }`}
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--sc-primary)] via-[var(--sc-secondary)] to-[var(--sc-accent)] text-sm font-bold text-white shadow-lg">
                 S
               </div>
 
-              {!collapsed && (
+              {collapsed !== true && (
                 <div className="min-w-0">
                   <div className="truncate text-base font-bold tracking-tight text-slate-950">
                     SmartCampusAI
@@ -141,7 +253,7 @@ export default function AdminShell({
               collapsed ? "px-3 py-5" : "px-5 py-5"
             }`}
           >
-            {!collapsed && (
+            {collapsed !== true && (
               <p className="mb-3 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
                 School
               </p>
@@ -168,7 +280,7 @@ export default function AdminShell({
                 )}
               </div>
 
-              {!collapsed && (
+              {collapsed !== true && (
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold text-slate-950">
                     {schoolName}
@@ -189,7 +301,7 @@ export default function AdminShell({
                 key={`navigation-section-${section.title}-${sectionIndex}`}
                 className="mb-6"
               >
-                {!collapsed && (
+                {collapsed !== true && (
                   <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
                     {section.title}
                   </p>
@@ -221,7 +333,7 @@ export default function AdminShell({
                           }`}
                         />
 
-                        {!collapsed && (
+                        {collapsed !== true && (
                           <span className="ml-3 truncate">{item.label}</span>
                         )}
                       </Link>
@@ -235,12 +347,12 @@ export default function AdminShell({
           {/* ADMIN PROFILE */}
           <div
             className={`border-t border-slate-200 ${
-              collapsed ? "p-3" : "p-4"
+              collapsed === true ? "p-3" : "p-4"
             }`}
           >
             <div
               className={`rounded-xl bg-slate-50 ${
-                collapsed
+                collapsed === true
                   ? "flex justify-center p-2"
                   : "flex items-center gap-3 p-3"
               }`}
@@ -249,7 +361,7 @@ export default function AdminShell({
                 {initials}
               </div>
 
-              {!collapsed && (
+              {collapsed !== true && (
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-slate-950">
                     {adminName}
@@ -269,10 +381,30 @@ export default function AdminShell({
             </div>
           </div>
 
+          {/* ACCOUNT CONTROLS */}
+          <div className="border-t border-slate-200 px-4 py-3">
+            <div className="grid gap-2">
+              <Link
+                href="/app/settings/theme"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+              >
+                <span aria-hidden="true">🎨</span>
+                <span>Theme & Appearance</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => void handleSignOut()}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+              >
+                <span aria-hidden="true">↪</span>
+                <span>Sign out</span>
+              </button>
+            </div>
+          </div>
           {/* COLLAPSE BUTTON */}
           <div
             className={`border-t border-slate-200 ${
-              collapsed ? "p-3" : "px-4 py-3"
+              collapsed === true ? "p-3" : "px-4 py-3"
             }`}
           >
             <button
@@ -283,14 +415,14 @@ export default function AdminShell({
                   ? "justify-center p-2.5"
                   : "justify-center gap-2 px-3 py-2.5"
               }`}
-              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title={collapsed === true ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={collapsed === true ? "Expand sidebar" : "Collapse sidebar"}
             >
               <span className="text-base">
-                {collapsed ? "→" : "←"}
+                {collapsed === true ? "→" : "←"}
               </span>
 
-              {!collapsed && <span>Hide sidebar</span>}
+              {collapsed !== true && <span>Hide sidebar</span>}
             </button>
           </div>
         </aside>

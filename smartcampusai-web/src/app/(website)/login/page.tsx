@@ -33,7 +33,17 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/app");
+    const meResponse = await fetch("/api/auth/me");
+      const me = await meResponse.json();
+
+      if (
+        me?.user?.isPlatformUser === true &&
+        me?.user?.platformRole === "SUPER_ADMIN"
+      ) {
+        router.push("/platform");
+      } else {
+        router.push("/app");
+      }
   }
 
   return (
