@@ -435,6 +435,30 @@ export async function POST(request: Request) {
       );
     }
 
+    const { data: authInvite, error: inviteError } =
+      await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        data: {
+          name: adminName,
+          tenantId,
+          role: "SCHOOL_ADMIN",
+        },
+      });
+
+    if (inviteError || !authInvite.user) {
+      console.error(
+        "Platform school administrator invitation error:",
+        inviteError,
+      );
+      await supabaseAdmin.from("Subscription").delete().eq("id", subscriptionId);
+      await supabaseAdmin.from("School").delete().eq("id", schoolId);
+      await supabaseAdmin.from("Tenant").delete().eq("id", tenantId);
+
+      return NextResponse.json(
+        { error: inviteError?.message || "Unable to send administrator invitation." },
+        { status: 500 },
+      );
+    }
+
     const { data: admin, error: adminError } = await supabaseAdmin
       .from("User")
       .insert({
@@ -443,7 +467,7 @@ export async function POST(request: Request) {
         email,
         name: adminName,
         role: "SCHOOL_ADMIN",
-        password: "PENDING_AUTH_SETUP",
+        password: "AUTH_MANAGED",
       })
       .select("id, tenantId, email, name, role, createdAt")
       .single();
@@ -454,6 +478,7 @@ export async function POST(request: Request) {
         adminError,
       );
 
+      await supabaseAdmin.auth.admin.deleteUser(authInvite.user.id);
       await supabaseAdmin
         .from("Subscription")
         .delete()
