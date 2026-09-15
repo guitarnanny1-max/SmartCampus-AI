@@ -328,9 +328,32 @@ export async function POST(request: Request) {
       );
     }
 
+    const { data: selectedPlan, error: selectedPlanError } =
+      await supabaseAdmin
+        .from("PlatformPlan")
+        .select("id, name, isActive")
+        .eq("name", requestedPlan)
+        .maybeSingle();
+
+    if (selectedPlanError) {
+      console.error("Platform plan lookup error:", selectedPlanError);
+      return NextResponse.json(
+        { error: "Unable to validate selected platform plan." },
+        { status: 500 },
+      );
+    }
+
+    if (!selectedPlan || selectedPlan.isActive !== true) {
+      return NextResponse.json(
+        { error: "Selected platform plan is invalid or inactive." },
+        { status: 400 },
+      );
+    }
+
     const tenantId = createId("tenant");
     const schoolId = createId("school");
     const userId = createId("user");
+    const subscriptionId = createId("sub");
     const now = new Date().toISOString();
 
     const { data: tenant, error: tenantError } = await supabaseAdmin
@@ -357,6 +380,36 @@ export async function POST(request: Request) {
       );
     }
 
+    const { error: subscriptionError } =
+      await supabaseAdmin
+        .from("Subscription")
+        .insert({
+          id: subscriptionId,
+          tenantId,
+          planId: selectedPlan.id,
+          status: "TRIALING",
+          billingCycle: "MONTHLY",
+          startedAt: now,
+          currentPeriodStart: now,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .select()
+        .single();
+
+    if (subscriptionError) {
+      console.error(
+        "Platform school subscription creation error:",
+        subscriptionError,
+      );
+      await supabaseAdmin.from("Tenant").delete().eq("id", tenantId);
+
+      return NextResponse.json(
+        { error: "Unable to create school subscription." },
+        { status: 500 },
+      );
+    }
+
     const { data: school, error: schoolError } = await supabaseAdmin
       .from("School")
       .insert({
@@ -370,6 +423,10 @@ export async function POST(request: Request) {
 
     if (schoolError) {
       console.error("Platform school creation error:", schoolError);
+      await supabaseAdmin
+        .from("Subscription")
+        .delete()
+        .eq("id", subscriptionId);
       await supabaseAdmin.from("Tenant").delete().eq("id", tenantId);
 
       return NextResponse.json(
@@ -397,6 +454,10 @@ export async function POST(request: Request) {
         adminError,
       );
 
+      await supabaseAdmin
+        .from("Subscription")
+        .delete()
+        .eq("id", subscriptionId);
       await supabaseAdmin.from("School").delete().eq("id", schoolId);
       await supabaseAdmin.from("Tenant").delete().eq("id", tenantId);
 
