@@ -228,6 +228,9 @@ export default function PlatformSubscriptionsPage() {
                     <th className="px-5 py-4 font-medium text-slate-400">
                       Period End
                     </th>
+                    <th className="px-5 py-4 font-medium text-slate-400">
+                      Action
+                    </th>
                   </tr>
                 </thead>
 
@@ -277,6 +280,14 @@ export default function PlatformSubscriptionsPage() {
 
                       <td className="px-5 py-4 text-slate-300">
                         {formatDate(subscription.currentPeriodEnd)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <a
+                          href={`/platform/subscriptions/${subscription.id}`}
+                          className="inline-flex rounded-lg border border-violet-500/40 px-3 py-2 text-xs font-semibold text-violet-300 transition hover:bg-violet-500/10"
+                        >
+                          Manage
+                        </a>
                       </td>
                     </tr>
                   ))}

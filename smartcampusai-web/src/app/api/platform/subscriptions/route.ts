@@ -168,6 +168,68 @@ export async function PATCH(request: Request) {
     update.planId = planId;
   }
 
+  if (planId !== undefined) {
+    const { data: currentSubscription, error: subscriptionError } =
+      await adminClient
+        .from("Subscription")
+        .select("tenantId")
+        .eq("id", id)
+        .maybeSingle();
+
+    if (subscriptionError) {
+      console.error(
+        "Platform subscription tenant lookup error:",
+        subscriptionError,
+      );
+
+      return NextResponse.json(
+        { error: "Failed to load subscription tenant" },
+        { status: 500 },
+      );
+    }
+
+    if (!currentSubscription) {
+      return NextResponse.json(
+        { error: "Subscription not found" },
+        { status: 404 },
+      );
+    }
+
+    const { data: selectedPlan, error: selectedPlanError } =
+      await adminClient
+        .from("PlatformPlan")
+        .select("name")
+        .eq("id", planId)
+        .maybeSingle();
+
+    if (selectedPlanError || !selectedPlan) {
+      return NextResponse.json(
+        { error: "Invalid platform plan" },
+        { status: 400 },
+      );
+    }
+
+    const { error: tenantUpdateError } = await adminClient
+      .from("Tenant")
+      .update({
+        plan: selectedPlan.name,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq("id", currentSubscription.tenantId);
+
+    if (tenantUpdateError) {
+      console.error(
+        "Platform subscription tenant plan update error:",
+        tenantUpdateError,
+      );
+
+      return NextResponse.json(
+        { error: "Failed to synchronize tenant plan" },
+        { status: 500 },
+      );
+    }
+  }
+
   if (status !== undefined) {
     if (
       !["TRIALING", "ACTIVE", "PAST_DUE", "CANCELED", "EXPIRED"].includes(
