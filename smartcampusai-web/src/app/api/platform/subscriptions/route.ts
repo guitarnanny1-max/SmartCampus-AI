@@ -253,12 +253,54 @@ export async function PATCH(request: Request) {
         "Platform subscription tenant plan update error:",
         tenantUpdateError,
       );
-
       return NextResponse.json(
         { error: "Failed to synchronize tenant plan" },
         { status: 500 },
       );
     }
+
+    const { data: tenant, error: tenantLookupError } = await adminClient
+      .from("Tenant")
+      .select("subdomain")
+      .eq("id", currentSubscription.tenantId)
+      .maybeSingle();
+
+    if (tenantLookupError) {
+      console.error(
+        "Platform subscription tenant subdomain lookup error:",
+        tenantLookupError,
+      );
+      return NextResponse.json(
+        { error: "Failed to load tenant details" },
+        { status: 500 },
+      );
+    }
+
+    if (!tenant) {
+      return NextResponse.json(
+        { error: "Subscription tenant not found" },
+        { status: 404 },
+      );
+    }
+
+    const { error: schoolUpdateError } = await adminClient
+      .from("School")
+      .update({
+        plan: selectedPlan.name,
+      })
+      .eq("subdomain", tenant.subdomain);
+
+    if (schoolUpdateError) {
+      console.error(
+        "Platform subscription school plan update error:",
+        schoolUpdateError,
+      );
+      return NextResponse.json(
+        { error: "Failed to synchronize school plan" },
+        { status: 500 },
+      );
+    }
+
   }
 
   if (status !== undefined) {

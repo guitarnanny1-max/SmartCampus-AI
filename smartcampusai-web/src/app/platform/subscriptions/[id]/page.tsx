@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
@@ -151,6 +152,7 @@ export default function ManageSubscriptionPage() {
 
       setSubscription(data.subscription);
       setSaved(true);
+      router.push("/platform/subscriptions");
     } catch (err) {
       setError(
         err instanceof Error
@@ -187,13 +189,12 @@ export default function ManageSubscriptionPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-3xl">
-        <button
-          type="button"
-          onClick={() => router.push("/platform/subscriptions")}
-          className="mb-6 text-sm font-medium text-violet-300 hover:text-violet-200"
+        <Link
+          href="/platform/subscriptions"
+          className="mb-6 inline-block text-sm font-medium text-violet-300 hover:text-violet-200"
         >
           ← Back to Subscriptions
-        </button>
+        </Link>
 
         <div className="mb-8">
           <p className="mb-2 text-sm font-medium text-violet-400">
