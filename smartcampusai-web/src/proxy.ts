@@ -55,6 +55,16 @@ export async function proxy(request: NextRequest) {
   }
 
   /*
+   * PLATFORM CONTROL CENTER
+   */
+  if (pathname.startsWith("/platform") && !user) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  /*
    * THOMASG TECHNOLOGIES OPERATIONS
    */
 
