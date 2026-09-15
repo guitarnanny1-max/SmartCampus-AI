@@ -59,15 +59,17 @@ async function requireSuperAdmin() {
     return null;
   }
 
-  return adminClient;
+  return { adminClient, appUser, authUser };
 }
 
 export async function GET() {
-  const adminClient = await requireSuperAdmin();
+  const authContext = await requireSuperAdmin();
 
-  if (!adminClient) {
+  if (!authContext) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { adminClient } = authContext;
 
   const { data, error } = await adminClient
     .from("Subscription")
@@ -116,11 +118,13 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const adminClient = await requireSuperAdmin();
+  const authContext = await requireSuperAdmin();
 
-  if (!adminClient) {
+  if (!authContext) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { adminClient, appUser, authUser } = authContext;
 
   const body = await request.json();
 
@@ -137,6 +141,33 @@ export async function PATCH(request: Request) {
     return NextResponse.json(
       { error: "Subscription id is required" },
       { status: 400 },
+    );
+  }
+
+  const { data: existingSubscription, error: existingSubscriptionError } =
+    await adminClient
+      .from("Subscription")
+      .select(
+        "id, tenantId, planId, status, billingCycle, currentPeriodEnd, canceledAt",
+      )
+      .eq("id", id)
+      .maybeSingle();
+
+  if (existingSubscriptionError) {
+    console.error(
+      "Platform subscription lookup error:",
+      existingSubscriptionError,
+    );
+    return NextResponse.json(
+      { error: "Failed to load subscription" },
+      { status: 500 },
+    );
+  }
+
+  if (!existingSubscription) {
+    return NextResponse.json(
+      { error: "Subscription not found" },
+      { status: 404 },
     );
   }
 
@@ -316,6 +347,57 @@ export async function PATCH(request: Request) {
       { error: "Subscription not found" },
       { status: 404 },
     );
+  }
+
+  const { error: auditError } = await adminClient
+    .from("PlatformAuditLog")
+    .insert({
+      id: `audit_${crypto.randomUUID()}`,
+      actorUserId: appUser.id,
+      actorEmail: authUser.email,
+      action: "UPDATE_SUBSCRIPTION",
+      resourceType: "Subscription",
+      resourceId: data.id,
+      description: `Updated subscription for tenant ${data.tenantId}.`,
+      metadata: {
+        subscriptionId: data.id,
+        tenantId: data.tenantId,
+        changes: {
+          planId:
+            planId !== undefined
+              ? { from: existingSubscription.planId, to: data.planId }
+              : undefined,
+          status:
+            status !== undefined
+              ? { from: existingSubscription.status, to: data.status }
+              : undefined,
+          billingCycle:
+            billingCycle !== undefined
+              ? {
+                  from: existingSubscription.billingCycle,
+                  to: data.billingCycle,
+                }
+              : undefined,
+          currentPeriodEnd:
+            currentPeriodEnd !== undefined
+              ? {
+                  from: existingSubscription.currentPeriodEnd,
+                  to: data.currentPeriodEnd,
+                }
+              : undefined,
+          canceledAt:
+            canceledAt !== undefined
+              ? {
+                  from: existingSubscription.canceledAt,
+                  to: data.canceledAt,
+                }
+              : undefined,
+        },
+      },
+    });
+
+  if (auditError) {
+    console.error("Platform subscription audit log error:", auditError);
   }
 
   return NextResponse.json({ subscription: data });

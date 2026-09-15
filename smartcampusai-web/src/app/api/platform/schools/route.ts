@@ -359,6 +359,29 @@ export async function POST(request: Request) {
       );
     }
 
+    const { error: auditError } = await supabaseAdmin
+      .from("PlatformAuditLog")
+      .insert({
+        id: `audit_${crypto.randomUUID()}`,
+        actorUserId: appUser.id,
+        actorEmail: authUser.email,
+        action: "CREATE_SCHOOL",
+        resourceType: "School",
+        resourceId: school.id,
+        description: `Created school ${school.name}.`,
+        metadata: {
+          schoolId: school.id,
+          tenantId: tenant.id,
+          subdomain,
+          plan: requestedPlan,
+          administratorEmail: admin.email,
+        },
+      });
+
+    if (auditError) {
+      console.error("Platform school audit log error:", auditError);
+    }
+
     return NextResponse.json(
       {
         success: true,

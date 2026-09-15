@@ -173,6 +173,27 @@ export async function POST(request: Request) {
       );
     }
 
+    const { error: auditError } = await supabaseAdmin
+      .from("PlatformAuditLog")
+      .insert({
+        id: `audit_${crypto.randomUUID()}`,
+        actorUserId: appUser.id,
+        actorEmail: authUser.email,
+        action: "INVITE_PLATFORM_USER",
+        resourceType: "User",
+        resourceId: createdUser.id,
+        description: `Invited platform user ${createdUser.email}.`,
+        metadata: {
+          invitedEmail: createdUser.email,
+          invitedName: createdUser.name,
+          platformRole: createdUser.platformRole,
+        },
+      });
+
+    if (auditError) {
+      console.error("Platform user audit log error:", auditError);
+    }
+
     return NextResponse.json(
       {
         success: true,
