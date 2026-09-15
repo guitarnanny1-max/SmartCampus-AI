@@ -266,6 +266,28 @@ export async function POST(request: Request) {
       );
     }
 
+    const { data: existingAdmin, error: existingAdminError } =
+      await supabaseAdmin
+        .from("User")
+        .select("id, email, name, role, tenantId")
+        .eq("email", email)
+        .maybeSingle();
+
+    if (existingAdminError) {
+      console.error("Platform administrator lookup error:", existingAdminError);
+      return NextResponse.json(
+        { error: "Unable to verify administrator email." },
+        { status: 500 },
+      );
+    }
+
+    if (existingAdmin) {
+      return NextResponse.json(
+        { error: "A user with this administrator email already exists." },
+        { status: 409 },
+      );
+    }
+
     const subdomainInput = cleanString(body.subdomain);
     const subdomainBase =
       subdomainInput ||
@@ -318,6 +340,9 @@ export async function POST(request: Request) {
         subdomain,
         name,
         plan: requestedPlan,
+        status: "PENDING_PAYMENT",
+        paymentStatus: "UNVERIFIED",
+        onboardingStatus: "PENDING",
         createdAt: now,
         updatedAt: now,
       })
