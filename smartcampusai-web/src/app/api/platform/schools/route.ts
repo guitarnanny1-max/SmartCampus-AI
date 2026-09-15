@@ -218,6 +218,28 @@ export async function POST(request: Request) {
       );
     }
 
+    const { data: platformSettings, error: settingsError } =
+      await supabaseAdmin
+        .from("PlatformSettings")
+        .select("schoolCreationEnabled")
+        .eq("id", "platform_settings")
+        .maybeSingle();
+
+    if (settingsError) {
+      console.error("Platform settings lookup error:", settingsError);
+      return NextResponse.json(
+        { error: "Unable to verify school creation settings." },
+        { status: 500 },
+      );
+    }
+
+    if (platformSettings?.schoolCreationEnabled !== true) {
+      return NextResponse.json(
+        { error: "School creation is currently disabled." },
+        { status: 403 },
+      );
+    }
+
     const body = (await request.json().catch(() => ({}))) as Record<
       string,
       unknown
