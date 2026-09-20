@@ -1,103 +1,193 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
 model Tenant {
-  id           String        @id @default(cuid())
-  subdomain    String        @unique
-  name         String
-  plan         String        @default("standard")
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  students     Student[]
-  invoices     Invoice[]
-  payments     Payment[]
-  messages     Message[]
-  busLocations BusLocation[]
-  attendances  Attendance[]
-  users        User[]
+  id                               String                             @id @default(cuid())
+  subdomain                        String                             @unique
+  name                             String
+  plan                             String                             @default("standard")
+  createdAt                        DateTime                           @default(now())
+  updatedAt                        DateTime                           @updatedAt
+  status                           String                             @default("PENDING_PAYMENT")
+  paymentStatus                    String                             @default("UNVERIFIED")
+  onboardingStatus                 String                             @default("PENDING")
+  contactEmail                     String?
+  contactPhone                     String?
+  schoolType                       String?
+  studentCount                     Int?
+  activatedAt                      DateTime?                          @db.Timestamp(6)
+  verifiedAt                       DateTime?                          @db.Timestamp(6)
+  attendances                      Attendance[]
+  busLocations                     BusLocation[]
+  invoices                         Invoice[]
+  messages                         Message[]
+  payments                         Payment[]
+  PlatformCustomBill               PlatformCustomBill[]
+  students                         Student[]
+  Subscription                     Subscription[]
+  users                            User[]
+  academic_years                   academic_years[]
+  attendance_approval_audit        attendance_approval_audit[]
+  attendance_approvals             attendance_approvals[]
+  class_period_attendance          class_period_attendance[]
+  class_period_attendance_students class_period_attendance_students[]
+  class_subjects                   class_subjects[]
+  classes                          classes[]
+  crm_lead_activities              crm_lead_activities[]
+  crm_leads                        crm_leads[]
+  exam_subjects                    exam_subjects[]
+  exams                            exams[]
+  fee_discounts                    fee_discounts[]
+  fee_payment_allocations          fee_payment_allocations[]
+  fee_payments                     fee_payments[]
+  fee_receipts                     fee_receipts[]
+  fee_structures                   fee_structures[]
+  fee_types                        fee_types[]
+  grading_scales                   grading_scales[]
+  period_timings                   period_timings[]
+  platform_crm_leads               platform_crm_leads[]
+  section_subjects                 section_subjects[]
+  sections                         sections[]
+  student_enrollments              student_enrollments[]
+  student_fee_discounts            student_fee_discounts[]
+  student_fees                     student_fees[]
+  student_guardians                student_guardians[]
+  student_marks                    student_marks[]
+  student_profiles                 student_profiles[]
+  subjects                         subjects[]
+  teacher_attendance               teacher_attendance[]
+  timetables                       timetables[]
+  student_consents                 StudentConsent[]
+  parent_student_links             ParentStudentLink[]
 }
 
 model User {
-  id        String   @id @default(cuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  email     String   @unique
-  name      String
-  role      String
-  password  String
-  createdAt DateTime @default(now())
+  id                String              @id @default(cuid())
+  tenantId          String
+  email             String              @unique
+  name              String
+  role              String
+  password          String
+  createdAt         DateTime            @default(now())
+  platformRole      String?
+  isPlatformUser    Boolean             @default(false)
+  tenant            Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fee_payments      fee_payments[]
+  ParentStudentLink ParentStudentLink[]
 }
 
 model Student {
-  id          String   @id @default(cuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name        String
-  rollNumber  String   @default("")
-  grade       String   @default("")
-  parentEmail String   @default("")
-  status      String   @default("ACTIVE")
-  createdAt   DateTime @default(now())
+  id                               String                             @id @default(cuid())
+  tenantId                         String
+  name                             String
+  rollNumber                       String                             @default("")
+  grade                            String                             @default("")
+  parentEmail                      String                             @default("")
+  status                           String                             @default("ACTIVE")
+  createdAt                        DateTime                           @default(now())
+  Attendance                       Attendance[]
+  tenant                           Tenant                             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  class_period_attendance_students class_period_attendance_students[]
+  fee_payments                     fee_payments[]
+  fee_receipts                     fee_receipts[]
+  student_enrollments              student_enrollments[]
+  student_fees                     student_fees[]
+  student_guardians                student_guardians[]
+  student_marks                    student_marks[]
+  student_profiles                 student_profiles?
+  student_consents                 StudentConsent[]
+  parent_student_links             ParentStudentLink[]
 }
 
 model Invoice {
   id          String   @id @default(cuid())
   tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   amount      Float
   studentName String
   status      String   @default("PENDING")
   dueDate     String   @default("")
   createdAt   DateTime @default(now())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
 model Payment {
-  id          String   @id @default(cuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  amount      Float
-  studentName String
-  status      String   @default("SUCCESS")
-  createdAt   DateTime @default(now())
+  id                 String    @id @default(cuid())
+  tenantId           String
+  amount             Float
+  studentName        String
+  status             String    @default("SUCCESS")
+  createdAt          DateTime  @default(now())
+  transactionId      String?
+  paymentMethod      String?
+  plan               String?
+  verificationStatus String    @default("PENDING")
+  verifiedAt         DateTime? @db.Timestamp(6)
+  verifiedBy         String?
+  notes              String?
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
 model Message {
   id         String   @id @default(cuid())
   tenantId   String
-  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   senderName String
   senderRole String
   content    String
   createdAt  DateTime @default(now())
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  tenantId     String
+  userId       String
+  userRole     String
+  action       String
+  resourceType String
+  resourceId   String
+  allowed      Boolean
+  errorCode    String?
+  details      Json?
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([resourceType, resourceId])
 }
 
 model BusLocation {
   id        String   @id @default(cuid())
   tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   busNumber String   @default("Bus #4 (Route A)")
   latitude  Float    @default(28.6139)
   longitude Float    @default(77.2090)
   speed     String   @default("42 km/h")
   status    String   @default("On Time")
   updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
 model Attendance {
   id          String   @id @default(cuid())
   tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   studentName String   @default("Rahul Gupta")
   date        String   @default("2026-08-24")
   status      String   @default("PRESENT")
   punchTime   String   @default("08:15 AM")
   createdAt   DateTime @default(now())
+  studentId   String?
+  Student     Student? @relation(fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, studentId, date])
 }
 
 model Lead {
@@ -110,11 +200,26 @@ model Lead {
 }
 
 model Staff {
-  id        String   @id @default(cuid())
-  name      String   @default("")
-  role      String   @default("Teacher")
-  email     String   @default("")
-  createdAt DateTime @default(now())
+  id                 String               @id @default(cuid())
+  name               String               @default("")
+  role               String               @default("Teacher")
+  email              String               @default("")
+  createdAt          DateTime             @default(now())
+  employee_id        String?
+  first_name         String?
+  last_name          String?
+  phone              String?
+  gender             String?
+  designation        String?
+  department         String?
+  status             String               @default("ACTIVE")
+  salutation         String?              @default("Mr")
+  tenantId           String?
+  teacher_attendance teacher_attendance[]
+
+  @@index([employee_id])
+  @@index([role])
+  @@index([status])
 }
 
 model Exam {
@@ -166,4 +271,1106 @@ model SmartAccreditationHub {
   standard  String   @default("")
   status    String   @default("PENDING")
   createdAt DateTime @default(now())
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model AdmissionDecision {
+  id            String    @id @default(dbgenerated("('decision_'::text || (gen_random_uuid())::text)"))
+  applicationId String
+  decision      String
+  decidedAt     DateTime? @default(now()) @db.Timestamp(6)
+  decidedBy     String?
+  reason        String?
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+
+  @@index([applicationId], map: "idx_admission_decision_application")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model AdmissionEnquiry {
+  id               String    @id @default(dbgenerated("('enquiry_'::text || (gen_random_uuid())::text)"))
+  leadId           String?
+  tenantId         String?
+  studentName      String
+  parentName       String?
+  parentEmail      String?
+  parentPhone      String?
+  dateOfBirth      DateTime? @db.Date
+  gender           String?
+  gradeApplyingFor String?
+  academicYear     String?
+  source           String?   @default("CRM")
+  status           String    @default("NEW")
+  notes            String?
+  createdAt        DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt        DateTime  @default(now()) @db.Timestamp(6)
+
+  @@index([leadId], map: "idx_admission_enquiry_lead")
+  @@index([status], map: "idx_admission_enquiry_status")
+  @@index([tenantId], map: "idx_admission_enquiry_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Applicant {
+  id           String    @id @default(dbgenerated("('applicant_'::text || (gen_random_uuid())::text)"))
+  enquiryId    String?
+  tenantId     String?
+  firstName    String
+  middleName   String?
+  lastName     String?
+  dateOfBirth  DateTime? @db.Date
+  gender       String?
+  parentName   String?
+  parentEmail  String?
+  parentPhone  String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  country      String?   @default("India")
+  postalCode   String?
+  status       String    @default("ACTIVE")
+  createdAt    DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime  @default(now()) @db.Timestamp(6)
+
+  @@index([enquiryId], map: "idx_applicant_enquiry")
+  @@index([tenantId], map: "idx_applicant_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Application {
+  id                String    @id @default(dbgenerated("('application_'::text || (gen_random_uuid())::text)"))
+  applicantId       String
+  tenantId          String?
+  applicationNumber String?   @unique
+  academicYear      String
+  gradeApplyingFor  String
+  status            String    @default("SUBMITTED")
+  submittedAt       DateTime? @default(now()) @db.Timestamp(6)
+  notes             String?
+  createdAt         DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime  @default(now()) @db.Timestamp(6)
+
+  @@index([applicantId], map: "idx_application_applicant")
+  @@index([status], map: "idx_application_status")
+  @@index([tenantId], map: "idx_application_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ApplicationDocument {
+  id            String    @id @default(dbgenerated("('document_'::text || (gen_random_uuid())::text)"))
+  applicationId String
+  documentType  String
+  fileName      String?
+  fileUrl       String?
+  status        String    @default("PENDING")
+  verifiedAt    DateTime? @db.Timestamp(6)
+  verifiedBy    String?
+  notes         String?
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime  @default(now()) @db.Timestamp(6)
+
+  @@index([applicationId], map: "idx_application_document_application")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Assessment {
+  id             String    @id @default(dbgenerated("('assessment_'::text || (gen_random_uuid())::text)"))
+  applicationId  String
+  assessmentType String
+  scheduledAt    DateTime? @db.Timestamp(6)
+  status         String    @default("SCHEDULED")
+  score          Decimal?  @db.Decimal
+  maxscore       Decimal?  @db.Decimal
+  feedback       String?
+  createdAt      DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime  @default(now()) @db.Timestamp(6)
+
+  @@index([applicationId], map: "idx_assessment_application")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Interview {
+  id              String    @id @default(dbgenerated("('interview_'::text || (gen_random_uuid())::text)"))
+  applicationId   String
+  scheduledAt     DateTime? @db.Timestamp(6)
+  interviewerName String?
+  mode            String?   @default("IN_PERSON")
+  status          String    @default("SCHEDULED")
+  score           Decimal?  @db.Decimal
+  feedback        String?
+  createdAt       DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime  @default(now()) @db.Timestamp(6)
+
+  @@index([applicationId], map: "idx_interview_application")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model PlatformAnnouncement {
+  id              String    @id
+  title           String
+  message         String
+  type            String    @default("INFO")
+  status          String    @default("DRAFT")
+  startsAt        DateTime? @db.Timestamptz(6)
+  endsAt          DateTime? @db.Timestamptz(6)
+  createdByUserId String?
+  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([startsAt])
+  @@index([status])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model PlatformAuditLog {
+  id           String   @id
+  actorUserId  String?
+  actorEmail   String?
+  action       String
+  resourceType String
+  resourceId   String?
+  description  String
+  metadata     Json?
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([actorUserId])
+  @@index([createdAt(sort: Desc)])
+  @@index([resourceType, resourceId], map: "PlatformAuditLog_resource_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model PlatformCustomBill {
+  id          String    @id
+  tenantId    String
+  description String
+  amount      Decimal   @db.Decimal(12, 2)
+  dueDate     DateTime? @db.Date
+  status      String    @default("PENDING")
+  notes       String?
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @db.Timestamptz(6)
+  Tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([tenantId])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model PlatformPlan {
+  id                    String         @id
+  name                  String         @unique
+  monthlyPrice          Decimal?       @db.Decimal(12, 2)
+  annualPrice           Decimal?       @db.Decimal(12, 2)
+  studentLimit          Int?
+  teacherLimit          Int?
+  razorpayMonthlyPlanId String?
+  razorpayAnnualPlanId  String?
+  isActive              Boolean        @default(true)
+  createdAt             DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime       @default(now()) @db.Timestamptz(6)
+  Subscription          Subscription[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model PlatformSettings {
+  id                    String   @id
+  platformName          String   @default("SmartCampusAI")
+  supportEmail          String?
+  supportPhone          String?
+  currency              String   @default("INR")
+  timezone              String   @default("Asia/Kolkata")
+  maintenanceMode       Boolean  @default(false)
+  schoolCreationEnabled Boolean  @default(true)
+  createdAt             DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model Subscription {
+  id                     String       @id
+  tenantId               String
+  planId                 String
+  status                 String       @default("ACTIVE")
+  billingCycle           String       @default("MONTHLY")
+  startedAt              DateTime     @default(now()) @db.Timestamptz(6)
+  currentPeriodStart     DateTime     @default(now()) @db.Timestamptz(6)
+  currentPeriodEnd       DateTime?    @db.Timestamptz(6)
+  canceledAt             DateTime?    @db.Timestamptz(6)
+  razorpayCustomerId     String?
+  razorpaySubscriptionId String?      @unique
+  razorpayPlanId         String?
+  createdAt              DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime     @default(now()) @db.Timestamptz(6)
+  PlatformPlan           PlatformPlan @relation(fields: [planId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant                 Tenant       @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model academic_years {
+  id                      String                    @id
+  tenantId                String
+  name                    String
+  start_date              DateTime?                 @db.Date
+  end_date                DateTime?                 @db.Date
+  status                  String                    @default("ACTIVE")
+  created_at              DateTime                  @default(now()) @db.Timestamp(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamp(6)
+  Tenant                  Tenant                    @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  class_period_attendance class_period_attendance[]
+  classes                 classes[]
+  exams                   exams[]
+  fee_payments            fee_payments[]
+  fee_structures          fee_structures[]
+  period_timings          period_timings[]
+  student_enrollments     student_enrollments[]
+  student_fees            student_fees[]
+  timetables              timetables[]
+
+  @@unique([tenantId, name], map: "academic_years_tenant_name_unique")
+  @@index([tenantId], map: "idx_academic_years_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model attendance_approval_audit {
+  id                    String                @id
+  tenantId              String
+  attendance_student_id String?
+  approval_id           String?
+  action                String
+  old_status            String?
+  new_status            String
+  reason                String?
+  performed_by          String?
+  performed_at          DateTime              @default(now()) @db.Timestamp(6)
+  created_at            DateTime              @default(now()) @db.Timestamp(6)
+  attendance_approvals  attendance_approvals? @relation(fields: [approval_id], references: [id], onUpdate: NoAction)
+  Tenant                Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([approval_id], map: "idx_attendance_approval_audit_approval")
+  @@index([performed_at], map: "idx_attendance_approval_audit_performed_at")
+  @@index([attendance_student_id], map: "idx_attendance_approval_audit_student")
+  @@index([tenantId], map: "idx_attendance_approval_audit_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model attendance_approvals {
+  id                               String                           @id
+  tenantId                         String
+  attendance_student_id            String                           @unique(map: "uq_attendance_approval_student")
+  status                           String                           @default("PENDING")
+  reason                           String?
+  acted_by                         String?
+  acted_at                         DateTime?                        @db.Timestamp(6)
+  created_at                       DateTime                         @default(now()) @db.Timestamp(6)
+  updated_at                       DateTime                         @default(now()) @db.Timestamp(6)
+  attendance_approval_audit        attendance_approval_audit[]
+  class_period_attendance_students class_period_attendance_students @relation(fields: [attendance_student_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenant                           Tenant                           @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([status], map: "idx_attendance_approvals_status")
+  @@index([attendance_student_id], map: "idx_attendance_approvals_student")
+  @@index([tenantId], map: "idx_attendance_approvals_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model class_period_attendance {
+  id                               String                             @id
+  tenantId                         String
+  attendance_date                  DateTime                           @db.Date
+  academic_year_id                 String
+  class_id                         String
+  section_id                       String
+  subject_id                       String
+  period_number                    Int
+  teacher_id                       String?
+  created_at                       DateTime                           @default(now()) @db.Timestamp(6)
+  updated_at                       DateTime                           @default(now()) @db.Timestamp(6)
+  academic_years                   academic_years                     @relation(fields: [academic_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  classes                          classes                            @relation(fields: [class_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sections                         sections                           @relation(fields: [section_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subjects                         subjects                           @relation(fields: [subject_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant                           Tenant                             @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  class_period_attendance_students class_period_attendance_students[]
+
+  @@unique([section_id, attendance_date, subject_id, period_number, academic_year_id], map: "class_period_attendance_unique")
+  @@index([class_id, section_id], map: "idx_class_period_attendance_class")
+  @@index([attendance_date], map: "idx_class_period_attendance_date")
+  @@index([tenantId], map: "idx_class_period_attendance_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model class_period_attendance_students {
+  id                         String                  @id
+  tenantId                   String
+  class_period_attendance_id String
+  student_id                 String
+  status                     String
+  notes                      String?
+  created_at                 DateTime                @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime                @default(now()) @db.Timestamp(6)
+  attendance_approvals       attendance_approvals?
+  class_period_attendance    class_period_attendance @relation(fields: [class_period_attendance_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "class_period_attendance_student_class_period_attendance_id_fkey")
+  Student                    Student                 @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant                     Tenant                  @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([class_period_attendance_id, student_id], map: "class_period_student_attendance_unique")
+  @@index([class_period_attendance_id], map: "idx_class_period_students_attendance")
+  @@index([student_id], map: "idx_class_period_students_student")
+  @@index([tenantId], map: "idx_class_period_students_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model class_subjects {
+  id         String   @id
+  tenantId   String
+  class_id   String
+  subject_id String
+  status     String   @default("ACTIVE")
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  classes    classes  @relation(fields: [class_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subjects   subjects @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([class_id, subject_id], map: "class_subject_unique")
+  @@index([tenantId], map: "idx_class_subjects_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model classes {
+  id                      String                    @id
+  tenantId                String
+  academic_year_id        String
+  name                    String
+  display_order           Int                       @default(0)
+  status                  String                    @default("ACTIVE")
+  created_at              DateTime                  @default(now()) @db.Timestamp(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamp(6)
+  class_period_attendance class_period_attendance[]
+  class_subjects          class_subjects[]
+  academic_years          academic_years            @relation(fields: [academic_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant                  Tenant                    @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fee_structures          fee_structures[]
+  section_subjects        section_subjects[]
+  sections                sections[]
+  student_enrollments     student_enrollments[]
+  timetables              timetables[]
+
+  @@unique([academic_year_id, name], map: "classes_year_name_unique")
+  @@index([academic_year_id], map: "idx_classes_academic_year")
+  @@index([tenantId], map: "idx_classes_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model crm_lead_activities {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lead_id       String    @db.Uuid
+  activity_type String    @default("NOTE")
+  title         String
+  description   String?
+  created_by    String?   @db.Uuid
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  tenantId      String?
+  crm_leads     crm_leads @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)])
+  @@index([lead_id])
+  @@index([tenantId], map: "crm_lead_activities_tenant_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model crm_leads {
+  id                  String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  school_name         String
+  contact_name        String?
+  contact_email       String?
+  contact_phone       String?
+  lead_status         String                @default("NEW")
+  status              String                @default("NEW")
+  priority            String                @default("MEDIUM")
+  source              String?
+  lead_source         String?
+  notes               String?
+  city                String?
+  state               String?
+  country             String?
+  school_type         String?
+  student_count       Int?
+  website             String?
+  demo_date           DateTime?             @db.Timestamptz(6)
+  last_contacted_at   DateTime?             @db.Timestamptz(6)
+  last_activity_at    DateTime?             @db.Timestamptz(6)
+  next_follow_up_at   DateTime?             @db.Timestamptz(6)
+  created_at          DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime              @default(now()) @db.Timestamptz(6)
+  tenantId            String?
+  crm_lead_activities crm_lead_activities[]
+  Tenant              Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)])
+  @@index([contact_email], map: "crm_leads_email_idx")
+  @@index([status])
+  @@index([tenantId], map: "crm_leads_tenant_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model exam_subjects {
+  id            String          @id
+  tenantId      String
+  exam_id       String
+  subject_id    String
+  max_marks     Decimal         @default(100) @db.Decimal(8, 2)
+  pass_marks    Decimal         @default(35) @db.Decimal(8, 2)
+  exam_date     DateTime?       @db.Date
+  start_time    DateTime?       @db.Time(6)
+  end_time      DateTime?       @db.Time(6)
+  created_at    DateTime        @default(now()) @db.Timestamp(6)
+  updated_at    DateTime        @default(now()) @db.Timestamp(6)
+  exams         exams           @relation(fields: [exam_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subjects      subjects        @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  student_marks student_marks[]
+
+  @@unique([exam_id, subject_id], map: "exam_subjects_unique")
+  @@index([exam_id], map: "idx_exam_subjects_exam")
+  @@index([subject_id], map: "idx_exam_subjects_subject")
+  @@index([tenantId], map: "idx_exam_subjects_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model exams {
+  id               String          @id
+  tenantId         String
+  academic_year_id String
+  name             String
+  exam_type        String          @default("EXAM")
+  start_date       DateTime?       @db.Date
+  end_date         DateTime?       @db.Date
+  status           String          @default("DRAFT")
+  created_at       DateTime        @default(now()) @db.Timestamp(6)
+  updated_at       DateTime        @default(now()) @db.Timestamp(6)
+  exam_subjects    exam_subjects[]
+  academic_years   academic_years  @relation(fields: [academic_year_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenant           Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  student_marks    student_marks[]
+
+  @@index([academic_year_id], map: "idx_exams_academic_year")
+  @@index([tenantId], map: "idx_exams_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model fee_discounts {
+  id                    String                  @id
+  tenantId              String
+  name                  String
+  code                  String?
+  discount_type         String                  @default("FIXED")
+  value                 Decimal                 @db.Decimal(12, 2)
+  description           String?
+  status                String                  @default("ACTIVE")
+  created_at            DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                @default(now()) @db.Timestamptz(6)
+  Tenant                Tenant                  @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  student_fee_discounts student_fee_discounts[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, status], map: "idx_fee_discounts_status")
+  @@index([tenantId], map: "idx_fee_discounts_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model fee_payment_allocations {
+  id             String       @id
+  tenantId       String
+  payment_id     String
+  student_fee_id String
+  amount         Decimal      @default(0) @db.Decimal(12, 2)
+  fee_payments   fee_payments @relation(fields: [payment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  student_fees   student_fees @relation(fields: [student_fee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant         Tenant       @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([payment_id, student_fee_id], map: "fee_payment_allocations_unique")
+  @@index([payment_id], map: "idx_fee_payment_allocations_payment")
+  @@index([student_fee_id], map: "idx_fee_payment_allocations_student_fee")
+  @@index([tenantId], map: "idx_fee_payment_allocations_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model fee_payments {
+  id                      String                    @id
+  tenantId                String
+  student_id              String
+  academic_year_id        String
+  payment_date            DateTime                  @default(dbgenerated("CURRENT_DATE")) @db.Date
+  amount                  Decimal                   @default(0) @db.Decimal(12, 2)
+  payment_method          String                    @default("CASH")
+  transaction_reference   String?
+  status                  String                    @default("COMPLETED")
+  remarks                 String?
+  collected_by            String?
+  created_at              DateTime                  @default(now()) @db.Timestamp(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamp(6)
+  fee_payment_allocations fee_payment_allocations[]
+  academic_years          academic_years            @relation(fields: [academic_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                    User?                     @relation(fields: [collected_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Student                 Student                   @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant                  Tenant                    @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fee_receipts            fee_receipts?
+
+  @@index([payment_date], map: "idx_fee_payments_date")
+  @@index([status], map: "idx_fee_payments_status")
+  @@index([student_id], map: "idx_fee_payments_student")
+  @@index([tenantId], map: "idx_fee_payments_tenant")
+  @@index([academic_year_id], map: "idx_fee_payments_year")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model fee_receipts {
+  id                   String       @id
+  tenantId             String
+  payment_id           String       @unique(map: "fee_receipts_payment_unique")
+  receipt_number       String
+  receipt_date         DateTime     @default(dbgenerated("CURRENT_DATE")) @db.Date
+  issued_to_student_id String
+  total_amount         Decimal      @default(0) @db.Decimal(12, 2)
+  status               String       @default("ISSUED")
+  remarks              String?
+  created_at           DateTime     @default(now()) @db.Timestamp(6)
+  updated_at           DateTime     @default(now()) @db.Timestamp(6)
+  Student              Student      @relation(fields: [issued_to_student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fee_payments         fee_payments @relation(fields: [payment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant               Tenant       @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([tenantId, receipt_number], map: "fee_receipts_tenant_number_unique")
+  @@index([receipt_date], map: "idx_fee_receipts_date")
+  @@index([payment_id], map: "idx_fee_receipts_payment")
+  @@index([issued_to_student_id], map: "idx_fee_receipts_student")
+  @@index([tenantId], map: "idx_fee_receipts_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model fee_structures {
+  id               String         @id
+  tenantId         String
+  academic_year_id String
+  class_id         String
+  fee_type_id      String
+  amount           Decimal        @default(0) @db.Decimal(12, 2)
+  frequency        String         @default("ANNUAL")
+  due_date         DateTime?      @db.Date
+  description      String?
+  status           String         @default("ACTIVE")
+  created_at       DateTime       @default(now()) @db.Timestamp(6)
+  updated_at       DateTime       @default(now()) @db.Timestamp(6)
+  academic_years   academic_years @relation(fields: [academic_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  classes          classes        @relation(fields: [class_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fee_types        fee_types      @relation(fields: [fee_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant           Tenant         @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  student_fees     student_fees[]
+
+  @@unique([tenantId, academic_year_id, class_id, fee_type_id, frequency], map: "fee_structures_unique")
+  @@index([fee_type_id], map: "idx_fee_structures_fee_type")
+  @@index([tenantId], map: "idx_fee_structures_tenant")
+  @@index([academic_year_id, class_id], map: "idx_fee_structures_year_class")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model fee_types {
+  id             String           @id
+  tenantId       String
+  name           String
+  code           String?
+  description    String?
+  status         String           @default("ACTIVE")
+  created_at     DateTime         @default(now()) @db.Timestamp(6)
+  updated_at     DateTime         @default(now()) @db.Timestamp(6)
+  fee_structures fee_structures[]
+  Tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  student_fees   student_fees[]
+
+  @@unique([tenantId, name], map: "fee_types_tenant_name_unique")
+  @@index([tenantId], map: "idx_fee_types_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model grading_scales {
+  id             String   @id
+  tenantId       String
+  name           String
+  min_percentage Decimal  @db.Decimal(5, 2)
+  max_percentage Decimal  @db.Decimal(5, 2)
+  grade          String
+  grade_point    Decimal? @db.Decimal(5, 2)
+  description    String?
+  created_at     DateTime @default(now()) @db.Timestamp(6)
+  updated_at     DateTime @default(now()) @db.Timestamp(6)
+  Tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([tenantId, min_percentage, max_percentage], map: "idx_grading_scales_percentage")
+  @@index([tenantId], map: "idx_grading_scales_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model period_timings {
+  id               String         @id
+  tenantId         String
+  academic_year_id String
+  period_number    Int
+  name             String
+  start_time       DateTime       @db.Time(6)
+  end_time         DateTime       @db.Time(6)
+  is_break         Boolean        @default(false)
+  status           String         @default("ACTIVE")
+  created_at       DateTime       @default(now()) @db.Timestamp(6)
+  updated_at       DateTime       @default(now()) @db.Timestamp(6)
+  academic_years   academic_years @relation(fields: [academic_year_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenant           Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenantId, academic_year_id, period_number], map: "period_timings_period_unique")
+  @@index([academic_year_id], map: "idx_period_timings_academic_year")
+  @@index([tenantId], map: "idx_period_timings_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model platform_crm_lead_activities {
+  id                 String             @id @default(dbgenerated("(gen_random_uuid())::text"))
+  lead_id            String
+  activity_type      String
+  title              String
+  description        String?
+  created_by         String?
+  created_at         DateTime           @default(now()) @db.Timestamptz(6)
+  platform_crm_leads platform_crm_leads @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at], map: "platform_crm_activities_created_idx")
+  @@index([lead_id], map: "platform_crm_activities_lead_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model platform_crm_leads {
+  id                           String                         @id @default(dbgenerated("(gen_random_uuid())::text"))
+  campus_name                  String
+  contact_name                 String?
+  contact_role                 String?
+  email                        String?
+  mobile                       String?
+  city                         String?
+  state                        String?
+  country                      String?                        @default("India")
+  school_type                  String?
+  student_count                Int?
+  teacher_count                Int?
+  current_software             String?
+  requirements                 String?
+  source                       String?
+  assigned_to                  String?
+  status                       String                         @default("NEW")
+  priority                     String                         @default("MEDIUM")
+  demo_at                      DateTime?                      @db.Timestamptz(6)
+  next_follow_up_at            DateTime?                      @db.Timestamptz(6)
+  tenant_id                    String?
+  converted_at                 DateTime?                      @db.Timestamptz(6)
+  created_at                   DateTime                       @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime                       @default(now()) @db.Timestamptz(6)
+  platform_crm_lead_activities platform_crm_lead_activities[]
+  Tenant                       Tenant?                        @relation(fields: [tenant_id], references: [id], onUpdate: NoAction)
+
+  @@index([next_follow_up_at], map: "platform_crm_leads_follow_up_idx")
+  @@index([status])
+  @@index([tenant_id], map: "platform_crm_leads_tenant_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model section_subjects {
+  id         String   @id
+  tenantId   String
+  class_id   String
+  section_id String
+  subject_id String
+  status     String   @default("ACTIVE")
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @default(now()) @db.Timestamp(6)
+  classes    classes  @relation(fields: [class_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sections   sections @relation(fields: [section_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subjects   subjects @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([section_id, subject_id], map: "section_subject_unique")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sections {
+  id                      String                    @id
+  tenantId                String
+  class_id                String
+  name                    String
+  display_order           Int                       @default(0)
+  status                  String                    @default("ACTIVE")
+  created_at              DateTime                  @default(now()) @db.Timestamp(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamp(6)
+  class_period_attendance class_period_attendance[]
+  section_subjects        section_subjects[]
+  classes                 classes                   @relation(fields: [class_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenant                  Tenant                    @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  student_enrollments     student_enrollments[]
+  timetables              timetables[]
+
+  @@unique([class_id, name], map: "sections_class_name_unique")
+  @@index([class_id], map: "idx_sections_class")
+  @@index([tenantId], map: "idx_sections_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model student_enrollments {
+  id               String         @id
+  tenantId         String
+  student_id       String
+  academic_year_id String
+  class_id         String
+  section_id       String
+  roll_number      String?
+  status           String         @default("ACTIVE")
+  enrolled_at      DateTime?      @db.Date
+  created_at       DateTime       @default(now()) @db.Timestamp(6)
+  updated_at       DateTime       @default(now()) @db.Timestamp(6)
+  academic_years   academic_years @relation(fields: [academic_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  classes          classes        @relation(fields: [class_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sections         sections       @relation(fields: [section_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Student          Student        @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant           Tenant         @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  student_fees     student_fees[]
+
+  @@unique([student_id, academic_year_id], map: "student_enrollment_unique")
+  @@index([class_id, section_id], map: "idx_student_enrollments_class_section")
+  @@index([student_id], map: "idx_student_enrollments_student")
+  @@index([tenantId], map: "idx_student_enrollments_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model student_fee_discounts {
+  id              String        @id
+  tenantId        String
+  student_fee_id  String
+  fee_discount_id String
+  discount_amount Decimal       @db.Decimal(12, 2)
+  remarks         String?
+  status          String        @default("APPLIED")
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
+  fee_discounts   fee_discounts @relation(fields: [fee_discount_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  student_fees    student_fees  @relation(fields: [student_fee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([student_fee_id, fee_discount_id])
+  @@index([fee_discount_id], map: "idx_student_fee_discounts_discount")
+  @@index([student_fee_id], map: "idx_student_fee_discounts_fee")
+  @@index([tenantId], map: "idx_student_fee_discounts_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model student_fees {
+  id                      String                    @id
+  tenantId                String
+  student_id              String
+  enrollment_id           String?
+  academic_year_id        String
+  fee_structure_id        String?
+  fee_type_id             String
+  amount                  Decimal                   @default(0) @db.Decimal(12, 2)
+  discount_amount         Decimal                   @default(0) @db.Decimal(12, 2)
+  net_amount              Decimal                   @default(0) @db.Decimal(12, 2)
+  due_date                DateTime?                 @db.Date
+  status                  String                    @default("PENDING")
+  remarks                 String?
+  created_at              DateTime                  @default(now()) @db.Timestamp(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamp(6)
+  fee_payment_allocations fee_payment_allocations[]
+  student_fee_discounts   student_fee_discounts[]
+  academic_years          academic_years            @relation(fields: [academic_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  student_enrollments     student_enrollments?      @relation(fields: [enrollment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fee_structures          fee_structures?           @relation(fields: [fee_structure_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fee_types               fee_types                 @relation(fields: [fee_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Student                 Student                   @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant                  Tenant                    @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([enrollment_id], map: "idx_student_fees_enrollment")
+  @@index([status], map: "idx_student_fees_status")
+  @@index([student_id], map: "idx_student_fees_student")
+  @@index([tenantId], map: "idx_student_fees_tenant")
+  @@index([academic_year_id], map: "idx_student_fees_year")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model student_guardians {
+  id                   String              @id
+  tenantId             String
+  student_id           String
+  name                 String
+  relationship         String?
+  email                String?
+  phone                String?
+  is_primary           Boolean             @default(false)
+  is_emergency_contact Boolean             @default(false)
+  created_at           DateTime            @default(now()) @db.Timestamp(6)
+  updated_at           DateTime            @default(now()) @db.Timestamp(6)
+  Student              Student             @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  student_consents     StudentConsent[]
+  parent_student_links ParentStudentLink[]
+
+  @@index([student_id, is_emergency_contact], map: "student_guardians_emergency_idx")
+  @@index([student_id, is_primary], map: "student_guardians_primary_idx")
+  @@index([student_id], map: "student_guardians_student_idx")
+  @@index([tenantId], map: "student_guardians_tenant_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model student_marks {
+  id              String         @id
+  tenantId        String
+  exam_id         String
+  student_id      String
+  subject_id      String
+  exam_subject_id String?
+  marks_obtained  Decimal?       @db.Decimal(8, 2)
+  max_marks       Decimal        @default(100) @db.Decimal(8, 2)
+  grade           String?
+  remarks         String?
+  created_at      DateTime       @default(now()) @db.Timestamp(6)
+  updated_at      DateTime       @default(now()) @db.Timestamp(6)
+  exams           exams          @relation(fields: [exam_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  exam_subjects   exam_subjects? @relation(fields: [exam_subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Student         Student        @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subjects        subjects       @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([exam_id, student_id, subject_id], map: "student_marks_unique")
+  @@index([exam_id], map: "idx_student_marks_exam")
+  @@index([student_id], map: "idx_student_marks_student")
+  @@index([subject_id], map: "idx_student_marks_subject")
+  @@index([tenantId], map: "idx_student_marks_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model student_profiles {
+  id            String    @id
+  tenantId      String
+  student_id    String    @unique(map: "student_profiles_student_unique")
+  first_name    String?
+  middle_name   String?
+  last_name     String?
+  date_of_birth DateTime? @db.Date
+  gender        String?
+  address_line1 String?
+  address_line2 String?
+  city          String?
+  state         String?
+  country       String?   @default("India")
+  postal_code   String?
+  created_at    DateTime  @default(now()) @db.Timestamp(6)
+  updated_at    DateTime  @default(now()) @db.Timestamp(6)
+  Student       Student   @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([student_id], map: "student_profiles_student_idx")
+  @@index([tenantId], map: "student_profiles_tenant_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model subjects {
+  id                      String                    @id
+  tenantId                String
+  name                    String
+  code                    String?
+  status                  String                    @default("ACTIVE")
+  created_at              DateTime                  @default(now()) @db.Timestamp(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamp(6)
+  class_period_attendance class_period_attendance[]
+  class_subjects          class_subjects[]
+  exam_subjects           exam_subjects[]
+  section_subjects        section_subjects[]
+  student_marks           student_marks[]
+  Tenant                  Tenant                    @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  timetables              timetables[]
+
+  @@unique([tenantId, name], map: "subjects_tenant_name_unique")
+  @@index([tenantId], map: "idx_subjects_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model teacher_activity {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teacher_id  String
+  action      String
+  description String?
+  metadata    Json?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at(sort: Desc)])
+  @@index([teacher_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model teacher_assignments {
+  id               String    @id
+  teacher_id       String
+  class_id         String?
+  class_name       String?
+  section_id       String?
+  section_name     String?
+  subject_id       String?
+  subject_name     String?
+  academic_year    String?
+  role             String?   @default("Subject Teacher")
+  periods_per_week Int?      @default(0)
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+  assignment_type  String?   @default("Subject")
+  status           String?   @default("ACTIVE")
+
+  @@unique([teacher_id, subject_name, class_name, section_name, academic_year], map: "uq_teacher_assignment_unique")
+  @@index([assignment_type], map: "idx_teacher_assignments_assignment_type")
+  @@index([class_id], map: "idx_teacher_assignments_class_id")
+  @@index([status], map: "idx_teacher_assignments_status")
+  @@index([subject_id], map: "idx_teacher_assignments_subject_id")
+  @@index([teacher_id], map: "idx_teacher_assignments_teacher_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model teacher_attendance {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teacher_id      String
+  attendance_date DateTime  @db.Date
+  status          String    @default("PRESENT")
+  check_in_time   DateTime? @db.Time(6)
+  check_out_time  DateTime? @db.Time(6)
+  notes           String?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+  tenantId        String
+  Staff           Staff     @relation(fields: [teacher_id], references: [id], map: "teacher_attendance_teacher_fk")
+  Tenant          Tenant    @relation(fields: [tenantId], references: [id], map: "teacher_attendance_tenant_fk")
+
+  @@unique([teacher_id, attendance_date], map: "teacher_attendance_unique_day")
+  @@index([attendance_date], map: "idx_teacher_attendance_date")
+  @@index([status], map: "idx_teacher_attendance_status")
+  @@index([teacher_id], map: "idx_teacher_attendance_teacher")
+  @@index([teacher_id, attendance_date(sort: Desc)], map: "idx_teacher_attendance_teacher_date")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tenant_subscriptions {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id           String?   @db.Uuid
+  plan_name           String    @db.VarChar(50)
+  amount_paid         Int
+  billing_cycle       String?   @default("MONTHLY") @db.VarChar(20)
+  status              String?   @default("TRIAL") @db.VarChar(50)
+  razorpay_order_id   String?   @db.VarChar(255)
+  razorpay_payment_id String?   @db.VarChar(255)
+  activated_at        DateTime? @default(now()) @db.Timestamp(6)
+  expires_at          DateTime? @db.Timestamp(6)
+  created_at          DateTime? @default(now()) @db.Timestamp(6)
+  tenants             tenants?  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tenants {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String                 @db.VarChar(255)
+  subdomain            String                 @unique @db.VarChar(100)
+  created_at           DateTime?              @default(now()) @db.Timestamp(6)
+  tenant_subscriptions tenant_subscriptions[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model timetables {
+  id               String         @id
+  tenantId         String
+  academic_year_id String
+  class_id         String
+  section_id       String
+  subject_id       String
+  teacher_id       String?
+  day_of_week      Int
+  period_number    Int
+  start_time       DateTime?      @db.Time(6)
+  end_time         DateTime?      @db.Time(6)
+  status           String         @default("ACTIVE")
+  created_at       DateTime       @default(now()) @db.Timestamp(6)
+  updated_at       DateTime       @default(now()) @db.Timestamp(6)
+  academic_years   academic_years @relation(fields: [academic_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  classes          classes        @relation(fields: [class_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sections         sections       @relation(fields: [section_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subjects         subjects       @relation(fields: [subject_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant           Tenant         @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([section_id, day_of_week, period_number, academic_year_id], map: "timetable_period_unique")
+  @@index([class_id, section_id], map: "idx_timetables_class_section")
+  @@index([teacher_id], map: "idx_timetables_teacher")
+  @@index([tenantId], map: "idx_timetables_tenant")
+}
+
+model ParentStudentLink {
+  id         String   @id @default(cuid())
+  tenantId   String
+  userId     String
+  studentId  String
+  guardianId String?
+  isPrimary  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  student  Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardian student_guardians? @relation(fields: [guardianId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, studentId], map: "ParentStudentLink_user_student_unique")
+  @@index([tenantId])
+  @@index([userId])
+  @@index([studentId])
+  @@index([guardianId])
+}
+
+model StudentConsent {
+  id         String  @id @default(cuid())
+  tenantId   String
+  studentId  String
+  guardianId String?
+
+  purpose               String
+  consentStatus         String    @default("PENDING")
+  privacyNoticeVersion  String
+  consentedAt           DateTime?
+  withdrawnAt           DateTime?
+  verificationMethod    String?
+  verificationReference String?
+  metadata              Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  student  Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardian student_guardians? @relation(fields: [guardianId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([studentId])
+  @@index([guardianId])
+  @@index([studentId, purpose])
 }
