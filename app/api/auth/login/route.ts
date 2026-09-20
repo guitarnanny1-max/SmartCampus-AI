@@ -1,45 +1,183 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/src/lib/rateLimit";
+
+export const dynamic = "force-dynamic";
+
+function isBcryptHash(value: string) {
+  return /^\$2[aby]\$\d{2}\$/.test(value);
+}
 
 export async function POST(request: Request) {
   try {
-    const { email, password, subdomain } = await request.json();
+    const body = await request.json();
+
+    const email =
+      typeof body.email === "string"
+        ? body.email.trim().toLowerCase()
+        : "";
+
+    const password =
+      typeof body.password === "string"
+        ? body.password
+        : "";
+
+    const subdomain =
+      typeof body.subdomain === "string"
+        ? body.subdomain.trim().toLowerCase()
+        : "";
+
     if (!email || !password || !subdomain) {
-      return NextResponse.json({ success: false, error: "Missing email, password, or subdomain" }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Email, password, and school subdomain are required",
+        },
+        { status: 400 }
+      );
     }
 
-    let tenant = await prisma.tenant.findUnique({ where: { subdomain } });
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const ip =
+      forwardedFor?.split(",")[0]?.trim() || "127.0.0.1";
+
+    const rateLimitResult = await checkRateLimit(
+      `user-login:${ip}`,
+      10,
+      60
+    );
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Too many login attempts. Please wait a moment and try again.",
+        },
+        { status: 429 }
+      );
+    }
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { subdomain },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+      },
+    });
+
     if (!tenant) {
-      tenant = await prisma.tenant.create({
-        data: { subdomain, name: `${subdomain.toUpperCase()} Public SmartCampus` },
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "School workspace not found",
+        },
+        { status: 404 }
+      );
     }
 
-    const userCount = await prisma.user.count({ where: { tenantId: tenant.id } });
-    if (userCount === 0) {
-      await prisma.user.createMany({
-        data: [
-          { tenantId: tenant.id, email: `admin@${subdomain}.com`, name: "System Administrator", role: "ADMIN", password: "password123" },
-          { tenantId: tenant.id, email: `parent@${subdomain}.com`, name: "Mr. Gupta", role: "PARENT", password: "password123" },
-          { tenantId: tenant.id, email: `teacher@${subdomain}.com`, name: "Dr. Sharma", role: "TEACHER", password: "password123" },
-          { tenantId: tenant.id, email: `student@${subdomain}.com`, name: "Rahul Gupta", role: "STUDENT", password: "password123" },
-        ],
-      });
+    if (tenant.status !== "ACTIVE") {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "This school workspace is not active. Please complete payment or contact your administrator.",
+        },
+        { status: 403 }
+      );
     }
 
     const user = await prisma.user.findFirst({
-      where: { tenantId: tenant.id, email },
+      where: {
+        tenantId: tenant.id,
+        email,
+      },
     });
 
-    if (!user || user.password !== password) {
-      return NextResponse.json({ success: false, error: "Invalid email or password" }, { status: 401 });
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid email or password",
+        },
+        { status: 401 }
+      );
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      user: { id: user.id, name: user.name, email: user.email, role: user.role, tenantId: tenant.id } 
+    let passwordValid = false;
+
+    if (isBcryptHash(user.password)) {
+      passwordValid = await bcrypt.compare(
+        password,
+        user.password
+      );
+    } else {
+      // Backward compatibility for existing development/test users.
+      passwordValid = user.password === password;
+
+      // Upgrade legacy plaintext password to bcrypt after
+      // successful authentication.
+      if (passwordValid) {
+        const passwordHash = await bcrypt.hash(password, 12);
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { password: passwordHash },
+        });
+      }
+    }
+
+    if (!passwordValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid email or password",
+        },
+        { status: 401 }
+      );
+    }
+
+    const response = NextResponse.json({
+      success: true,
+      message: "Logged in successfully",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        tenantId: tenant.id,
+        tenantName: tenant.name,
+      },
     });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+
+    response.cookies.set("auth_session", user.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    response.cookies.set("tenant_subdomain", tenant.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
+  } catch (error: unknown) {
+    console.error("User login error:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Internal server error",
+      },
+      { status: 500 }
+    );
   }
 }

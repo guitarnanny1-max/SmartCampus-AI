@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import SignupForm from "@/components/SignupForm";
+import SignupForm from "@/src/components/SignupForm";
 
 export const dynamic = "force-dynamic";
 

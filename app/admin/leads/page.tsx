@@ -1,11 +1,11 @@
 export const dynamic = "force-dynamic";
 
-import { db } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export default async function AdminLeadsPage() {
   let leads: any[] = [];
   try {
-    leads = await db.tenant.findMany({
+    leads = await prisma.tenant.findMany({
       orderBy: { createdAt: "desc" },
     });
   } catch (err) {

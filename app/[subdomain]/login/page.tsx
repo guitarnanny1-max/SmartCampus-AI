@@ -26,12 +26,14 @@ export default function LoginPage(props: { params: Promise<{ subdomain: string }
       const data = await res.json();
 
       if (data.success) {
-        localStorage.setItem("smartcampus_user", JSON.stringify(data.user));
+
         const role = data.user.role;
-        if (role === "ADMIN") router.push(`/${subdomain}/admin`);
-        else if (role === "PARENT") router.push(`/${subdomain}/parent`);
-        else if (role === "TEACHER") router.push(`/${subdomain}/teacher`);
-        else router.push(`/${subdomain}/student`);
+        if (role === "ADMIN" || role === "SCHOOL_ADMIN") {
+          router.push("/admin");
+        }
+        else if (role === "PARENT") router.push("/parent");
+        else if (role === "TEACHER") router.push("/teacher");
+        else router.push("/student");
       } else {
         setError(data.error || "Authentication failed.");
       }

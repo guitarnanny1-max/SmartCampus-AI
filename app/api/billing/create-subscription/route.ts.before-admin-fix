@@ -1,0 +1,302 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { PLANS, type BillingCycle } from "@/lib/plans";
+import crypto from "crypto";
+
+export const runtime = "nodejs";
+
+type RequestBody = {
+  schoolName: string;
+  subdomain: string;
+  email: string;
+  phone?: string;
+  schoolType?: string;
+  studentCount?: number;
+  adminName?: string;
+  planId: string;
+  billingCycle: BillingCycle;
+};
+
+function normalizeSubdomain(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function getRazorpayCredentials() {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+  if (!keyId || !keySecret) {
+    throw new Error("Razorpay credentials are not configured");
+  }
+
+  return { keyId, keySecret };
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json()) as RequestBody;
+
+    const schoolName = body.schoolName?.trim();
+    const email = normalizeEmail(body.email || "");
+    const subdomain = normalizeSubdomain(body.subdomain || "");
+    const planId = body.planId;
+    const billingCycle = body.billingCycle;
+
+    if (!schoolName) {
+      return NextResponse.json(
+        { error: "School name is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!email || !email.includes("@")) {
+      return NextResponse.json(
+        { error: "Valid email is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!subdomain || subdomain.length < 3) {
+      return NextResponse.json(
+        { error: "Valid subdomain is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!["monthly", "annual"].includes(billingCycle)) {
+      return NextResponse.json(
+        { error: "Invalid billing cycle" },
+        { status: 400 }
+      );
+    }
+
+    const plan = PLANS[planId as keyof typeof PLANS];
+
+    if (!plan) {
+      return NextResponse.json(
+        { error: "Invalid plan" },
+        { status: 400 }
+      );
+    }
+
+    if (plan.id === "enterprise") {
+      return NextResponse.json(
+        {
+          error:
+            "Enterprise plans require a custom quote and cannot be purchased through self-service checkout.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const amount = billingCycle === "annual" ? plan.annual : plan.monthly;
+
+    if (!amount) {
+      return NextResponse.json(
+        { error: "Selected plan has no price" },
+        { status: 400 }
+      );
+    }
+
+    const planNameMap: Record<string, string> = {
+      "school-starter": "STARTER",
+      "school-growth": "GROWTH",
+      "school-professional": "PROFESSIONAL",
+    };
+
+    const databasePlanName = planNameMap[plan.id];
+
+    if (!databasePlanName) {
+      return NextResponse.json(
+        { error: "Plan configuration is invalid" },
+        { status: 500 }
+      );
+    }
+
+    const platformPlan = await prisma.platformPlan.findUnique({
+      where: {
+        name: databasePlanName,
+      },
+    });
+
+    if (!platformPlan) {
+      return NextResponse.json(
+        { error: "Platform plan is not configured" },
+        { status: 500 }
+      );
+    }
+
+    const razorpayPlanId =
+      billingCycle === "annual"
+        ? platformPlan.razorpayAnnualPlanId
+        : platformPlan.razorpayMonthlyPlanId;
+
+    if (!razorpayPlanId) {
+      return NextResponse.json(
+        {
+          error:
+            "Razorpay plan is not configured for the selected billing cycle",
+        },
+        { status: 500 }
+      );
+    }
+
+    const existingTenant = await prisma.tenant.findUnique({
+      where: {
+        subdomain,
+      },
+    });
+
+    if (existingTenant) {
+      return NextResponse.json(
+        {
+          error: "This school subdomain is already registered",
+        },
+        { status: 409 }
+      );
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        {
+          error:
+            "This email is already registered. Please use another administrator email.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const tenantId = `tenant_${crypto.randomBytes(12).toString("hex")}`;
+    const subscriptionId = crypto.randomUUID();
+
+    const tenant = await prisma.tenant.create({
+      data: {
+        id: tenantId,
+        name: schoolName,
+        subdomain,
+        plan: plan.id,
+        status: "PENDING_PAYMENT",
+        paymentStatus: "UNVERIFIED",
+        onboardingStatus: "PENDING",
+        contactEmail: email,
+        contactPhone: body.phone?.trim() || null,
+        schoolType: body.schoolType?.trim() || null,
+        studentCount:
+          typeof body.studentCount === "number"
+            ? body.studentCount
+            : null,
+      },
+    });
+
+    try {
+      const { keyId, keySecret } = getRazorpayCredentials();
+
+      const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+
+      const razorpayResponse = await fetch(
+        "https://api.razorpay.com/v1/subscriptions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${auth}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            plan_id: razorpayPlanId,
+            total_count: billingCycle === "annual" ? 10 : 120,
+            customer_notify: 1,
+            notes: {
+              tenantId,
+              schoolName,
+              email,
+              planId: plan.id,
+              billingCycle,
+            },
+          }),
+        }
+      );
+
+      const razorpayData = await razorpayResponse.json();
+
+      if (!razorpayResponse.ok) {
+        await prisma.tenant.delete({
+          where: { id: tenantId },
+        });
+
+        return NextResponse.json(
+          {
+            error:
+              razorpayData?.error?.description ||
+              "Unable to create Razorpay subscription",
+          },
+          { status: 502 }
+        );
+      }
+
+      const subscription = await prisma.subscription.create({
+        data: {
+          id: subscriptionId,
+          tenantId,
+          planId: platformPlan.id,
+          status: "TRIALING",
+          billingCycle: billingCycle.toUpperCase(),
+          razorpaySubscriptionId: razorpayData.id,
+          razorpayPlanId,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        tenantId: tenant.id,
+        subscriptionId: subscription.id,
+        razorpaySubscriptionId: razorpayData.id,
+        razorpayKeyId: keyId,
+        plan: {
+          id: plan.id,
+          name: plan.name,
+          billingCycle,
+          amount,
+          currency: "INR",
+        },
+        school: {
+          name: schoolName,
+          subdomain,
+          email,
+        },
+      });
+    } catch (razorpayError) {
+      await prisma.tenant.delete({
+        where: { id: tenantId },
+      });
+
+      throw razorpayError;
+    }
+  } catch (error) {
+    console.error("CREATE SUBSCRIPTION ERROR:", error);
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to create subscription",
+      },
+      { status: 500 }
+    );
+  }
+}

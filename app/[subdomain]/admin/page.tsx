@@ -1,127 +1,316 @@
 "use client";
+
 export const dynamic = "force-dynamic";
 
-import { use, useState, useEffect } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function AdminApp(props: { params: Promise<{ subdomain: string }> }) {
+type Payment = {
+  id: string;
+  amount: number;
+  studentName: string | null;
+  status: string;
+  createdAt: string;
+  transactionId: string | null;
+  paymentMethod: string | null;
+  verificationStatus: string;
+};
+
+type Tenant = {
+  id: string;
+  name: string;
+  subdomain: string;
+  plan: string;
+  status: string;
+  paymentStatus: string;
+  onboardingStatus: string;
+  contactEmail?: string | null;
+};
+
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  tenantId?: string | null;
+};
+
+export default function AdminApp(props: {
+  params: Promise<{ subdomain: string }>;
+}) {
   const { subdomain } = use(props.params);
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [tenantId, setTenantId] = useState("");
-  const [payments, setPayments] = useState<any[]>([]);
+
+  const [user, setUser] = useState<User | null>(null);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("smartcampus_user");
-    if (!storedUser) {
-      router.push(`/${subdomain}/login`);
-      return;
-    }
-    const parsedUser = JSON.parse(storedUser);
-    if (parsedUser.role !== "ADMIN") {
-      router.push(`/${subdomain}/login`);
-      return;
-    }
-    setUser(parsedUser);
+    const controller = new AbortController();
 
     async function init() {
       try {
-        const res = await fetch(`/api/messages/tenant-lookup?subdomain=${subdomain}`);
-        const data = await res.json();
-        if (data.tenantId) {
-          setTenantId(data.tenantId);
-          // Fetch payment audit logs
-          const payRes = await fetch(`/api/payments?tenantId=${data.tenantId}`);
-          const payData = await payRes.json();
-          if (payData.success) setPayments(payData.payments);
+        const authRes = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        const authData = await authRes.json();
+
+        if (!authRes.ok || !authData.success || !authData.user) {
+          router.push(`/${subdomain}/login`);
+          return;
         }
-      } catch (e) {
+
+        const role = authData.user.role;
+
+        if (role !== "ADMIN" && role !== "SCHOOL_ADMIN") {
+          router.push(`/${subdomain}/login`);
+          return;
+        }
+
+        setUser(authData.user);
+        setTenant(authData.tenant || null);
+
+        const tenantId =
+          authData.tenant?.id || authData.user.tenantId || "";
+
+        if (tenantId) {
+          const payRes = await fetch(
+            `/api/payments?tenantId=${encodeURIComponent(tenantId)}`,
+            {
+              credentials: "include",
+              cache: "no-store",
+              signal: controller.signal,
+            }
+          );
+
+          const payData = await payRes.json();
+
+          if (payData.success) {
+            setPayments(
+              Array.isArray(payData.payments) ? payData.payments : []
+            );
+          }
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        console.error("Admin session initialization error:", error);
+        router.push(`/${subdomain}/login`);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     }
+
     init();
+
+    return () => {
+      controller.abort();
+    };
   }, [subdomain, router]);
 
-  function handleLogout() {
-    localStorage.removeItem("smartcampus_user");
-    router.push(`/${subdomain}/login`);
+  async function handleLogout() {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } finally {
+      router.push(`/${subdomain}/login`);
+    }
   }
 
-  if (!user || loading) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+        <div className="text-sm text-slate-400 font-mono">
+          Loading workspace...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  const totalRevenue = payments
+    .filter((payment) => payment.status === "SUCCESS")
+    .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+
+  const planLabel =
+    tenant?.plan
+      ?.replace(/[-_]/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase()) || "Not assigned";
+
+  const tenantStatus = tenant?.status || "UNKNOWN";
+  const paymentStatus = tenant?.paymentStatus || "UNKNOWN";
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
+
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex justify-between items-center shadow-xl">
           <div>
-            <span className="text-xs font-mono text-purple-400 uppercase tracking-wider">Enterprise Administration</span>
-            <h1 className="text-3xl font-black mt-1">Admin Dashboard ({subdomain})</h1>
-            <p className="text-sm text-slate-400">Monitor multi-tenant revenue ledgers, biometric access audit logs, and global system health.</p>
+            <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider">
+              School Administration
+            </span>
+
+            <h1 className="text-3xl font-black mt-1">
+              {tenant?.name || subdomain}
+            </h1>
+
+            <p className="text-sm text-slate-400 mt-1">
+              Workspace: {subdomain}
+            </p>
           </div>
+
           <div className="flex items-center space-x-4">
-            <span className="px-3 py-1 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-full text-xs font-bold uppercase">Role: {user.role} ({user.name})</span>
-            <button onClick={handleLogout} className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 rounded-xl text-xs font-bold uppercase transition cursor-pointer">
+            <span className="px-3 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full text-xs font-bold uppercase">
+              {user.role}: {user.name}
+            </span>
+
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 rounded-xl text-xs font-bold uppercase transition cursor-pointer"
+            >
               Logout
             </button>
           </div>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
           <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl">
-            <p className="text-xs font-mono text-slate-400 uppercase">Total Revenue (Q2)</p>
-            <h3 className="text-2xl font-black text-emerald-400 mt-1">₹1,25,000</h3>
-            <span className="text-[10px] text-emerald-500 font-mono mt-1 block">✓ Razorpay Gateway Live</span>
+            <p className="text-xs font-mono text-slate-400 uppercase">
+              Fee Revenue
+            </p>
+
+            <h3 className="text-2xl font-black text-emerald-400 mt-1">
+              ₹{totalRevenue.toLocaleString("en-IN")}
+            </h3>
+
+            <span className="text-[10px] text-slate-500 font-mono mt-1 block">
+              {payments.length} recorded payment
+              {payments.length === 1 ? "" : "s"}
+            </span>
           </div>
+
           <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl">
-            <p className="text-xs font-mono text-slate-400 uppercase">Enrolled Students</p>
-            <h3 className="text-2xl font-black text-cyan-400 mt-1">480</h3>
-            <span className="text-[10px] text-cyan-500 font-mono mt-1 block">Active across 16 classes</span>
+            <p className="text-xs font-mono text-slate-400 uppercase">
+              Subscription
+            </p>
+
+            <h3 className="text-2xl font-black text-cyan-400 mt-1">
+              {planLabel}
+            </h3>
+
+            <span className="text-[10px] text-cyan-500 font-mono mt-1 block uppercase">
+              {paymentStatus}
+            </span>
           </div>
+
           <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl">
-            <p className="text-xs font-mono text-slate-400 uppercase">Attendance Rate</p>
-            <h3 className="text-2xl font-black text-indigo-400 mt-1">98.4%</h3>
-            <span className="text-[10px] text-indigo-500 font-mono mt-1 block">Biometric Gate Synced</span>
+            <p className="text-xs font-mono text-slate-400 uppercase">
+              Students
+            </p>
+
+            <h3 className="text-2xl font-black text-indigo-400 mt-1">
+              —
+            </h3>
+
+            <span className="text-[10px] text-slate-500 font-mono mt-1 block">
+              No student records yet
+            </span>
           </div>
+
           <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl">
-            <p className="text-xs font-mono text-slate-400 uppercase">System Status</p>
-            <h3 className="text-2xl font-black text-emerald-400 mt-1">Optimal</h3>
-            <span className="text-[10px] text-emerald-500 font-mono mt-1 block">Supabase Cloud Live</span>
+            <p className="text-xs font-mono text-slate-400 uppercase">
+              Workspace Status
+            </p>
+
+            <h3 className="text-2xl font-black text-emerald-400 mt-1">
+              {tenantStatus}
+            </h3>
+
+            <span className="text-[10px] text-emerald-500 font-mono mt-1 block">
+              Secure session active
+            </span>
           </div>
+
         </div>
 
-        {/* Payment Audit Logs */}
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 shadow-xl">
+
           <div className="flex justify-between items-center">
-            <h3 className="font-bold text-lg">Secure Fee Collection Ledger</h3>
-            <span className="text-xs font-mono text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded border border-purple-500/20">Real-time Audit</span>
-          </div>
-          <div className="space-y-2">
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-              <div>
-                <p className="font-semibold text-slate-200">Rahul Gupta (Class 10-A)</p>
-                <p className="text-[10px] text-slate-400 font-mono mt-0.5">Transaction ID: pay_N38x91L0ms2Q</p>
-              </div>
-              <div className="text-right">
-                <span className="font-bold text-emerald-400">₹25,000</span>
-                <span className="block text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-mono font-bold uppercase mt-1">SUCCESS</span>
-              </div>
+            <div>
+              <h3 className="font-bold text-lg">
+                Secure Fee Collection Ledger
+              </h3>
+
+              <p className="text-xs text-slate-500 mt-1">
+                Tenant-scoped payment records
+              </p>
             </div>
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-              <div>
-                <p className="font-semibold text-slate-200">Priya Sharma (Class 9-B)</p>
-                <p className="text-[10px] text-slate-400 font-mono mt-0.5">Transaction ID: pay_K91z22P9qa4X</p>
-              </div>
-              <div className="text-right">
-                <span className="font-bold text-emerald-400">₹25,000</span>
-                <span className="block text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-mono font-bold uppercase mt-1">SUCCESS</span>
-              </div>
-            </div>
+
+            <span className="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded border border-cyan-500/20">
+              {payments.length} RECORDS
+            </span>
           </div>
+
+          {payments.length === 0 ? (
+            <div className="bg-slate-950 p-8 rounded-xl border border-slate-800 text-center">
+              <p className="font-semibold text-slate-300">
+                No payments yet
+              </p>
+
+              <p className="text-xs text-slate-500 mt-2">
+                Genuine fee transactions will appear here when recorded.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {payments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs"
+                >
+                  <div>
+                    <p className="font-semibold text-slate-200">
+                      {payment.studentName || "Student payment"}
+                    </p>
+
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                      ID: {payment.transactionId || payment.id}
+                    </p>
+
+                    <p className="text-[10px] text-slate-600 mt-1">
+                      {new Date(payment.createdAt).toLocaleString("en-IN")}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="font-bold text-emerald-400">
+                      ₹{Number(payment.amount).toLocaleString("en-IN")}
+                    </span>
+
+                    <span className="block text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-mono font-bold uppercase mt-1">
+                      {payment.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
         </div>
+
       </div>
     </div>
   );

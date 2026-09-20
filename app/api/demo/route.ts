@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db"; 
+import { prisma } from "@/lib/prisma"; 
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     
     const subdomain = `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const tenant = await db.tenant.create({
+    const tenant = await prisma.tenant.create({
       data: {
         name: institutionName || "New Institution",
         subdomain,
