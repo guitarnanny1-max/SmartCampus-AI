@@ -5,3 +5,9 @@ backups/
 node_modules/
 .next/
 .vercel
+
+# Local environment secrets
+.env.local
+.env.production
+.env.*
+!.env.example
