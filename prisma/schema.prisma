@@ -70,7 +70,7 @@ model Tenant {
 
 model User {
   id                String              @id @default(cuid())
-  tenantId          String
+  tenantId          String?
   email             String              @unique
   name              String
   role              String
@@ -78,9 +78,11 @@ model User {
   createdAt         DateTime            @default(now())
   platformRole      String?
   isPlatformUser    Boolean             @default(false)
-  tenant            Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  authVersion       Int                 @default(1)
+  tenant            Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   fee_payments      fee_payments[]
   ParentStudentLink ParentStudentLink[]
+  platformOtps      PlatformOtp[]
 }
 
 model Student {
@@ -986,6 +988,22 @@ model platform_crm_leads {
   platform_crm_lead_activities platform_crm_lead_activities[]
   Tenant                       Tenant?                        @relation(fields: [tenant_id], references: [id], onUpdate: NoAction)
 
+  website              String?
+  websiteExtractedAt   DateTime?
+  emailSource          String?
+  phoneSource          String?
+  whatsappSource       String?
+  whatsappNumber       String?
+  emailAllowed         Boolean                  @default(false)
+  whatsappAllowed      Boolean                  @default(false)
+  voiceAllowed         Boolean                  @default(false)
+  optedOut             Boolean                  @default(false)
+  optedOutAt           DateTime?
+  optOutSource         String?
+  campaignLeads        CampaignLead[]
+  communicationLogs    CommunicationLog[]
+  automationExecutions CrmAutomationExecution[]
+
   @@index([next_follow_up_at], map: "platform_crm_leads_follow_up_idx")
   @@index([status])
   @@index([tenant_id], map: "platform_crm_leads_tenant_idx")
@@ -1373,4 +1391,193 @@ model StudentConsent {
   @@index([studentId])
   @@index([guardianId])
   @@index([studentId, purpose])
+}
+
+model CrmAutomation {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  status      String   @default("ACTIVE")
+  triggerType String
+  config      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  steps      CrmAutomationStep[]
+  executions CrmAutomationExecution[]
+
+  @@index([status, triggerType])
+}
+
+model CrmAutomationStep {
+  id               String   @id @default(cuid())
+  automationId     String
+  stepOrder        Int
+  actionType       String
+  config           Json?
+  delayMinutes     Int      @default(0)
+  requiresApproval Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  automation CrmAutomation                @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  executions CrmAutomationStepExecution[]
+  approvals  CrmAutomationApproval[]
+
+  @@unique([automationId, stepOrder])
+  @@index([automationId])
+}
+
+model CrmAutomationExecution {
+  id           String    @id @default(cuid())
+  automationId String
+  leadId       String?
+  status       String    @default("PENDING")
+  currentStep  Int       @default(0)
+  startedAt    DateTime?
+  completedAt  DateTime?
+  error        String?
+  context      Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  automation CrmAutomation                @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  lead       platform_crm_leads?          @relation(fields: [leadId], references: [id])
+  stepRuns   CrmAutomationStepExecution[]
+  approvals  CrmAutomationApproval[]
+
+  @@index([automationId, status])
+  @@index([leadId, status])
+}
+
+model CrmAutomationStepExecution {
+  id          String    @id @default(cuid())
+  executionId String
+  stepId      String
+  status      String    @default("PENDING")
+  startedAt   DateTime?
+  completedAt DateTime?
+  output      Json?
+  error       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  execution CrmAutomationExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  step      CrmAutomationStep      @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([executionId, status])
+  @@index([stepId])
+}
+
+model CrmAutomationApproval {
+  id          String    @id @default(cuid())
+  executionId String
+  stepId      String
+  status      String    @default("PENDING")
+  requestedAt DateTime  @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  note        String?
+
+  execution CrmAutomationExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  step      CrmAutomationStep      @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([executionId, status])
+  @@index([stepId])
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.VarChar(255)
+  status      String   @default("DRAFT")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  steps CampaignStep[]
+  leads CampaignLead[]
+  logs  CommunicationLog[]
+}
+
+model CampaignStep {
+  id              String   @id @default(cuid())
+  campaignId      String
+  stepOrder       Int
+  channel         String
+  delayDays       Int      @default(0)
+  subject         String?
+  messageTemplate String?
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  campaign Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  logs     CommunicationLog[]
+
+  @@unique([campaignId, stepOrder])
+}
+
+model CampaignLead {
+  id                    String    @id @default(cuid())
+  campaignId            String
+  leadId                String
+  status                String    @default("ACTIVE")
+  currentStep           Int       @default(0)
+  nextActionAt          DateTime?
+  startedAt             DateTime?
+  completedAt           DateTime?
+  processingAt          DateTime?
+  processingExecutionId String?
+  stoppedAt             DateTime?
+  stopReason            String?
+
+  campaign Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  lead     platform_crm_leads @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  logs     CommunicationLog[]
+
+  @@unique([campaignId, leadId])
+  @@index([nextActionAt, status])
+  @@index([leadId, status])
+}
+
+model CommunicationLog {
+  id             String    @id @default(cuid())
+  leadId         String
+  campaignId     String?
+  campaignStepId String?
+  campaignLeadId String?
+  channel        String
+  direction      String    @default("OUTBOUND")
+  status         String
+  recipient      String?
+  message        String?
+  provider       String?
+  externalId     String?
+  attemptedAt    DateTime  @default(now())
+  completedAt    DateTime?
+  error          String?
+
+  lead         platform_crm_leads @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  campaign     Campaign?          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignStep CampaignStep?      @relation(fields: [campaignStepId], references: [id], onDelete: SetNull)
+  campaignLead CampaignLead?      @relation(fields: [campaignLeadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, attemptedAt])
+  @@index([campaignId, status])
+  @@index([campaignLeadId, attemptedAt])
+}
+
+model PlatformOtp {
+  id        String   @id @default(cuid())
+  userId    String
+  otpHash   String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }

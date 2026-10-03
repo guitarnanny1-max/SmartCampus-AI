@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
+import TenantSplash from "@/app/components/TenantSplash";
 
 export default function LoginPage(props: { params: Promise<{ subdomain: string }> }) {
   const { subdomain } = use(props.params);
@@ -11,6 +12,8 @@ export default function LoginPage(props: { params: Promise<{ subdomain: string }
   const [password, setPassword] = useState("password123");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showTenantSplash, setShowTenantSplash] = useState(false);
+  const [authenticatedUser, setAuthenticatedUser] = useState<any>(null);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -26,14 +29,8 @@ export default function LoginPage(props: { params: Promise<{ subdomain: string }
       const data = await res.json();
 
       if (data.success) {
-
-        const role = data.user.role;
-        if (role === "ADMIN" || role === "SCHOOL_ADMIN") {
-          router.push("/admin");
-        }
-        else if (role === "PARENT") router.push("/parent");
-        else if (role === "TEACHER") router.push("/teacher");
-        else router.push("/student");
+        setAuthenticatedUser(data.user);
+        setShowTenantSplash(true);
       } else {
         setError(data.error || "Authentication failed.");
       }
@@ -42,6 +39,28 @@ export default function LoginPage(props: { params: Promise<{ subdomain: string }
     } finally {
       setLoading(false);
     }
+  }
+
+  if (showTenantSplash && authenticatedUser) {
+    return (
+      <TenantSplash
+        campusName={authenticatedUser.tenantName || "SmartCampusAI"}
+        campusLogo={null}
+        onComplete={() => {
+          const role = authenticatedUser.role;
+
+          if (role === "ADMIN" || role === "SCHOOL_ADMIN") {
+            window.location.href = "/admin";
+          } else if (role === "PARENT") {
+            window.location.href = "/parent";
+          } else if (role === "TEACHER") {
+            window.location.href = "/teacher";
+          } else {
+            window.location.href = "/student";
+          }
+        }}
+      />
+    );
   }
 
   return (
@@ -94,7 +113,7 @@ export default function LoginPage(props: { params: Promise<{ subdomain: string }
         <div className="border-t border-slate-800 pt-4 space-y-2">
           <p className="text-[10px] font-mono text-slate-500 uppercase text-center">Quick Demo Credentials (Password: password123)</p>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <button type="button" onClick={() => setEmail(`admin@${subdomain}.com`)} className="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 font-mono cursor-pointer">
+            <button type="button" onClick={() => { setEmail("admin@smartcampusai.test"); setPassword("SmartCampusAdmin2026!"); }} className="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 font-mono cursor-pointer">
               👑 Admin
             </button>
             <button type="button" onClick={() => setEmail(`parent@${subdomain}.com`)} className="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 font-mono cursor-pointer">

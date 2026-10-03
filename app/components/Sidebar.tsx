@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/", label: "📊 Main Dashboard" },
+  { href: "/front-desk", label: "🛎️ Front Desk" },
   { href: "/admissions", label: "📋 Admissions CRM" },
   { href: "/students", label: "👨‍🎓 Student Management" },
   { href: "/staff", label: "👔 Staff & HR" },
@@ -36,7 +37,9 @@ export default function Sidebar() {
 
         <nav className="space-y-1">
           {navItems.map((item: any) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/" && pathname.startsWith(`${item.href}/`));
             return (
               <Link
                 key={item.href}

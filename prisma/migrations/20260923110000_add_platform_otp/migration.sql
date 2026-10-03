@@ -1,0 +1,22 @@
+CREATE TABLE "PlatformOtp" (
+  "id" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "otpHash" TEXT NOT NULL,
+  "expiresAt" TIMESTAMP(3) NOT NULL,
+  "attempts" INTEGER NOT NULL DEFAULT 0,
+  "used" BOOLEAN NOT NULL DEFAULT false,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT "PlatformOtp_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX "PlatformOtp_userId_idx"
+ON "PlatformOtp"("userId");
+
+CREATE INDEX "PlatformOtp_expiresAt_idx"
+ON "PlatformOtp"("expiresAt");
+
+ALTER TABLE "PlatformOtp"
+ADD CONSTRAINT "PlatformOtp_userId_fkey"
+FOREIGN KEY ("userId") REFERENCES "User"("id")
+ON DELETE CASCADE ON UPDATE CASCADE;

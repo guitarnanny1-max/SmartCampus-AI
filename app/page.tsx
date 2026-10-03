@@ -12,11 +12,11 @@ export default function LandingPage() {
 
   const handlePromptClick = (prompt: string) => {
     if (prompt.includes("fee collection")) {
-      setCopilotResponse("📊 Q3 Status: Total invoiced ₹4.2Cr. Collected ₹3.85Cr (91.6%). Pending arrears across 142 student accounts have automated WhatsApp reminders scheduled for Monday morning.");
+      setCopilotResponse("📊 Q3 Status: Illustrative example only: a school administrator could review fee collection totals and outstanding balances using verified school data, where those features are configured.");
     } else if (prompt.includes("substitute teacher")) {
-      setCopilotResponse("👥 Grade 10 Roster: 2 faculty members on approved leave. AI matched and assigned qualified substitute teachers: Dr. Sharma (Physics - Period 3) and Prof. Mehta (Mathematics - Period 5). Timetables synced.");
-    } else if (prompt.includes("ISO 27001")) {
-      setCopilotResponse("🔒 Security Status: All 45 database clusters operating under active 256-Bit TLS encryption. ISO 27001 continuous audit trail active. Zero unauthorized intrusion attempts recorded.");
+      setCopilotResponse("👥 Grade 10 Roster: 2 faculty members on approved leave. Illustrative example only: staff availability and substitute suggestions would need to be verified by an authorized school administrator. No assignments or timetable changes are made by this preview.");
+    } else if (prompt.includes("security-first design")) {
+      setCopilotResponse("🔒 Security Status: This preview does not access live infrastructure or verify encryption, audits, or intrusion activity.");
     }
   };
 
@@ -58,8 +58,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-blue-600 selection:text-white">
       {/* Top Banner */}
       <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 border-b border-blue-500/20 py-2 px-4 text-center text-xs md:text-sm font-medium tracking-wide">
-        <span className="text-blue-400 font-semibold">VERIFIED SECURE</span> • THE 360 DEGREES CAMPUS OS • ISO 27001 & SOC 2 TYPE II CERTIFIED
-        <a href="#security" className="ml-3 underline hover:text-blue-300">View Compliance →</a>
+        <span className="text-blue-400 font-semibold">SECURITY-FIRST DESIGN</span> • THE 360 DEGREES CAMPUS OS • MODERN SECURITY ARCHITECTURE
+        <a href="#security" className="ml-3 underline hover:text-blue-300">View Security Approach →</a>
       </div>
 
       {/* Navigation */}
@@ -80,7 +80,7 @@ export default function LandingPage() {
           <a href="#pricing" className="hover:text-blue-400 transition">Pricing</a>
         </div>
         <div className="flex items-center space-x-4">
-          <a href="/dashboard" className="hidden sm:inline-block text-sm font-medium text-slate-300 hover:text-white px-4 py-2 border border-slate-700 rounded-lg hover:bg-slate-900 transition">
+          <a href="/login" className="hidden sm:inline-block text-sm font-medium text-slate-300 hover:text-white px-4 py-2 border border-slate-700 rounded-lg hover:bg-slate-900 transition">
             Sign In
           </a>
           <a href="#demo" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition shadow-lg shadow-blue-600/30">
@@ -90,49 +90,188 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-20 pb-24 px-6 text-center max-w-5xl mx-auto">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-slate-950/0 to-slate-950"></div>
-        <div className="inline-block px-4 py-1.5 mb-6 rounded-full text-xs font-semibold tracking-wide bg-blue-500/10 text-blue-400 border border-blue-500/20">
-          ⚡ OFFICIAL PORTAL: WWW.SMARTCAMPUSAI.IN
+      <section
+        className="scai-hero relative isolate overflow-hidden min-h-[650px] md:min-h-[740px] flex items-center"
+        aria-labelledby="hero-heading"
+      >
+        {/* Background image */}
+        <div
+          className="scai-hero-wallpaper absolute inset-0 -z-30"
+          style={{
+            backgroundImage: "url('/images/smartcampus-hero.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center 35%",
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Dark overlays for text contrast */}
+        <div
+          className="absolute inset-0 -z-20 bg-gradient-to-r from-slate-950 via-slate-950/80 to-slate-950/25"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0 -z-20 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/35"
+          aria-hidden="true"
+        />
+
+        {/* Animated blue and cyan atmosphere */}
+        <div className="scai-glow scai-glow-blue" aria-hidden="true" />
+        <div className="scai-glow scai-glow-cyan" aria-hidden="true" />
+
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-20 md:py-28">
+          <div className="max-w-4xl text-left">
+            <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full text-xs md:text-sm font-semibold tracking-wide bg-blue-950/60 text-cyan-200 border border-cyan-400/30 backdrop-blur-md shadow-lg shadow-blue-950/30">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-300" />
+              </span>
+              SECURITY-FIRST DESIGN
+              <span className="text-cyan-500">•</span>
+              THE 360 DEGREES CAMPUS OS
+            </div>
+
+            <h1
+              id="hero-heading"
+              className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight leading-[1.08] mb-7 text-white"
+            >
+              Intelligence at scale.
+              <br />
+              <span className="scai-hero-gradient">
+                Absolute administrative clarity.
+              </span>
+            </h1>
+
+            <p className="text-base sm:text-lg md:text-xl text-slate-200/90 max-w-2xl mb-10 leading-relaxed">
+              Empower your institution with The 360 Degrees Campus OS,
+              featuring AI-assisted administrative workflows, modern
+              security architecture, and unified ERP management.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <a
+                href="#demo"
+                className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-base transition-all duration-300 shadow-xl shadow-blue-600/30 hover:shadow-cyan-500/30 hover:-translate-y-1"
+              >
+                Schedule Enterprise Demo
+                <span aria-hidden="true">→</span>
+              </a>
+
+              <a
+                href="#copilot"
+                className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-slate-950/60 hover:bg-slate-900/80 text-white border border-cyan-400/30 hover:border-cyan-300/60 rounded-xl font-bold text-base backdrop-blur-md transition-all duration-300 hover:-translate-y-1"
+              >
+                <span aria-hidden="true">✦</span>
+                Test AI Copilot Live
+              </a>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs sm:text-sm text-slate-300">
+              <span className="flex items-center gap-2">
+                <span className="text-cyan-400">✓</span>
+                Unified campus management
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="text-cyan-400">✓</span>
+                AI-assisted workflows
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="text-cyan-400">✓</span>
+                Privacy-aware design
+              </span>
+            </div>
+          </div>
         </div>
-        <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-tight mb-6">
-          Intelligence at scale. <br />
-          <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-white bg-clip-text text-transparent">
-            Absolute administrative clarity.
-          </span>
-        </h1>
-        <p className="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed">
-          Empower your institution with The 360 Degrees Campus OS featuring autonomous AI workflows, military-grade security, and unified ERP management.
-        </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <a href="#demo" className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-base transition shadow-xl shadow-blue-600/30">
-            Schedule Enterprise Demo
-          </a>
-          <a href="#copilot" className="px-8 py-4 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-xl font-bold text-base transition">
-            Test AI Copilot Live
-          </a>
-        </div>
-        <p className="mt-3 text-xs font-mono text-slate-500">www.smartcampusai.in/ai-command-center</p>
+
+        <style jsx>{`
+          .scai-hero-wallpaper {
+            animation: scai-wallpaper-drift 28s ease-in-out infinite alternate;
+            transform-origin: center;
+            will-change: transform;
+          }
+
+          .scai-glow {
+            position: absolute;
+            z-index: -10;
+            width: 32rem;
+            height: 32rem;
+            border-radius: 9999px;
+            filter: blur(100px);
+            pointer-events: none;
+            opacity: 0.22;
+            animation: scai-glow-float 12s ease-in-out infinite alternate;
+          }
+
+          .scai-glow-blue {
+            top: 5%;
+            left: -12rem;
+            background: #2563eb;
+          }
+
+          .scai-glow-cyan {
+            right: -12rem;
+            bottom: -10%;
+            background: #06b6d4;
+            animation-delay: -6s;
+          }
+
+          .scai-hero-gradient {
+            background: linear-gradient(
+              100deg,
+              #60a5fa 0%,
+              #67e8f9 45%,
+              #ffffff 90%
+            );
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+          }
+
+          @keyframes scai-wallpaper-drift {
+            from {
+              transform: scale(1);
+            }
+            to {
+              transform: scale(1.07);
+            }
+          }
+
+          @keyframes scai-glow-float {
+            from {
+              transform: translate3d(0, -20px, 0) scale(0.9);
+            }
+            to {
+              transform: translate3d(30px, 30px, 0) scale(1.15);
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .scai-hero-wallpaper,
+            .scai-glow {
+              animation: none !important;
+            }
+          }
+        `}</style>
       </section>
 
       {/* Stats Ticker */}
       <section className="border-y border-slate-800/80 bg-slate-900/40 py-10 px-6">
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <div>
-            <div className="text-3xl md:text-4xl font-extrabold text-white">500+</div>
-            <div className="text-xs md:text-sm text-slate-400 mt-1 uppercase tracking-wider font-medium">Enterprise Campuses</div>
+            <div className="text-3xl md:text-4xl font-extrabold text-white">Campus Management</div>
+            <div className="text-xs md:text-sm text-slate-400 mt-1 uppercase tracking-wider font-medium">Unified School Operations</div>
           </div>
           <div>
-            <div className="text-3xl md:text-4xl font-extrabold text-blue-400">ISO 27001</div>
-            <div className="text-xs md:text-sm text-slate-400 mt-1 uppercase tracking-wider font-medium">Certified Information Security</div>
+            <div className="text-3xl md:text-4xl font-extrabold text-blue-400">Security-First Design</div>
+            <div className="text-xs md:text-sm text-slate-400 mt-1 uppercase tracking-wider font-medium">Modern Security Architecture</div>
           </div>
           <div>
-            <div className="text-3xl md:text-4xl font-extrabold text-white">SOC 2</div>
-            <div className="text-xs md:text-sm text-slate-400 mt-1 uppercase tracking-wider font-medium">Type II Compliance Audited</div>
+            <div className="text-3xl md:text-4xl font-extrabold text-white">Privacy-Focused</div>
+            <div className="text-xs md:text-sm text-slate-400 mt-1 uppercase tracking-wider font-medium">Designed with Privacy in Mind</div>
           </div>
           <div>
-            <div className="text-3xl md:text-4xl font-extrabold text-blue-400">99.9%</div>
-            <div className="text-xs md:text-sm text-slate-400 mt-1 uppercase tracking-wider font-medium">System Uptime SLA</div>
+            <div className="text-3xl md:text-4xl font-extrabold text-blue-400">Modern</div>
+            <div className="text-xs md:text-sm text-slate-400 mt-1 uppercase tracking-wider font-medium">Technology Platform</div>
           </div>
         </div>
       </section>
@@ -155,10 +294,10 @@ export default function LandingPage() {
               </div>
               <div>
                 <h3 className="font-bold text-sm">SmartCampus Administrative Copilot</h3>
-                <span className="text-xs text-emerald-400 font-mono">● Online • Connected to www.smartcampusai.in Database</span>
+                <span className="text-xs text-emerald-400 font-mono">● Interactive Demo • Illustrative Sample Data</span>
               </div>
             </div>
-            <span className="text-xs px-3 py-1 bg-slate-800 text-slate-400 rounded-full font-mono">v4.2 Enterprise</span>
+            <span className="text-xs px-3 py-1 bg-slate-800 text-slate-400 rounded-full font-mono">Interactive Preview</span>
           </div>
 
           <div className="bg-slate-950 rounded-xl p-5 border border-slate-800/80 mb-6 min-h-[120px] flex items-center">
@@ -174,8 +313,8 @@ export default function LandingPage() {
               <button onClick={() => handlePromptClick("Generate substitute teacher roster for Grade 10")} className="p-3 text-left text-xs bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl transition text-slate-300 cursor-pointer">
                 👥 "Generate substitute teacher roster for Grade 10"
               </button>
-              <button onClick={() => handlePromptClick("Verify ISO 27001 data encryption status")} className="p-3 text-left text-xs bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl transition text-slate-300 cursor-pointer">
-                🔒 "Verify ISO 27001 data encryption status"
+              <button onClick={() => handlePromptClick("Explain the security-first design")} className="p-3 text-left text-xs bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl transition text-slate-300 cursor-pointer">
+                🔒 "Explain the security-first design"
               </button>
             </div>
           </div>
@@ -196,23 +335,23 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
               <div className="text-3xl mb-4">🛡️</div>
-              <h3 className="font-bold text-lg mb-2">ISO 27001 Certified</h3>
-              <p className="text-sm text-slate-400">International benchmark for information security management systems (ISMS).</p>
+              <h3 className="font-bold text-lg mb-2">Security-First Design</h3>
+              <p className="text-sm text-slate-400">We are developing our security practices as the platform evolves.</p>
             </div>
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
               <div className="text-3xl mb-4">🔒</div>
-              <h3 className="font-bold text-lg mb-2">SOC 2 Type II Audited</h3>
-              <p className="text-sm text-slate-400">Verified operational controls protecting confidentiality, availability, and privacy.</p>
+              <h3 className="font-bold text-lg mb-2">Privacy-Aware Design</h3>
+              <p className="text-sm text-slate-400">Security and privacy practices should be reviewed and verified before adoption.</p>
             </div>
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
               <div className="text-3xl mb-4">⚡</div>
-              <h3 className="font-bold text-lg mb-2">256-Bit TLS Encryption</h3>
-              <p className="text-sm text-slate-400">Bank-grade data encryption in transit and at rest across all endpoints.</p>
+              <h3 className="font-bold text-lg mb-2">Data Protection</h3>
+              <p className="text-sm text-slate-400">Review the platform's security and data-handling practices before adopting it.</p>
             </div>
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
               <div className="text-3xl mb-4">📜</div>
-              <h3 className="font-bold text-lg mb-2">FERPA & GDPR Compliant</h3>
-              <p className="text-sm text-slate-400">Strict adherence to student record confidentiality laws worldwide.</p>
+              <h3 className="font-bold text-lg mb-2">Privacy-Aware Design</h3>
+              <p className="text-sm text-slate-400">Institutions should assess applicable privacy and data protection requirements before adopting the platform.</p>
             </div>
           </div>
         </div>
@@ -235,7 +374,7 @@ export default function LandingPage() {
             { title: "Fee Ledger & SmartPay", desc: "Automated fee reminders, online gateway synchronization, and vendor payouts." },
             { title: "HR, Payroll & Biometrics", desc: "Biometric attendance matching, tax deductions, and automated salary disbursement." },
             { title: "Transport & Live GPS", desc: "Optimized bus routes and real-time tracking for parents and administrators." },
-            { title: "Autonomous AI Copilot", desc: "24/7 institutional assistant answering queries and forecasting P&L trends." },
+            { title: "AI-Assisted Campus Tools", desc: "Illustrative AI-assisted support for administrative queries and workflows, subject to feature availability." },
           ].map((mod, idx) => (
             <div key={idx} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-blue-500/50 transition">
               <h3 className="font-bold text-lg mb-2 text-white">{mod.title}</h3>
@@ -291,8 +430,8 @@ export default function LandingPage() {
                 <p className="text-sm text-slate-400 mb-6">For Colleges & Universities (2,000+ Students)</p>
                 <div className="text-2xl font-extrabold mb-6">Custom <span className="text-sm font-normal text-slate-400">(Starting ₹25k+/mo)</span></div>
                 <ul className="space-y-3 text-sm text-slate-300 mb-8">
-                  <li>✓ Full AI Copilot Suite</li>
-                  <li>✓ ISO 27001 & SOC 2 Audit Logs</li>
+                  <li>✓ AI-assisted features (where available)</li>
+                  <li>✓ Security and access-control features (subject to configuration)</li>
                   <li>✓ Custom ERP API Integrations</li>
                 </ul>
               </div>
@@ -384,7 +523,7 @@ export default function LandingPage() {
       <footer className="border-t border-slate-900 bg-slate-950/80 py-8 px-6 text-center text-xs text-slate-500 space-y-1">
         <p className="font-semibold text-slate-400">SmartCampus AI</p>
         <p className="text-slate-400 font-medium">Powered by <span className="text-blue-400 font-bold">thomasG technologies</span></p>
-        <p className="text-slate-500">ISO 27001 & SOC 2 Type II Certified • www.smartcampusai.in • The 360 Degrees Campus OS. © 2026</p>
+        <p className="text-slate-500">Security-First Design • Privacy-Aware Design • www.smartcampusai.in • The 360 Degrees Campus OS. © 2026</p>
       </footer>
     </div>
   );

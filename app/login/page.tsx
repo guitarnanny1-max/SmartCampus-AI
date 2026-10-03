@@ -1,220 +1,229 @@
 "use client";
-export const dynamic = "force-dynamic";
 
-import React, { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useState } from "react";
 
-function LoginForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+type Step = "credentials" | "otp";
 
-  const redirectTo = searchParams.get("from") || "/";
-
-  const [email, setEmail] = useState("admin@smartcampus.ai");
-  const [password, setPassword] = useState("••••••••");
+export default function PlatformLoginPage() {
+  const [step, setStep] = useState<Step>("credentials");
+  const [email, setEmail] = useState("admin@smartcampusai.test");
+  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  async function requestOtp(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     setLoading(true);
+    setError("");
+    setMessage("");
 
-    document.cookie =
-      "campus_auth_token=active_session_token_xyz; path=/; max-age=86400;";
+    try {
+      const res = await fetch("/api/auth/platform-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-    setTimeout(() => {
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error || "Unable to send verification code.");
+        return;
+      }
+
+      setMessage(
+        data.message || "Verification code sent to your email.",
+      );
+      setStep("otp");
+    } catch {
+      setError("Unable to connect to the authentication service.");
+    } finally {
       setLoading(false);
-      router.push(redirectTo);
-    }, 600);
-  };
+    }
+  }
+
+  async function verifyOtp(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const res = await fetch("/api/auth/platform-otp/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email,
+          otp,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error || "Unable to verify OTP.");
+        return;
+      }
+
+      if (
+        data.user?.role !== "SUPER_ADMIN" ||
+        data.user?.isPlatformUser !== true
+      ) {
+        setError(
+          "This account is not authorized for the platform Command Center.",
+        );
+        return;
+      }
+
+      window.location.href = "/admin";
+    } catch {
+      setError("Unable to connect to the authentication service.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function backToCredentials() {
+    setStep("credentials");
+    setOtp("");
+    setError("");
+    setMessage("");
+  }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background: "#0f172a",
-        color: "#f8fafc",
-        fontFamily: "sans-serif",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "420px",
-          background: "#1e293b",
-          border: "1px solid #334155",
-          borderRadius: "16px",
-          padding: "40px",
-          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3)",
-        }}
-      >
-        <div
-          style={{
-            textAlign: "center",
-            marginBottom: "35px",
-          }}
-        >
-          <div
-            style={{
-              display: "inline-flex",
-              background: "#3b82f6",
-              color: "white",
-              padding: "12px",
-              borderRadius: "12px",
-              fontSize: "20px",
-              fontWeight: "bold",
-              marginBottom: "15px",
-            }}
-          >
-            🎓
+    <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+      <section className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-2xl">
+        <div className="mb-8 text-center">
+          <div className="mb-4 text-sm font-semibold tracking-widest text-cyan-400 uppercase">
+            ThomasG Technologies
           </div>
 
-          <h1
-            style={{
-              fontSize: "24px",
-              margin: "0 0 8px 0",
-              color: "white",
-              fontWeight: "bold",
-            }}
-          >
-            Welcome to SmartCampusAI
+          <h1 className="text-3xl font-bold">
+            Platform Command Center
           </h1>
 
-          <p
-            style={{
-              color: "#94a3b8",
-              fontSize: "13px",
-              margin: 0,
-            }}
-          >
-            Sign in to your enterprise campus portal
+          <p className="mt-2 text-sm text-slate-400">
+            {step === "credentials"
+              ? "Sign in to manage SmartCampusAI platform operations."
+              : "Enter the verification code sent to your email."}
           </p>
         </div>
 
-        <form
-          onSubmit={handleLogin}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-          }}
-        >
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: "13px",
-                fontWeight: "bold",
-                color: "#cbd5e1",
-                marginBottom: "8px",
-              }}
-            >
-              Campus Email
-            </label>
-
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{
-                width: "100%",
-                background: "#0f172a",
-                border: "1px solid #334155",
-                borderRadius: "8px",
-                padding: "12px 14px",
-                color: "white",
-                fontSize: "14px",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-            />
+        {error && (
+          <div className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+            {error}
           </div>
+        )}
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: "13px",
-                fontWeight: "bold",
-                color: "#cbd5e1",
-                marginBottom: "8px",
-              }}
-            >
-              Password
-            </label>
-
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{
-                width: "100%",
-                background: "#0f172a",
-                border: "1px solid #334155",
-                borderRadius: "8px",
-                padding: "12px 14px",
-                color: "white",
-                fontSize: "14px",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-            />
+        {message && (
+          <div className="mb-5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-3 text-sm text-cyan-300">
+            {message}
           </div>
+        )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              background: "#3b82f6",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              padding: "12px",
-              fontWeight: "bold",
-              fontSize: "14px",
-              cursor: loading ? "not-allowed" : "pointer",
-              transition: "background 0.2s",
-              marginTop: "10px",
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading
-              ? "Authenticating Secure Session..."
-              : "Sign In to Dashboard"}
-          </button>
-        </form>
+        {step === "credentials" ? (
+          <form onSubmit={requestOtp} className="space-y-5">
+            <div>
+              <label className="mb-2 block text-sm text-slate-300">
+                Platform Email
+              </label>
 
-        <div
-          style={{
-            marginTop: "30px",
-            textAlign: "center",
-            borderTop: "1px solid #334155",
-            paddingTop: "20px",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "11px",
-              color: "#64748b",
-            }}
-          >
-            🔒 Secured with PostgreSQL RBAC &amp; Encrypted Cookies
-          </span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-cyan-500"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm text-slate-300">
+                Password
+              </label>
+
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-cyan-500"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-cyan-600 px-4 py-3 font-semibold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Sending verification code..." : "Continue"}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={verifyOtp} className="space-y-5">
+            <div>
+              <label className="mb-2 block text-sm text-slate-300">
+                6-Digit Verification Code
+              </label>
+
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                value={otp}
+                onChange={(e) =>
+                  setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                }
+                required
+                autoComplete="one-time-code"
+                autoFocus
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-center text-2xl tracking-[0.35em] outline-none focus:border-cyan-500"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || otp.length !== 6}
+              className="w-full rounded-xl bg-cyan-600 px-4 py-3 font-semibold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Verifying..." : "Verify & Enter Command Center"}
+            </button>
+
+            <button
+              type="button"
+              onClick={backToCredentials}
+              disabled={loading}
+              className="w-full rounded-xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+            >
+              Back
+            </button>
+          </form>
+        )}
+
+        <div className="mt-6 border-t border-slate-800 pt-5 text-center text-xs text-slate-500">
+          Platform administrators only
         </div>
-      </div>
-    </div>
-  );
-}
 
-export default function LoginPage() {
-  return (
-    <Suspense fallback={null}>
-      <LoginForm />
-    </Suspense>
+        <p className="mt-4 text-center text-[11px] text-slate-600">
+          Powered by ThomasG Technologies · SmartCampus AI
+        </p>
+      </section>
+    </main>
   );
 }

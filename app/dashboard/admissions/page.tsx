@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
+import FrontDeskPreviewBanner from "@/app/components/FrontDeskPreviewBanner";
+
 export default async function DashboardAdmissionsPage() {
   let applicants: any[] = [];
   try {
@@ -19,6 +21,7 @@ export default async function DashboardAdmissionsPage() {
           <p className="text-sm text-slate-400">Manage incoming school applications and lead conversions</p>
         </div>
       </div>
+      <FrontDeskPreviewBanner />
       <div className="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>

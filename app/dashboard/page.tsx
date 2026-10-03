@@ -15,7 +15,7 @@ export default function LandingPage() {
         </p>
         <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4">
           <a
-            href="/dashboard"
+            href="/local/login"
             className="px-8 py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-semibold text-lg transition shadow-lg shadow-blue-600/30 text-white"
           >
             Access Portal & Dashboard →
